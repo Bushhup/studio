@@ -1,0 +1,55 @@
+export type Role = 'admin' | 'faculty' | 'student';
+
+export interface User {
+  id: string;
+  name: string;
+  role: Role;
+}
+
+export interface AppEvent {
+  id: string;
+  title: string;
+  date: string; // ISO string or a Date object
+  description: string;
+  type: 'lecture' | 'hackathon' | 'fest' | 'internship_fair' | 'exam' | 'notice';
+  image?: string;
+  dataAiHint?: string;
+}
+
+export interface StudyMaterial {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  fileType: 'pdf' | 'ppt' | 'doc' | 'link';
+  fileName?: string; // For actual file uploads
+  fileUrl: string; // Could be a download link or path
+  uploadedBy: string; // Faculty name or ID
+  uploadDate: string; // ISO string or Date object
+}
+
+export interface PlacementOpportunity {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  batchYear?: string; // e.g., "2024", "2025"
+  eligibility?: {
+    cgpa?: number;
+    skills?: string[];
+  };
+  applyLink: string;
+  postedDate: string; // ISO string or Date object
+  lastDateToApply?: string;
+}
+
+export interface Feedback {
+  id: string;
+  studentId?: string; // Anonymous, so might not be directly stored with feedback record if truly anonymous
+  facultyId?: string; // or courseId
+  courseId?: string;
+  feedbackText: string;
+  submittedDate: string; // ISO string or Date object
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  summary?: string;
+}
