@@ -1,4 +1,4 @@
-# **App Name**: DeptLink
+# **App Name**: MCA Dept
 
 ## Core Features:
 

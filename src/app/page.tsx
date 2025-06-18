@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <GraduationCap className="h-16 w-16 text-primary" />
-          <p className="text-xl font-medium text-foreground">Loading DeptLink...</p>
+          <p className="text-xl font-medium text-foreground">Loading MCA Dept...</p>
         </div>
       </div>
     );
@@ -53,7 +53,7 @@ export default function LoginPage() {
           <div className="mb-4 flex justify-center">
             <GraduationCap className="h-16 w-16 text-primary" />
           </div>
-          <CardTitle className="font-headline text-4xl tracking-tight text-primary">DeptLink</CardTitle>
+          <CardTitle className="font-headline text-4xl tracking-tight text-primary">MCA Dept</CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
             MCA Department Management System
           </CardDescription>
@@ -80,7 +80,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} DeptLink. All rights reserved.
+            &copy; {new Date().getFullYear()} MCA Dept. All rights reserved.
           </p>
         </CardFooter>
       </Card>

@@ -46,7 +46,7 @@ export function Header() {
       <div className="flex w-full items-center justify-between">
         <Link href="/home" className="flex items-center gap-2">
           <GraduationCap className="h-7 w-7 text-primary" />
-          <span className="font-headline text-2xl font-semibold text-primary">DeptLink</span>
+          <span className="font-headline text-2xl font-semibold text-primary">MCA Dept</span>
         </Link>
         
         <div className="flex items-center gap-4">

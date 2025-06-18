@@ -20,7 +20,7 @@ export default function AdminDashboardPage() {
             <Users className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1250</div>
+            <div className="text-2xl font-bold">150</div>
             <p className="text-xs text-muted-foreground">+50 from last month</p>
           </CardContent>
         </Card>
@@ -31,7 +31,7 @@ export default function AdminDashboardPage() {
             <Users className="h-5 w-5 text-primary" /> {/* Different icon or color for distinction */}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">75</div>
+            <div className="text-2xl font-bold">5</div>
             <p className="text-xs text-muted-foreground">+2 new hires</p>
           </CardContent>
         </Card>

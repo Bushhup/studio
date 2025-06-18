@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk', weight: ['300', '400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: 'DeptLink - MCA Department Management',
+  title: 'MCA Dept - MCA Department Management',
   description: 'Streamlined communication and academic tracking for MCA departments.',
 };
 

@@ -82,7 +82,7 @@ export default function AccountSettingsPage() {
               <Label htmlFor="inapp-notifications" className="flex flex-col space-y-1">
                 <span>In-App Notifications</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Show notifications within the DeptLink app.
+                  Show notifications within the MCA Dept app.
                 </span>
               </Label>
               <Switch id="inapp-notifications" defaultChecked />

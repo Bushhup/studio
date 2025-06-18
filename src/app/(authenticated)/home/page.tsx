@@ -1,70 +1,40 @@
 import { EventCard } from '@/components/event-card';
-import type { AppEvent } from '@/types';
+import type { AppEvent, EventDocument } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { CalendarClock } from 'lucide-react';
+import { connectToDatabase } from '@/lib/mongodb';
+import type { Collection, WithId } from 'mongodb';
 
-const mockEvents: AppEvent[] = [
-  {
-    id: '1',
-    title: 'Guest Lecture: AI in Modern Software',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-    description: 'Join us for an insightful session on the role of Artificial Intelligence in shaping modern software development practices. Led by Dr. Alan Turing.',
-    type: 'lecture',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'technology lecture'
-  },
-  {
-    id: '2',
-    title: 'DeptLink Hackathon 2024',
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
-    description: 'Annual departmental hackathon. Form teams and build innovative solutions. Exciting prizes to be won!',
-    type: 'hackathon',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'coding event'
-  },
-  {
-    id: '3',
-    title: 'Semester End Examinations Schedule',
-    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks from now
-    description: 'The schedule for the upcoming semester end examinations has been published. Please check the department notice board for details.',
-    type: 'exam',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'examination schedule'
-  },
-  {
-    id: '4',
-    title: 'Tech Fest "Innovate"',
-    date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 1 month from now
-    description: 'Get ready for our annual tech fest "Innovate"! Featuring coding competitions, project showcases, and fun events.',
-    type: 'fest',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'technology festival'
-  },
-  {
-    id: '5',
-    title: 'Internship Fair - Summer 2024',
-    date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(), // 1.5 months from now
-    description: 'Top companies are visiting for the Summer Internship Fair. Prepare your resumes and portfolios!',
-    type: 'internship_fair',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'career fair'
-  },
-  {
-    id: '6',
-    title: 'Important Notice: Library Closure',
-    date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
-    description: 'The central library will be closed for maintenance on the specified dates. Please plan accordingly.',
-    type: 'notice',
-    image: 'https://placehold.co/600x300.png',
-    dataAiHint: 'library notice'
+async function getEvents(): Promise<AppEvent[]> {
+  try {
+    const db = await connectToDatabase();
+    const eventsCollection: Collection<EventDocument> = db.collection<EventDocument>('events');
+    
+    const eventDocuments = await eventsCollection.find({}).sort({ date: 1 }).toArray();
+    
+    return eventDocuments.map((doc: WithId<EventDocument>) => ({
+      id: doc._id.toString(),
+      title: doc.title,
+      date: doc.date.toISOString(), // Convert BSON Date to ISO string
+      description: doc.description,
+      type: doc.type,
+      image: doc.image,
+      dataAiHint: doc.dataAiHint,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch events:", error);
+    return []; // Return empty array on error
   }
-];
-
-// Sort events by date
-const sortedEvents = mockEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
 
 
-export default function HomePage() {
+export default async function HomePage() {
+  const events = await getEvents();
+  // Sort events by date (descending - newest first, or ascending - oldest first as per requirement)
+  // MongoDB sort should handle this, but client-side sort can be a fallback or refinement
+  const sortedEvents = events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
@@ -77,7 +47,7 @@ export default function HomePage() {
       
       <div className="relative pl-8">
         {/* Vertical timeline bar */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-border rounded-full ml-[calc(0.375rem-1px)]"></div>
+        {sortedEvents.length > 0 && <div className="absolute left-0 top-0 bottom-0 w-1 bg-border rounded-full ml-[calc(0.375rem-1px)]"></div>}
 
         {sortedEvents.map((event, index) => (
           <div key={event.id} className="mb-10 flex items-start">
@@ -94,7 +64,7 @@ export default function HomePage() {
         <div className="text-center py-10">
           <CalendarClock className="mx-auto h-16 w-16 text-muted-foreground" />
           <p className="mt-4 text-xl font-medium text-muted-foreground">No upcoming events or notices.</p>
-          <p className="text-sm text-muted-foreground">Check back later for updates.</p>
+          <p className="text-sm text-muted-foreground">Check back later for updates or contact admin if you believe this is an error.</p>
         </div>
       )}
     </div>

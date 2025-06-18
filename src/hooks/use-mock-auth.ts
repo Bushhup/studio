@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Role } from '@/types';
 
-const ROLE_STORAGE_KEY = 'deptlink-user-role';
+const ROLE_STORAGE_KEY = 'MCA Dept-user-role';
 
 interface MockAuth {
   role: Role | null;

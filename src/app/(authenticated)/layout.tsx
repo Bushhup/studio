@@ -44,10 +44,10 @@ export default function AuthenticatedLayout({
     <SidebarProvider defaultOpen>
         <Sidebar variant="sidebar" collapsible="icon" side="left">
           <SidebarHeader className="items-center justify-center p-4">
-            <Link href="/home" className="flex items-center gap-2" aria-label="DeptLink Home">
+            <Link href="/home" className="flex items-center gap-2" aria-label="MCA Dept Home">
               <GraduationCap className="h-8 w-8 text-primary" />
               <span className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
-                DeptLink
+                MCA Dept
               </span>
             </Link>
           </SidebarHeader>
