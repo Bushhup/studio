@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -17,7 +18,7 @@ import {
 import { 
   LayoutDashboard, CalendarDays, BookOpenText, MessageSquareText, Briefcase, 
   Users, ClipboardList, GraduationCap, FileText, UploadCloud, DownloadCloud, 
-  Sparkles, ListChecks, BarChart3, ShieldCheck, Settings, UserCog, BookCopy
+  Sparkles, ListChecks, BarChart3, ShieldCheck, Settings, UserCog, BookCopy, School
 } from 'lucide-react';
 
 interface NavItem {
