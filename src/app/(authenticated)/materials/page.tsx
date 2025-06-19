@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { StudyMaterial, Role } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,24 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2 } from 'lucide-react';
+import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useMockAuth } from '@/hooks/use-mock-auth';
 
-const mockMaterials: StudyMaterial[] = [
+const initialMockMaterials: StudyMaterial[] = [
   { id: '1', title: 'Introduction to Algorithms Notes', description: 'Comprehensive notes for the first unit.', subject: 'Algorithms', fileType: 'pdf', fileUrl: '#', uploadedBy: 'Dr. Ada Lovelace', uploadDate: new Date().toISOString() , fileName: 'algo_unit1.pdf'},
   { id: '2', title: 'Operating Systems Concepts PPT', description: 'Lecture slides for OS concepts.', subject: 'Operating Systems', fileType: 'ppt', fileUrl: '#', uploadedBy: 'Prof. Linus Torvalds', uploadDate: new Date().toISOString(), fileName: 'os_concepts.ppt' },
   { id: '3', title: 'Database Design Document Template', description: 'Template for database design projects.', subject: 'DBMS', fileType: 'doc', fileUrl: '#', uploadedBy: 'Dr. Charles Babbage', uploadDate: new Date().toISOString(), fileName: 'db_design_template.doc' },
   { id: '4', title: 'Advanced Java Programming Examples', description: 'Code examples for advanced Java topics.', subject: 'Java Programming', fileType: 'link', fileUrl: 'https://github.com/example/java-examples', uploadedBy: 'Prof. James Gosling', uploadDate: new Date().toISOString() },
 ];
 
+const LOCAL_STORAGE_KEY_MATERIALS = 'mcaDeptCachedMaterials';
+
 const FileTypeIcon = ({ type }: { type: StudyMaterial['fileType'] }) => {
   switch (type) {
     case 'pdf': return <FileText className="h-5 w-5 text-red-500" />;
-    case 'ppt': return <FileType2 className="h-5 w-5 text-orange-500" />; // Using FileType2 as placeholder
+    case 'ppt': return <FileType2 className="h-5 w-5 text-orange-500" />;
     case 'doc': return <FileType2 className="h-5 w-5 text-blue-500" />;
-    case 'link': return <UploadCloud className="h-5 w-5 text-green-500" />; // Link could be different
+    case 'link': return <UploadCloud className="h-5 w-5 text-green-500" />;
     default: return <FileText className="h-5 w-5 text-gray-500" />;
   }
 };
@@ -59,15 +60,54 @@ function MaterialCard({ material }: { material: StudyMaterial }) {
 
 export default function MaterialsPage() {
   const { role } = useMockAuth();
+  const [materials, setMaterials] = useState<StudyMaterial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
 
-  const filteredMaterials = mockMaterials.filter(material => 
+  useEffect(() => {
+    // Load materials from localStorage or fallback to initialMockMaterials
+    try {
+      const cachedMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
+      if (cachedMaterials) {
+        setMaterials(JSON.parse(cachedMaterials));
+      } else {
+        setMaterials(initialMockMaterials); // Fallback to mocks
+      }
+    } catch (error) {
+      console.error("Failed to load materials from local storage:", error);
+      setMaterials(initialMockMaterials); // Fallback on error
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // Save materials to localStorage whenever they change, but not if it's the initial empty array
+    if (materials.length > 0 && !isLoading) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY_MATERIALS, JSON.stringify(materials));
+      } catch (error) {
+        console.error("Failed to save materials to local storage:", error);
+      }
+    }
+  }, [materials, isLoading]);
+
+
+  const filteredMaterials = materials.filter(material => 
     (material.title.toLowerCase().includes(searchTerm.toLowerCase()) || material.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (subjectFilter === 'all' || material.subject === subjectFilter)
   );
 
-  const subjects = ['all', ...new Set(mockMaterials.map(m => m.subject))];
+  const subjects = ['all', ...new Set(materials.map(m => m.subject))];
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 flex justify-center items-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-lg text-muted-foreground">Loading materials...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -148,10 +188,14 @@ export default function MaterialsPage() {
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* Dynamically populate subjects if needed, or keep static */}
                       <SelectItem value="algorithms">Algorithms</SelectItem>
                       <SelectItem value="os">Operating Systems</SelectItem>
                       <SelectItem value="dbms">DBMS</SelectItem>
                       <SelectItem value="java">Java Programming</SelectItem>
+                      {subjects.filter(s => s !== 'all' && !['Algorithms', 'Operating Systems', 'DBMS', 'Java Programming'].includes(s)).map(s => (
+                        <SelectItem key={s} value={s.toLowerCase().replace(/\s+/g, '_')}>{s}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
