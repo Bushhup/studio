@@ -1,9 +1,10 @@
+
 import { EventCard } from '@/components/event-card';
 import type { AppEvent } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { CalendarClock } from 'lucide-react';
 
-// Mock data for events, as MongoDB is being removed
+// Mock data for events
 const mockEvents: AppEvent[] = [
   {
     id: '1',
@@ -43,8 +44,7 @@ const mockEvents: AppEvent[] = [
 
 
 async function getEvents(): Promise<AppEvent[]> {
-  // Simulate fetching data
-  // In a real scenario without a DB, this might come from a static JSON file or an external non-DB API
+  // Using mock data as MongoDB is removed
   return Promise.resolve(mockEvents);
 }
 
