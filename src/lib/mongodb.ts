@@ -5,7 +5,17 @@ const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB_NAME || 'mca_department_db';
 
 if (!uri) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env');
+  throw new Error(
+    'The MONGODB_URI environment variable is not defined or is empty. ' +
+    'Please define it in your .env file with your MongoDB connection string.'
+  );
+}
+
+if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+  throw new Error(
+    'Invalid MONGODB_URI scheme in your .env file. The connection string must start with "mongodb://" or "mongodb+srv://". ' +
+    `The provided URI starts with: "${uri.substring(0, uri.indexOf(':') > -1 ? uri.indexOf(':') + 3 : Math.min(20, uri.length))}"`
+  );
 }
 
 let client: MongoClient | null = null;
