@@ -20,7 +20,7 @@ const addUserSchema = z.object({
   name: z.string().min(2, "Username must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  role: z.enum(['student', 'faculty', 'admin'], {
+  role: z.enum(['student', 'faculty'], { // Removed 'admin' from enum
     required_error: "You must select a role.",
   }),
 });
@@ -92,7 +92,7 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" />
+                <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -113,7 +113,7 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="faculty">Faculty</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {/* Admin option is removed as it's hardcoded */}
                 </SelectContent>
               </Select>
               <FormMessage />

@@ -19,7 +19,17 @@ export async function login(data: LoginInput): Promise<LoginResult> {
   if (!validation.success) {
     return { success: false, message: 'Invalid input data.' };
   }
+  
+  // Special case for the admin user
+  if (data.role === 'admin') {
+    if (data.username === 'Admin01' && data.password === 'shaosaid05413') {
+      return { success: true };
+    } else {
+      return { success: false, message: 'Invalid admin credentials.' };
+    }
+  }
 
+  // Database authentication for faculty and students
   try {
     await connectToDB();
     
