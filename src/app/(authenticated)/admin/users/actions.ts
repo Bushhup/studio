@@ -10,7 +10,8 @@ import { revalidatePath } from 'next/cache';
 const addUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
-  role: z.enum(['student', 'faculty'], {
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  role: z.enum(['student', 'faculty', 'admin'], {
     required_error: "Role is required.",
   }),
 });
@@ -49,10 +50,14 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       return { success: false, message: 'A user with this email already exists.' };
     }
 
+    // In a real application, you should hash the password before saving.
+    // For example, using bcrypt:
+    // const hashedPassword = await bcrypt.hash(data.password, 10);
+    // const newUser = new UserModel({ ...data, password: hashedPassword });
+    
     const newUser = new UserModel(data);
     await newUser.save();
     
-    // Revalidate the path to refresh the user list if it's being displayed
     revalidatePath('/admin/users');
 
     return { success: true, message: `User '${data.name}' added successfully as a ${data.role}.` };

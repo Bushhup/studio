@@ -5,6 +5,7 @@ import type { User as UserType } from '@/types';
 export interface IUser extends UserType, Document {
   id: string; 
   email: string;
+  password?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -15,7 +16,7 @@ const UserSchema = new Schema<IUser>({
     enum: ['admin', 'faculty', 'student'],
     required: true,
   },
-  // You can add other fields here like password (hashed), profilePicture, etc.
+  password: { type: String }, // In a real app, ALWAYS hash passwords.
 });
 
 const UserModel = models.User || model<IUser>('User', UserSchema);

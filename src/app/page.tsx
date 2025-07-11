@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,18 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { GraduationCap, LogIn } from 'lucide-react';
 import type { Role } from '@/types';
 import { useMockAuth } from '@/hooks/use-mock-auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { login, role: currentRole, isLoading } = useMockAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading && currentRole) {
-      // User is already logged in, redirect them
       let redirectPath = '/home';
       if (currentRole === 'admin') redirectPath = '/admin/dashboard';
       else if (currentRole === 'faculty') redirectPath = '/faculty/dashboard';
@@ -26,11 +31,23 @@ export default function LoginPage() {
     }
   }, [currentRole, isLoading, router]);
 
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedRole) {
-      login(selectedRole as Role);
+    if (selectedRole && email && password) {
+      const result = await login(selectedRole as Role, email, password);
+      if (!result.success) {
+        toast({
+          title: "Login Failed",
+          description: result.message || "Invalid credentials or role.",
+          variant: "destructive",
+        });
+      }
+    } else {
+        toast({
+            title: "Missing Information",
+            description: "Please select a role and enter your email and password.",
+            variant: "destructive"
+        })
     }
   };
 
@@ -44,7 +61,6 @@ export default function LoginPage() {
       </div>
     );
   }
-  
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-6 sm:p-8">
@@ -73,8 +89,33 @@ export default function LoginPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!selectedRole}>
-              <LogIn className="mr-2 h-5 w-5" /> Login
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="user@example.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!selectedRole || !email || !password || isLoading}>
+              {isLoading ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
             </Button>
           </form>
         </CardContent>

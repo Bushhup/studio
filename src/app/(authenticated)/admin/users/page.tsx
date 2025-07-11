@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +19,8 @@ import { addUser, type AddUserInput } from './actions';
 const addUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
-  role: z.enum(['student', 'faculty'], {
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  role: z.enum(['student', 'faculty', 'admin'], {
     required_error: "You must select a role.",
   }),
 });
@@ -30,6 +32,7 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
     defaultValues: {
       name: "",
       email: "",
+      password: "",
     },
   });
 
@@ -84,6 +87,19 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
         />
         <FormField
           control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="role"
           render={({ field }) => (
             <FormItem>
@@ -97,6 +113,7 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
                 <SelectContent>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="faculty">Faculty</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
