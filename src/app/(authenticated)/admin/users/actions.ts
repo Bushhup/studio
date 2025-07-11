@@ -65,3 +65,17 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
     return { success: false, message: 'An unknown error occurred while adding the user.' };
   }
 }
+
+export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'>[]> {
+    try {
+        await connectToDB();
+        const users = await UserModel.find({ role }).select('id name').lean();
+        return users.map(user => ({
+            id: user._id.toString(),
+            name: user.name,
+        }));
+    } catch (error) {
+        console.error(`Error fetching ${role}s:`, error);
+        return [];
+    }
+}
