@@ -17,7 +17,7 @@ const UserSchema = new Schema<IUser>({
     enum: ['admin', 'faculty', 'student'],
     required: true,
   },
-  password: { type: String, required: true }, // Password is now required
+  password: { type: String, required: true, select: true }, // Password is required and selected by default now
   classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false }, // Link to the Class model
 });
 

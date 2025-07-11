@@ -33,8 +33,8 @@ export async function login(data: LoginInput): Promise<LoginResult> {
   try {
     await connectToDB();
     
-    // Find user by username and role
-    const user = await UserModel.findOne({ name: data.username, role: data.role });
+    // Find user by username and role, and explicitly include the password
+    const user = await UserModel.findOne({ name: data.username, role: data.role }).select('+password');
 
     if (!user) {
       return { success: false, message: 'No user found with this username and role.' };
@@ -54,4 +54,3 @@ export async function login(data: LoginInput): Promise<LoginResult> {
     return { success: false, message: 'An internal server error occurred.' };
   }
 }
-
