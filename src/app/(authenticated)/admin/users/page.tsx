@@ -64,7 +64,7 @@ const addUserSchema = z.object({
 });
 
 
-function AddUserForm({ setIsOpen, classList, role }: { setIsOpen: (open: boolean) => void, classList: IClass[], role: 'student' | 'faculty' }) {
+function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (open: boolean) => void, classList: IClass[], role: 'student' | 'faculty', onUserAdded: () => void }) {
   const { toast } = useToast();
   const form = useForm<AddUserInput>({
     resolver: zodResolver(addUserSchema),
@@ -86,6 +86,7 @@ function AddUserForm({ setIsOpen, classList, role }: { setIsOpen: (open: boolean
         title: "Success!",
         description: result.message,
       });
+      onUserAdded(); // Refresh the user list
       setIsOpen(false);
       form.reset();
     } else {
@@ -259,9 +260,8 @@ export default function AdminUsersPage() {
   };
   
   useEffect(() => {
-    // Fetch users when component mounts and when dialog closes after a potential add/delete
     fetchUsers();
-  }, [isDialogOpen]);
+  }, []);
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -325,7 +325,7 @@ export default function AdminUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} role={dialogRole} />
+              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} role={dialogRole} onUserAdded={fetchUsers} />
             </div>
           </DialogContent>
         </Dialog>
@@ -386,5 +386,6 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+    
 
     
