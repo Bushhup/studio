@@ -1,57 +1,35 @@
-
 import { EventCard } from '@/components/event-card';
 import type { AppEvent } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { CalendarClock } from 'lucide-react';
-
-// Mock data for events
-const mockEvents: AppEvent[] = [
-  {
-    id: '1',
-    title: 'Guest Lecture: AI in Modern Applications',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-    description: 'Join us for an insightful guest lecture by Dr. Evalyn Quantum on the role of AI in today\'s technology landscape. Limited seats available.',
-    type: 'lecture',
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'lecture presentation',
-  },
-  {
-    id: '2',
-    title: 'Department Fest "TechUtopia 2024"',
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
-    description: 'Annual department festival with coding competitions, project showcases, and fun events. Don\'t miss out!',
-    type: 'fest',
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'technology festival',
-  },
-  {
-    id: '3',
-    title: 'Internship Fair - Summer Batch',
-    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks from now
-    description: 'Connect with leading tech companies for exciting internship opportunities for the upcoming summer batch. Pre-registration required.',
-    type: 'internship_fair',
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'job fair',
-  },
-  {
-    id: '4',
-    title: 'Mid-Term Exam Schedule Released',
-    date: new Date().toISOString(),
-    description: 'The schedule for the upcoming mid-term examinations has been released. Please check the notice board or department website for details.',
-    type: 'notice',
-  },
-];
+import { connectToDB } from '@/lib/mongoose';
+import Event from '@/models/event.model';
 
 
 async function getEvents(): Promise<AppEvent[]> {
-  // Using mock data as MongoDB is removed
-  return Promise.resolve(mockEvents);
+  await connectToDB();
+  try {
+    const events = await Event.find({}).sort({ date: 'asc' }).lean();
+
+    // The data from MongoDB needs to be serialized.
+    // Also, MongoDB uses `_id` which we map to `id`.
+    return events.map((event: any) => ({
+      ...event,
+      id: event._id.toString(),
+      date: event.date.toISOString(),
+      _id: undefined, // remove _id
+      __v: undefined, // remove __v
+    }));
+  } catch (error) {
+    console.error('Failed to fetch events:', error);
+    return []; // Return an empty array on error
+  }
 }
 
 
 export default async function HomePage() {
   const events = await getEvents();
-  // Sort events by date (ascending - oldest first)
+  // The sorting is now done in the database query, but we can keep it here as a fallback.
   const sortedEvents = events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
