@@ -11,17 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import { useMockAuth } from '@/hooks/use-mock-auth';
-
-const initialMockMaterials: StudyMaterial[] = [
-  { id: '1', title: 'Introduction to Algorithms Notes', description: 'Comprehensive notes for the first unit.', subject: 'Algorithms', fileType: 'pdf', fileUrl: '#', uploadedBy: 'Dr. Ada Lovelace', uploadDate: new Date().toISOString() , fileName: 'algo_unit1.pdf'},
-  { id: '2', title: 'Operating Systems Concepts PPT', description: 'Lecture slides for OS concepts.', subject: 'Operating Systems', fileType: 'ppt', fileUrl: '#', uploadedBy: 'Prof. Linus Torvalds', uploadDate: new Date().toISOString(), fileName: 'os_concepts.ppt' },
-  { id: '3', title: 'Database Design Document Template', description: 'Template for database design projects.', subject: 'DBMS', fileType: 'doc', fileUrl: '#', uploadedBy: 'Dr. Charles Babbage', uploadDate: new Date().toISOString(), fileName: 'db_design_template.doc' },
-  { id: '4', title: 'Advanced Java Programming Examples', description: 'Code examples for advanced Java topics.', subject: 'Java Programming', fileType: 'link', fileUrl: 'https://github.com/example/java-examples', uploadedBy: 'Prof. James Gosling', uploadDate: new Date().toISOString() },
-];
-
-const LOCAL_STORAGE_KEY_MATERIALS = 'mcaDeptCachedMaterials';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
+import { getMaterials, addMaterial, type AddMaterialInput } from './actions';
 
 const FileTypeIcon = ({ type }: { type: StudyMaterial['fileType'] }) => {
   switch (type) {
@@ -60,6 +53,89 @@ function MaterialCard({ material }: { material: StudyMaterial }) {
   );
 }
 
+function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMaterial) => void }) {
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AddMaterialInput>();
+  const { toast } = useToast();
+  const { role } = useMockAuth();
+
+  const onSubmit: SubmitHandler<AddMaterialInput> = async (data) => {
+    try {
+      const newMaterial = await addMaterial({ ...data, uploadedBy: `${role} user` });
+      if ('error' in newMaterial) {
+        throw new Error(newMaterial.error);
+      }
+      toast({
+        title: "Success",
+        description: "New study material has been added.",
+      });
+      onMaterialAdded(newMaterial);
+      reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Failed to add material.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline">Upload New Material</CardTitle>
+        <CardDescription>Share resources with students. Fill in the details below.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div>
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" placeholder="e.g., Chapter 1 Notes" {...register("title", { required: "Title is required" })} />
+            {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" placeholder="Briefly describe the material." {...register("description", { required: "Description is required" })} />
+            {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="subject">Subject</Label>
+              <Input id="subject" placeholder="e.g., Algorithms" {...register("subject", { required: "Subject is required" })} />
+              {errors.subject && <p className="text-sm text-destructive mt-1">{errors.subject.message}</p>}
+            </div>
+            <div>
+              <Label htmlFor="fileType">File Type</Label>
+              <Select {...register("fileType")} onValueChange={(value) => (register("fileType").onChange({ target: { name: "fileType", value } }))}>
+                 <SelectTrigger id="fileType">
+                    <SelectValue placeholder="Select file type" />
+                 </SelectTrigger>
+                 <SelectContent>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                    <SelectItem value="ppt">PPT</SelectItem>
+                    <SelectItem value="doc">DOC</SelectItem>
+                    <SelectItem value="link">Link</SelectItem>
+                 </SelectContent>
+              </Select>
+              {errors.fileType && <p className="text-sm text-destructive mt-1">{errors.fileType.message}</p>}
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="fileUrl">File URL / Link</Label>
+            <Input id="fileUrl" placeholder="https://example.com/file.pdf or https://github.com/..." {...register("fileUrl", { required: "File URL is required" })} />
+            <p className="text-sm text-muted-foreground mt-1">Provide a direct link to the file or resource.</p>
+            {errors.fileUrl && <p className="text-sm text-destructive mt-1">{errors.fileUrl.message}</p>}
+          </div>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+            Upload Material
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 export default function MaterialsPage() {
   const { role } = useMockAuth();
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
@@ -68,32 +144,23 @@ export default function MaterialsPage() {
   const [subjectFilter, setSubjectFilter] = useState('all');
 
   useEffect(() => {
-    // Load materials from localStorage or fallback to initialMockMaterials
-    try {
-      const cachedMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
-      if (cachedMaterials) {
-        setMaterials(JSON.parse(cachedMaterials));
-      } else {
-        setMaterials(initialMockMaterials); // Fallback to mocks
+    const fetchMaterials = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedMaterials = await getMaterials();
+        setMaterials(fetchedMaterials);
+      } catch (error) {
+        console.error("Failed to fetch materials:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to load materials from local storage:", error);
-      setMaterials(initialMockMaterials); // Fallback on error
-    }
-    setIsLoading(false);
+    };
+    fetchMaterials();
   }, []);
 
-  useEffect(() => {
-    // Save materials to localStorage whenever they change, but not if it's the initial empty array
-    if (materials.length > 0 && !isLoading) {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY_MATERIALS, JSON.stringify(materials));
-      } catch (error) {
-        console.error("Failed to save materials to local storage:", error);
-      }
-    }
-  }, [materials, isLoading]);
-
+  const handleNewMaterial = (newMaterial: StudyMaterial) => {
+    setMaterials(prev => [newMaterial, ...prev]);
+  };
 
   const filteredMaterials = materials.filter(material => 
     (material.title.toLowerCase().includes(searchTerm.toLowerCase()) || material.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -101,15 +168,6 @@ export default function MaterialsPage() {
   );
 
   const subjects = ['all', ...new Set(materials.map(m => m.subject))];
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-8 flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-muted-foreground">Loading materials...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8">
@@ -156,12 +214,16 @@ export default function MaterialsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {filteredMaterials.length > 0 ? (
+              {isLoading ? (
+                  <div className="flex justify-center items-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : filteredMaterials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredMaterials.map(material => <MaterialCard key={material.id} material={material} />)}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-10">No materials found matching your criteria.</p>
+                <p className="text-center text-muted-foreground py-10">No materials found.</p>
               )}
             </CardContent>
           </Card>
@@ -169,48 +231,7 @@ export default function MaterialsPage() {
 
         {(role === 'admin' || role === 'faculty') && (
           <TabsContent value="upload" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline">Upload New Material</CardTitle>
-                <CardDescription>Share resources with students. Fill in the details below.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" placeholder="e.g., Chapter 1 Notes" />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Briefly describe the material." />
-                </div>
-                <div>
-                  <Label htmlFor="subject">Subject</Label>
-                  <Select>
-                    <SelectTrigger id="subject">
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Dynamically populate subjects if needed, or keep static */}
-                      <SelectItem value="algorithms">Algorithms</SelectItem>
-                      <SelectItem value="os">Operating Systems</SelectItem>
-                      <SelectItem value="dbms">DBMS</SelectItem>
-                      <SelectItem value="java">Java Programming</SelectItem>
-                      {subjects.filter(s => s !== 'all' && !['Algorithms', 'Operating Systems', 'DBMS', 'Java Programming'].includes(s)).map(s => (
-                        <SelectItem key={s} value={s.toLowerCase().replace(/\s+/g, '_')}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="file">File Upload</Label>
-                  <Input id="file" type="file" />
-                  <p className="text-sm text-muted-foreground mt-1">Supported formats: PDF, PPT, DOC, DOCX. Max size: 10MB.</p>
-                </div>
-                <Button className="w-full sm:w-auto">
-                  <FileUp className="mr-2 h-4 w-4" /> Upload Material
-                </Button>
-              </CardContent>
-            </Card>
+            <UploadForm onMaterialAdded={handleNewMaterial} />
           </TabsContent>
         )}
       </Tabs>
