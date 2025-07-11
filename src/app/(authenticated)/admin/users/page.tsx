@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const addUserSchema = z.object({
@@ -179,6 +180,61 @@ function AddUserForm({ setIsOpen, classList, role }: { setIsOpen: (open: boolean
   );
 }
 
+function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete: (user: IUser) => void }) {
+  return (
+     <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Username</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Assigned Class</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.length > 0 ? users.map((user) => (
+          <TableRow key={user.id}>
+            <TableCell className="font-medium">{user.name}</TableCell>
+            <TableCell>{user.email}</TableCell>
+            <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
+            <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem disabled>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onSelect={() => onSelectDelete(user)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        )) : (
+          <TableRow>
+            <TableCell colSpan={5} className="h-24 text-center">
+              No users found.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
+
 export default function AdminUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogRole, setDialogRole] = useState<'student' | 'faculty'>('student');
@@ -202,7 +258,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [isDialogOpen]); // Re-fetch when dialog closes after potential add
   
   useEffect(() => {
     if (isDialogOpen) {
@@ -235,6 +291,8 @@ export default function AdminUsersPage() {
     setIsDialogOpen(true);
   };
 
+  const studentUsers = users.filter(u => u.role === 'student');
+  const facultyUsers = users.filter(u => u.role === 'faculty');
 
   return (
     <div className="container mx-auto py-8">
@@ -270,71 +328,34 @@ export default function AdminUsersPage() {
         </Dialog>
       <Card>
         <CardHeader>
-          <CardTitle>User List</CardTitle>
+          <CardTitle>User Lists</CardTitle>
           <CardDescription>A list of all student and faculty accounts.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Assigned Class</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length > 0 ? users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === 'student' ? 'secondary' : 'default'} className="capitalize">
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
-                    <TableCell className="text-right">
-                       <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem disabled>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={() => setUserToDelete(user)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+           <Tabs defaultValue="students" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="students">Students</TabsTrigger>
+                <TabsTrigger value="faculty">Faculty</TabsTrigger>
+              </TabsList>
+              <TabsContent value="students">
+                 {isLoading ? (
+                    <div className="flex justify-center items-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <UsersTable users={studentUsers} onSelectDelete={setUserToDelete} />
+                  )}
+              </TabsContent>
+              <TabsContent value="faculty">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <UsersTable users={facultyUsers} onSelectDelete={setUserToDelete} />
+                  )}
+              </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
       
@@ -362,4 +383,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
