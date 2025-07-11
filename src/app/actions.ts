@@ -54,3 +54,4 @@ export async function login(data: LoginInput): Promise<LoginResult> {
     return { success: false, message: 'An internal server error occurred.' };
   }
 }
+
