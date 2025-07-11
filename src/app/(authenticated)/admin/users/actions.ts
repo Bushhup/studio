@@ -82,13 +82,27 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
 export async function getUsers(): Promise<IUser[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role: { $ne: 'admin' } }).populate('classId', 'name').lean();
-        return users.map(user => ({
-            ...user,
-            id: user._id.toString(),
+        const users = await UserModel.find({ role: { $ne: 'admin' } }).populate('classId', 'name academicYear').lean();
+        
+        // Manually serialize the data to ensure it's a plain object
+        const plainUsers = users.map(user => {
+            const userObject = { ...user };
+            userObject.id = user._id.toString();
+
+            if (user.classId) {
+                // @ts-ignore
+                userObject.classId = user.classId._id.toString();
+                // @ts-ignore
+                userObject.className = user.classId.name; 
+            } else {
+                userObject.className = 'N/A';
+            }
             // @ts-ignore
-            className: user.classId ? user.classId.name : 'N/A'
-        })) as IUser[];
+            delete userObject._id;
+            return userObject;
+        });
+
+        return plainUsers as IUser[];
     } catch (error) {
         console.error('Error fetching users:', error);
         return [];
@@ -134,5 +148,3 @@ export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<
         return [];
     }
 }
-
-    
