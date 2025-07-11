@@ -1,31 +1,69 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import type { IClass } from '@/models/class.model';
+import type { IUser } from '@/models/user.model';
+import { getClasses } from '../classes/actions';
+import { getUsers, addUser, deleteUser, type AddUserInput } from './actions';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2 } from "lucide-react";
+import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { addUser, type AddUserInput } from './actions';
+import { Badge } from '@/components/ui/badge';
+
 
 const addUserSchema = z.object({
   name: z.string().min(2, "Username must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  role: z.enum(['student', 'faculty'], { // Removed 'admin' from enum
-    required_error: "You must select a role.",
-  }),
+  role: z.enum(['student', 'faculty']),
+  classId: z.string().optional(),
+}).refine(data => {
+    if (data.role === 'student' && (!data.classId || data.classId.length === 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A class must be selected for students.",
+    path: ["classId"],
 });
 
-function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
+
+function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => void, classList: IClass[] }) {
   const { toast } = useToast();
   const form = useForm<AddUserInput>({
     resolver: zodResolver(addUserSchema),
@@ -33,10 +71,12 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
       name: "",
       email: "",
       password: "",
+      classId: "",
     },
   });
 
-  const { formState: { isSubmitting } } = form;
+  const { formState: { isSubmitting }, watch } = form;
+  const role = watch('role');
 
   const onSubmit = async (data: AddUserInput) => {
     const result = await addUser(data);
@@ -59,6 +99,55 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role for the user" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="faculty">Faculty</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         {role === 'student' && (
+          <FormField
+            control={form.control}
+            name="classId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assign to Class</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {classList.length > 0 ? (
+                      classList.map(cls => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-muted-foreground">No classes found. Create a class first.</div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="name"
@@ -98,28 +187,6 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role for the user" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="faculty">Faculty</SelectItem>
-                  {/* Admin option is removed as it's hardcoded */}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
@@ -134,6 +201,54 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
 
 export default function AdminUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [users, setUsers] = useState<IUser[]>([]);
+  const [classList, setClassList] = useState<IClass[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
+  const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedUsers = await getUsers();
+      setUsers(fetchedUsers);
+    } catch {
+      toast({ title: "Error", description: "Could not fetch users.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+  
+  useEffect(() => {
+    if (isDialogOpen) {
+      getClasses().then(setClassList);
+    }
+  }, [isDialogOpen]);
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    const result = await deleteUser(userToDelete.id);
+    if (result.success) {
+      toast({
+        title: "Success",
+        description: result.message,
+      });
+      fetchUsers(); // Refresh the user list
+    } else {
+      toast({
+        title: "Error",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+    setUserToDelete(null);
+  };
+
 
   return (
     <div className="container mx-auto py-8">
@@ -155,11 +270,11 @@ export default function AdminUsersPage() {
             <DialogHeader>
               <DialogTitle className="font-headline">Add New User</DialogTitle>
               <DialogDescription>
-                Enter the details below to create a new user account. The username will be used for login.
+                Enter the details below to create a new user account.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <AddUserForm setIsOpen={setIsDialogOpen} />
+              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} />
             </div>
           </DialogContent>
         </Dialog>
@@ -170,10 +285,91 @@ export default function AdminUsersPage() {
           <CardDescription>A list of all student and faculty accounts.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">User data table (displaying users from the database) will be implemented next.</p>
-          {/* Example: <DataTable columns={columns} data={data} /> */}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Assigned Class</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.length > 0 ? users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={user.role === 'student' ? 'secondary' : 'default'} className="capitalize">
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem disabled>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={() => setUserToDelete(user)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      No users found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+      
+      {/* Delete Confirmation Dialog */}
+       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the account for{' '}
+              <span className="font-semibold">{userToDelete?.name}</span> and remove all their associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteUser}
+            >
+              Yes, delete user
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

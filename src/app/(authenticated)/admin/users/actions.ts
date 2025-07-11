@@ -5,16 +5,25 @@ import { connectToDB } from '@/lib/mongoose';
 import UserModel, { IUser } from '@/models/user.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import mongoose from 'mongoose';
 
 // Zod schema for input validation
 const addUserSchema = z.object({
   name: z.string().min(2, "Username must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  role: z.enum(['student', 'faculty'], { // Admin role removed from creatable roles
-    required_error: "Role is required.",
-  }),
+  role: z.enum(['student', 'faculty']),
+  classId: z.string().optional(),
+}).refine(data => {
+    if (data.role === 'student' && !data.classId) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A class must be selected for students.",
+    path: ["classId"],
 });
+
 
 export type AddUserInput = z.infer<typeof addUserSchema>;
 
@@ -31,7 +40,6 @@ export async function getUserCounts(): Promise<{ students: number; faculty: numb
     };
   } catch (error) {
     console.error('Error fetching user counts:', error);
-    // Return 0 if there's an error to prevent the page from crashing
     return { students: 0, faculty: 0 };
   }
 }
@@ -55,11 +63,6 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       return { success: false, message: 'A user with this username already exists.' };
     }
 
-    // In a real application, you should hash the password before saving.
-    // For example, using bcrypt:
-    // const hashedPassword = await bcrypt.hash(data.password, 10);
-    // const newUser = new UserModel({ ...data, password: hashedPassword });
-    
     const newUser = new UserModel(data);
     await newUser.save();
     
@@ -75,6 +78,48 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
     return { success: false, message: 'An unknown error occurred while adding the user.' };
   }
 }
+
+export async function getUsers(): Promise<IUser[]> {
+    try {
+        await connectToDB();
+        const users = await UserModel.find({ role: { $ne: 'admin' } }).populate('classId', 'name').lean();
+        return users.map(user => ({
+            ...user,
+            id: user._id.toString(),
+            // @ts-ignore
+            className: user.classId ? user.classId.name : 'N/A'
+        })) as IUser[];
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+    }
+}
+
+export async function deleteUser(userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return { success: false, message: "Invalid user ID." };
+        }
+
+        const result = await UserModel.findByIdAndDelete(userId);
+
+        if (!result) {
+            return { success: false, message: "User not found." };
+        }
+
+        revalidatePath('/admin/users');
+        return { success: true, message: `User deleted successfully.` };
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred while deleting the user.' };
+    }
+}
+
 
 export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'>[]> {
     try {
