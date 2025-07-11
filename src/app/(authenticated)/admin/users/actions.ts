@@ -84,22 +84,24 @@ export async function getUsers(): Promise<IUser[]> {
         await connectToDB();
         const users = await UserModel.find({ role: { $ne: 'admin' } }).populate('classId', 'name academicYear').lean();
         
-        // Manually serialize the data to ensure it's a plain object
         const plainUsers = users.map(user => {
-            const userObject = { ...user };
-            userObject.id = user._id.toString();
+            const plainUser: any = {
+                id: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                password: user.password,
+                className: 'N/A'
+            };
 
-            if (user.classId) {
-                // @ts-ignore
-                userObject.classId = user.classId._id.toString();
-                // @ts-ignore
-                userObject.className = user.classId.name; 
-            } else {
-                userObject.className = 'N/A';
+            if (user.classId && typeof user.classId === 'object') {
+                plainUser.classId = user.classId._id.toString();
+                plainUser.className = (user.classId as any).name || 'N/A';
+            } else if (user.classId) {
+                 plainUser.classId = user.classId.toString();
             }
-            // @ts-ignore
-            delete userObject._id;
-            return userObject;
+
+            return plainUser;
         });
 
         return plainUsers as IUser[];
@@ -108,6 +110,7 @@ export async function getUsers(): Promise<IUser[]> {
         return [];
     }
 }
+
 
 export async function deleteUser(userId: string): Promise<{ success: boolean; message: string }> {
     try {
