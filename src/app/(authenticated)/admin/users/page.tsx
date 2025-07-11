@@ -257,15 +257,11 @@ export default function AdminUsersPage() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, [isDialogOpen]); // Re-fetch when dialog closes after potential add
   
   useEffect(() => {
-    // Initial fetch when component mounts
+    // Fetch users when component mounts and when dialog closes after a potential add/delete
     fetchUsers();
-  }, []);
+  }, [isDialogOpen]);
 
   useEffect(() => {
     if (isDialogOpen) {
