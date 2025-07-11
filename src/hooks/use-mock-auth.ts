@@ -12,7 +12,7 @@ const ROLE_STORAGE_KEY = 'MCA Dept-user-role';
 interface AuthHook {
   role: Role | null;
   isLoading: boolean;
-  login: (selectedRole: Role, email: string, password: string) => Promise<LoginResult>;
+  login: (selectedRole: Role, username: string, password: string) => Promise<LoginResult>;
   logout: () => void;
 }
 
@@ -33,14 +33,15 @@ export function useMockAuth(): AuthHook {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (selectedRole: Role, email: string, password: string): Promise<LoginResult> => {
+  const login = useCallback(async (selectedRole: Role, username: string, password: string): Promise<LoginResult> => {
     setIsLoading(true);
-    const result = await loginAction({ role: selectedRole, email, password });
+    const result = await loginAction({ role: selectedRole, username, password });
     
     if (result.success) {
       try {
         localStorage.setItem(ROLE_STORAGE_KEY, selectedRole);
-      } catch (error) {
+      } catch (error)
+      {
         console.error("Failed to access localStorage:", error);
         setIsLoading(false);
         return { success: false, message: "Could not save session. Please enable cookies/localStorage." };

@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 
 // Zod schema for input validation
 const addUserSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  name: z.string().min(2, "Username must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty', 'admin'], {
@@ -45,9 +45,14 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
 
     await connectToDB();
 
-    const existingUser = await UserModel.findOne({ email: data.email });
-    if (existingUser) {
+    const existingUserByEmail = await UserModel.findOne({ email: data.email });
+    if (existingUserByEmail) {
       return { success: false, message: 'A user with this email already exists.' };
+    }
+    
+    const existingUserByName = await UserModel.findOne({ name: data.name });
+    if (existingUserByName) {
+      return { success: false, message: 'A user with this username already exists.' };
     }
 
     // In a real application, you should hash the password before saving.

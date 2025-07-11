@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { addUser, type AddUserInput } from './actions';
 
 const addUserSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  name: z.string().min(2, "Username must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty', 'admin'], {
@@ -64,9 +64,9 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input placeholder="e.g., john.doe" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,7 +92,7 @@ function AddUserForm({ setIsOpen }: { setIsOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" placeholder="••••••••" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -155,7 +155,7 @@ export default function AdminUsersPage() {
             <DialogHeader>
               <DialogTitle className="font-headline">Add New User</DialogTitle>
               <DialogDescription>
-                Enter the details below to create a new user account.
+                Enter the details below to create a new user account. The username will be used for login.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">

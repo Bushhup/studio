@@ -6,16 +6,22 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { GraduationCap, LogIn } from 'lucide-react';
+import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft } from 'lucide-react';
 import type { Role } from '@/types';
 import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const roleIcons = {
+  admin: <UserCog className="h-10 w-10 mx-auto mb-4" />,
+  faculty: <Briefcase className="h-10 w-10 mx-auto mb-4" />,
+  student: <GraduationCap className="h-10 w-10 mx-auto mb-4" />,
+};
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState<Role | ''>('');
-  const [email, setEmail] = useState('');
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { login, role: currentRole, isLoading } = useMockAuth();
   const router = useRouter();
@@ -33,8 +39,8 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedRole && email && password) {
-      const result = await login(selectedRole as Role, email, password);
+    if (selectedRole && username && password) {
+      const result = await login(selectedRole, username, password);
       if (!result.success) {
         toast({
           title: "Login Failed",
@@ -45,11 +51,22 @@ export default function LoginPage() {
     } else {
         toast({
             title: "Missing Information",
-            description: "Please select a role and enter your email and password.",
+            description: "Please enter your username and password.",
             variant: "destructive"
         })
     }
   };
+
+  const handleRoleSelect = (role: Role) => {
+    setSelectedRole(role);
+  };
+
+  const handleBack = () => {
+    setSelectedRole(null);
+    setUsername('');
+    setPassword('');
+  };
+
 
   if (isLoading || (!isLoading && currentRole)) {
     return (
@@ -64,60 +81,72 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-6 sm:p-8">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md shadow-2xl overflow-hidden">
+        <CardHeader className="text-center relative">
+           {selectedRole && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4"
+              onClick={handleBack}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+          )}
           <div className="mb-4 flex justify-center">
             <GraduationCap className="h-16 w-16 text-primary" />
           </div>
           <CardTitle className="font-headline text-4xl tracking-tight text-primary">MCA Dept</CardTitle>
           <CardDescription className="text-muted-foreground pt-1">
-            MCA Department Management System
+            {selectedRole ? `Login as ${selectedRole}` : 'Select your role to begin'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-foreground">Select Your Role</Label>
-              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as Role)}>
-                <SelectTrigger id="role" className="w-full focus:ring-accent">
-                  <SelectValue placeholder="Choose a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="faculty">Faculty</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                </SelectContent>
-              </Select>
+        <CardContent className="transition-all duration-500">
+          {!selectedRole ? (
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
+                <Card
+                  key={role}
+                  className="p-6 text-center cursor-pointer hover:bg-muted hover:border-primary transition-colors"
+                  onClick={() => handleRoleSelect(role)}
+                >
+                  {roleIcons[role]}
+                  <p className="font-semibold capitalize">{role}</p>
+                </Card>
+              ))}
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="user@example.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+          ) : (
+             <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in-50">
+                <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+                <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+                </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!selectedRole || !email || !password || isLoading}>
-              {isLoading ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
-            </Button>
-          </form>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!username || !password || isLoading}>
+                  {isLoading ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
+                </Button>
+            </form>
+          )}
+         
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-xs text-muted-foreground">

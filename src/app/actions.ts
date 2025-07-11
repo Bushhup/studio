@@ -6,7 +6,7 @@ import UserModel from '@/models/user.model';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string(),
   password: z.string(),
   role: z.enum(['admin', 'student', 'faculty']),
 });
@@ -23,10 +23,11 @@ export async function login(data: LoginInput): Promise<LoginResult> {
   try {
     await connectToDB();
     
-    const user = await UserModel.findOne({ email: data.email, role: data.role });
+    // Find user by username and role
+    const user = await UserModel.findOne({ name: data.username, role: data.role });
 
     if (!user) {
-      return { success: false, message: 'No user found with this email and role.' };
+      return { success: false, message: 'No user found with this username and role.' };
     }
     
     // In a real app, you MUST hash passwords. Here we are doing a plain text comparison for simplicity.
