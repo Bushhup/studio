@@ -187,6 +187,7 @@ function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete:
         <TableRow>
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
+          <TableHead>Password</TableHead>
           <TableHead>Assigned Class</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -196,6 +197,7 @@ function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete:
           <TableRow key={user.id}>
             <TableCell className="font-medium">{user.name}</TableCell>
             <TableCell>{user.email}</TableCell>
+            <TableCell>{user.password}</TableCell>
             <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
             <TableCell className="text-right">
                 <DropdownMenu>
@@ -260,6 +262,11 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [isDialogOpen]); // Re-fetch when dialog closes after potential add
   
+  useEffect(() => {
+    // Initial fetch when component mounts
+    fetchUsers();
+  }, []);
+
   useEffect(() => {
     if (isDialogOpen) {
       getClasses().then(setClassList);
@@ -383,3 +390,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    
