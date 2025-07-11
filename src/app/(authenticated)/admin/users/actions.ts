@@ -63,7 +63,15 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       return { success: false, message: 'A user with this username already exists.' };
     }
 
-    const newUser = new UserModel(data);
+    // Explicitly create the new user object to ensure all fields are included
+    const newUser = new UserModel({
+      name: data.name,
+      email: data.email,
+      password: data.password, // Ensure password is saved
+      role: data.role,
+      classId: data.role === 'student' ? data.classId : undefined,
+    });
+    
     await newUser.save();
     
     revalidatePath('/admin/users');
@@ -95,7 +103,7 @@ export async function getUsers(): Promise<IUser[]> {
             };
 
             if (user.classId && typeof user.classId === 'object') {
-                plainUser.classId = user.classId._id.toString();
+                plainUser.classId = (user.classId as any)._id.toString();
                 plainUser.className = (user.classId as any).name || 'N/A';
             } else if (user.classId) {
                  plainUser.classId = user.classId.toString();
