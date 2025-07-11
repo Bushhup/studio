@@ -63,7 +63,7 @@ const addUserSchema = z.object({
 });
 
 
-function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => void, classList: IClass[] }) {
+function AddUserForm({ setIsOpen, classList, role }: { setIsOpen: (open: boolean) => void, classList: IClass[], role: 'student' | 'faculty' }) {
   const { toast } = useToast();
   const form = useForm<AddUserInput>({
     resolver: zodResolver(addUserSchema),
@@ -71,12 +71,12 @@ function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => v
       name: "",
       email: "",
       password: "",
+      role: role,
       classId: "",
     },
   });
 
-  const { formState: { isSubmitting }, watch } = form;
-  const role = watch('role');
+  const { formState: { isSubmitting } } = form;
 
   const onSubmit = async (data: AddUserInput) => {
     const result = await addUser(data);
@@ -99,55 +99,6 @@ function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => v
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role for the user" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="faculty">Faculty</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         {role === 'student' && (
-          <FormField
-            control={form.control}
-            name="classId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assign to Class</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a class" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {classList.length > 0 ? (
-                      classList.map(cls => (
-                        <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-4 text-sm text-muted-foreground">No classes found. Create a class first.</div>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         <FormField
           control={form.control}
           name="name"
@@ -187,6 +138,35 @@ function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => v
             </FormItem>
           )}
         />
+        {role === 'student' && (
+          <FormField
+            control={form.control}
+            name="classId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assign to Class</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {classList.length > 0 ? (
+                      classList.map(cls => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-muted-foreground">No classes found. Create a class first.</div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
@@ -201,6 +181,7 @@ function AddUserForm({ setIsOpen, classList }: { setIsOpen: (open: boolean) => v
 
 export default function AdminUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogRole, setDialogRole] = useState<'student' | 'faculty'>('student');
   const [users, setUsers] = useState<IUser[]>([]);
   const [classList, setClassList] = useState<IClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -248,6 +229,11 @@ export default function AdminUsersPage() {
     }
     setUserToDelete(null);
   };
+  
+  const handleOpenDialog = (role: 'student' | 'faculty') => {
+    setDialogRole(role);
+    setIsDialogOpen(true);
+  };
 
 
   return (
@@ -260,25 +246,28 @@ export default function AdminUsersPage() {
             <p className="text-muted-foreground">Manage student and faculty accounts.</p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-5 w-5" /> Add New User
+        <div className="flex gap-2">
+            <Button onClick={() => handleOpenDialog('student')}>
+              <UserPlus className="mr-2 h-5 w-5" /> Add Student
             </Button>
-          </DialogTrigger>
+            <Button onClick={() => handleOpenDialog('faculty')} variant="secondary">
+              <UserPlus className="mr-2 h-5 w-5" /> Add Faculty
+            </Button>
+        </div>
+      </div>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-headline">Add New User</DialogTitle>
+              <DialogTitle className="font-headline capitalize">Add New {dialogRole}</DialogTitle>
               <DialogDescription>
-                Enter the details below to create a new user account.
+                Enter the details below to create a new {dialogRole} account.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} />
+              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} role={dialogRole} />
             </div>
           </DialogContent>
         </Dialog>
-      </div>
       <Card>
         <CardHeader>
           <CardTitle>User List</CardTitle>
@@ -373,3 +362,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
