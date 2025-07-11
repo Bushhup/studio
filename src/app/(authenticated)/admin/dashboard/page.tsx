@@ -1,8 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Users, Settings, Briefcase, Bell } from "lucide-react";
+import { Users, Settings, Briefcase, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getUserCounts } from "../users/actions";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const { students, faculty } = await getUserCounts();
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -10,7 +13,6 @@ export default function AdminDashboardPage() {
           <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">Admin Dashboard</h1>
           <p className="text-muted-foreground">Oversee and manage all department activities.</p>
         </div>
-        {/* Add any primary action button here if needed, e.g., <Button>Create New User</Button> */}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -20,19 +22,19 @@ export default function AdminDashboardPage() {
             <Users className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">150</div>
-            <p className="text-xs text-muted-foreground">+50 from last month</p>
+            <div className="text-2xl font-bold">{students}</div>
+            <p className="text-xs text-muted-foreground">Live count from database</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faculty Members</CardTitle>
-            <Users className="h-5 w-5 text-primary" /> {/* Different icon or color for distinction */}
+            <Users className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">+2 new hires</p>
+            <div className="text-2xl font-bold">{faculty}</div>
+            <p className="text-xs text-muted-foreground">Live count from database</p>
           </CardContent>
         </Card>
 
