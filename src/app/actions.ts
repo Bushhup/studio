@@ -21,16 +21,13 @@ export async function login(data: LoginInput): Promise<LoginResult> {
     return { success: false, message: 'Invalid input data.' };
   }
   
-  // Special case for the admin user
   if (data.role === 'admin') {
     if (data.username === 'Admin01' && data.password === 'shaosaid05413') {
       return { success: true };
     }
-    // If admin credentials are wrong, return failure immediately.
     return { success: false, message: 'Invalid admin credentials.' };
   }
 
-  // Database authentication for faculty and students
   try {
     await connectToDB();
     
@@ -40,7 +37,6 @@ export async function login(data: LoginInput): Promise<LoginResult> {
       return { success: false, message: 'No user found with this username and role.' };
     }
     
-    // In a real app, you MUST hash passwords. Here we are doing a plain text comparison for simplicity.
     if (user.password !== data.password) {
       return { success: false, message: 'Incorrect password.' };
     }
