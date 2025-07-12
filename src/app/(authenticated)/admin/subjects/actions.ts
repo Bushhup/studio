@@ -62,15 +62,20 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             .populate('facultyId', 'name')
             .lean();
 
-        return subjects.map(subject => ({
-            id: subject._id.toString(),
-            name: subject.name,
-            code: subject.code,
-            classId: (subject.classId as any)?._id?.toString() ?? '',
-            facultyId: (subject.facultyId as any)?._id?.toString() ?? '',
-            className: (subject.classId as any)?.name || 'N/A',
-            facultyName: (subject.facultyId as any)?.name || 'N/A',
-        }));
+        return subjects.map(subject => {
+            const classIdObj = subject.classId as { _id: mongoose.Types.ObjectId, name: string } | null;
+            const facultyIdObj = subject.facultyId as { _id: mongoose.Types.ObjectId, name: string } | null;
+
+            return {
+                id: subject._id.toString(),
+                name: subject.name,
+                code: subject.code,
+                classId: classIdObj?._id?.toString() ?? '',
+                facultyId: facultyIdObj?._id?.toString() ?? '',
+                className: classIdObj?.name || 'N/A',
+                facultyName: facultyIdObj?.name || 'N/A',
+            };
+        });
     } catch (error) {
         console.error('Error fetching subjects:', error);
         return [];
