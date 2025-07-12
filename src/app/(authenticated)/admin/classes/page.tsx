@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { IUser } from '@/models/user.model';
+import type { IClass } from '@/models/class.model';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { createClass, type CreateClassInput } from './actions';
+import { createClass, getClasses, type CreateClassInput } from './actions';
 import { getUsersByRole } from '../users/actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 const createClassSchema = z.object({
@@ -25,7 +27,7 @@ const createClassSchema = z.object({
   inchargeFaculty: z.string().min(1, "You must select an in-charge faculty."),
 });
 
-function CreateClassForm({ setIsOpen, facultyList }: { setIsOpen: (open: boolean) => void; facultyList: Pick<IUser, 'id' | 'name'>[] }) {
+function CreateClassForm({ setIsOpen, facultyList, onClassAdded }: { setIsOpen: (open: boolean) => void; facultyList: Pick<IUser, 'id' | 'name'>[]; onClassAdded: () => void; }) {
   const { toast } = useToast();
   const form = useForm<CreateClassInput>({
     resolver: zodResolver(createClassSchema),
@@ -45,6 +47,7 @@ function CreateClassForm({ setIsOpen, facultyList }: { setIsOpen: (open: boolean
         title: "Success!",
         description: result.message,
       });
+      onClassAdded();
       setIsOpen(false);
       form.reset();
     } else {
@@ -123,17 +126,64 @@ function CreateClassForm({ setIsOpen, facultyList }: { setIsOpen: (open: boolean
   );
 }
 
+function ClassesTable({ classes, facultyList }: { classes: IClass[], facultyList: Pick<IUser, 'id' | 'name'>[] }) {
+  const facultyMap = new Map(facultyList.map(f => [f.id, f.name]));
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Class Name</TableHead>
+          <TableHead>Academic Year</TableHead>
+          <TableHead>In-charge Faculty</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {classes.length > 0 ? classes.map((c) => (
+          <TableRow key={c.id}>
+            <TableCell className="font-medium">{c.name}</TableCell>
+            <TableCell>{c.academicYear}</TableCell>
+            <TableCell>{facultyMap.get(c.inchargeFaculty as string) || 'N/A'}</TableCell>
+          </TableRow>
+        )) : (
+          <TableRow>
+            <TableCell colSpan={3} className="h-24 text-center">
+              No classes found. Create one to get started.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
 
 export default function AdminClassesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [facultyList, setFacultyList] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
+    const [allFaculty, setAllFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
+    const [classes, setClasses] = useState<IClass[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
 
-    useEffect(() => {
-        // Fetch faculty list when the component mounts or dialog opens
-        if (isDialogOpen) {
-            getUsersByRole('faculty').then(setFacultyList);
+    const fetchPageData = async () => {
+        setIsLoading(true);
+        try {
+            const [fetchedClasses, fetchedFaculty] = await Promise.all([
+                getClasses(),
+                getUsersByRole('faculty')
+            ]);
+            setClasses(fetchedClasses);
+            setAllFaculty(fetchedFaculty);
+        } catch (error) {
+            toast({ title: "Error", description: "Could not fetch page data.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
         }
-    }, [isDialogOpen]);
+    };
+    
+    useEffect(() => {
+        fetchPageData();
+    }, []);
 
   return (
     <div className="container mx-auto py-8">
@@ -157,7 +207,7 @@ export default function AdminClassesPage() {
                 <DialogDescription>Fill in the details for the new class.</DialogDescription>
             </DialogHeader>
             <div className="py-4">
-                <CreateClassForm setIsOpen={setIsDialogOpen} facultyList={facultyList} />
+                <CreateClassForm setIsOpen={setIsDialogOpen} facultyList={allFaculty} onClassAdded={fetchPageData} />
             </div>
           </DialogContent>
         </Dialog>
@@ -168,7 +218,13 @@ export default function AdminClassesPage() {
           <CardDescription>A list of all created classes.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Class data table (name, year, in-charge faculty) will be implemented next.</p>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <ClassesTable classes={classes} facultyList={allFaculty} />
+          )}
         </CardContent>
       </Card>
     </div>
