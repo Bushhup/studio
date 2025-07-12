@@ -57,20 +57,23 @@ export type ExtendedSubject = Subject & { className: string, facultyName: string
 export async function getSubjects(): Promise<ExtendedSubject[]> {
     try {
         await connectToDB();
+        // Use .lean() to get plain JavaScript objects from the query
         const subjects = await SubjectModel.find({})
             .populate('classId', 'name')
             .populate('facultyId', 'name')
             .lean();
 
+        // The .lean() method returns plain objects, so we cast the populated fields
+        // to a type that reflects their potential structure or null if not found.
         return subjects.map(subject => {
-            // Safely access populated data and convert ObjectIDs to strings
-            const classIdObj = subject.classId as { _id: mongoose.Types.ObjectId, name: string } | null;
-            const facultyIdObj = subject.facultyId as { _id: mongoose.Types.ObjectId, name: string } | null;
+            const classIdObj = subject.classId as { _id: mongoose.Types.ObjectId; name: string } | null;
+            const facultyIdObj = subject.facultyId as { _id: mongoose.Types.ObjectId; name: string } | null;
 
             return {
                 id: subject._id.toString(),
                 name: subject.name,
                 code: subject.code,
+                // Safely access properties, providing fallbacks if the populated document is null
                 classId: classIdObj?._id.toString() || '',
                 facultyId: facultyIdObj?._id.toString() || '',
                 className: classIdObj?.name || 'N/A',
