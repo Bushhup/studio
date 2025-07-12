@@ -64,8 +64,8 @@ export async function getSubjects(): Promise<(Subject & { className: string, fac
             id: subject._id.toString(),
             name: subject.name,
             code: subject.code,
-            classId: subject.classId?._id.toString() ?? '',
-            facultyId: subject.facultyId?._id.toString() ?? '',
+            classId: (subject.classId as any)?._id?.toString() ?? '',
+            facultyId: (subject.facultyId as any)?._id?.toString() ?? '',
             className: (subject.classId as any)?.name || 'N/A',
             facultyName: (subject.facultyId as any)?.name || 'N/A',
         }));
