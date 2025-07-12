@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMockAuth } from '@/hooks/use-mock-auth';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { Header } from '@/components/layout/header';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { 
@@ -14,25 +15,39 @@ import {
   SidebarInset,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { GraduationCap, Settings2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { GraduationCap } from 'lucide-react';
 
 export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { role, isLoading, logout } = useMockAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const role = session?.user?.role;
 
   useEffect(() => {
-    if (!isLoading && !role) {
+    if (status === 'unauthenticated') {
       router.replace('/'); // Redirect to login if not authenticated
     }
-  }, [role, isLoading, router]);
+  }, [status, router]);
+  
+  // Role-based route protection
+  useEffect(() => {
+      if (status === 'authenticated' && role) {
+        if (pathname.startsWith('/admin') && role !== 'admin') {
+            router.replace('/home');
+        } else if (pathname.startsWith('/faculty') && role !== 'faculty') {
+            router.replace('/home');
+        } else if (pathname.startsWith('/student') && role !== 'student') {
+            router.replace('/home');
+        }
+      }
+  }, [status, role, pathname, router]);
 
-  if (isLoading || !role) {
+  if (status === 'loading' || !role) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <GraduationCap className="h-12 w-12 animate-pulse text-primary" />

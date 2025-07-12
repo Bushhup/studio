@@ -21,12 +21,11 @@ import { format } from 'date-fns';
 import { getEventsForUser, addEvent } from './actions';
 import { getClasses } from '../admin/classes/actions';
 import { getUsersByRole } from '../admin/users/actions';
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { useSession } from 'next-auth/react';
 
 function EventListView({ events }: { events: AppEvent[] }) {
   return (
@@ -268,7 +267,10 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const { role, user } = useMockAuth();
+  
+  const { data: session } = useSession();
+  const user = session?.user;
+  const role = user?.role;
 
   const [allClasses, setAllClasses] = useState<Pick<IClass, 'id' | 'name'>[]>([]);
   const [allFaculty, setAllFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);

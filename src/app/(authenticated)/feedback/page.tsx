@@ -1,13 +1,15 @@
+
 'use client';
 
 import { FeedbackForm } from '@/components/feedback/feedback-form';
 import { FeedbackSummary } from '@/components/feedback/feedback-summary';
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Sparkles } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 export default function FeedbackPage() {
-  const { role } = useMockAuth();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
 
   if (!role) {
     return <p>Loading or unauthorized...</p>; // Or a proper loading/error state

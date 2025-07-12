@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Briefcase, Filter, Search, PlusCircle, ExternalLink, Bookmark, Edit, Trash2, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useSession } from 'next-auth/react';
 
 const mockPlacements: PlacementOpportunity[] = [
   { id: '1', title: 'Software Engineer Intern', company: 'Innovatech Solutions', description: 'Work on cutting-edge projects using modern technologies. Great learning opportunity.', batchYear: '2025', eligibility: { cgpa: 7.5, skills: ['React', 'Node.js', 'Python'] }, applyLink: '#', postedDate: new Date().toISOString() },
@@ -75,7 +76,8 @@ function PlacementCard({ placement, userRole }: { placement: PlacementOpportunit
 }
 
 export default function PlacementsPage() {
-  const { role } = useMockAuth();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
   const [searchTerm, setSearchTerm] = useState('');
   const [batchFilter, setBatchFilter] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);

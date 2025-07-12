@@ -11,69 +11,70 @@ import { z } from 'zod';
 import mongoose from 'mongoose';
 
 export async function getEventsForUser(userId: string, userRole: Role): Promise<AppEvent[]> {
-  try {
-    await connectToDB();
+    try {
+        await connectToDB();
 
-    const user = await UserModel.findById(userId).lean();
-    if (!user && userRole !== 'admin') {
-        return []; // If user not found (and isn't admin), return no events
-    }
-
-    const query: any = {};
-
-    // If the user is not an admin, we apply filtering logic
-    if (userRole !== 'admin') {
-      const orConditions: any[] = [
-        // Events with no classes assigned (global events)
-        { $or: [ { classIds: { $exists: false } }, { classIds: { $size: 0 } } ]},
-      ];
-
-      // If the user is a student and has a classId, find events for their class
-      if (userRole === 'student' && user?.classId) {
-        orConditions.push({ classIds: user.classId });
-      }
-
-      // If the user is a faculty member
-      if (userRole === 'faculty') {
-        // Find events where they are personally the in-charge faculty
-        orConditions.push({ inchargeFacultyId: new mongoose.Types.ObjectId(userId) });
-        
-        // Find classes where this faculty is the in-charge
-        const facultyClasses = await ClassModel.find({ inchargeFaculty: userId }).select('_id').lean();
-        const facultyClassIds = facultyClasses.map(c => c._id);
-        
-        // If they are in charge of any classes, find events for those classes
-        if (facultyClassIds.length > 0) {
-          orConditions.push({ classIds: { $in: facultyClassIds } });
+        // No need to fetch user if we have userId and role, except for student's classId
+        let userClassId: mongoose.Types.ObjectId | null = null;
+        if (userRole === 'student') {
+            const user = await UserModel.findById(userId).select('classId').lean();
+            if (user && user.classId) {
+                userClassId = user.classId;
+            }
         }
-      }
-      
-      query.$or = orConditions;
+        
+        const query: any = {};
+
+        if (userRole !== 'admin') {
+            const orConditions: any[] = [
+                // Global events (no classes assigned)
+                { classIds: { $exists: false } },
+                { classIds: { $size: 0 } },
+            ];
+
+            if (userRole === 'student' && userClassId) {
+                orConditions.push({ classIds: userClassId });
+            }
+
+            if (userRole === 'faculty') {
+                const facultyObjectId = new mongoose.Types.ObjectId(userId);
+                // Events where faculty is personally in-charge
+                orConditions.push({ inchargeFacultyId: facultyObjectId });
+                
+                // Find classes where this faculty is the in-charge
+                const facultyClasses = await ClassModel.find({ inchargeFaculty: facultyObjectId }).select('_id').lean();
+                const facultyClassIds = facultyClasses.map(c => c._id);
+                
+                if (facultyClassIds.length > 0) {
+                    orConditions.push({ classIds: { $in: facultyClassIds } });
+                }
+            }
+            
+            query.$or = orConditions;
+        }
+
+        const events = await Event.find(query)
+            .populate({ path: 'inchargeFacultyId', select: 'name' })
+            .sort({ date: 'asc' })
+            .lean();
+
+        return events.map((event: any) => ({
+            id: event._id.toString(),
+            title: event.title,
+            date: event.date.toISOString(),
+            description: event.description,
+            type: event.type,
+            image: event.image,
+            dataAiHint: event.dataAiHint,
+            location: event.location,
+            inchargeFacultyName: event.inchargeFacultyId ? (event.inchargeFacultyId as any).name : undefined,
+        }));
+    } catch (error) {
+        console.error('Failed to fetch events:', error);
+        return [];
     }
-
-    // Admins will have an empty query object, fetching all events.
-    // Other roles will have the $or condition applied.
-    const events = await Event.find(query)
-        .populate({ path: 'inchargeFacultyId', select: 'name' })
-        .sort({ date: 'asc' })
-        .lean();
-
-    return events.map((event: any) => ({
-      id: event._id.toString(),
-      title: event.title,
-      date: event.date.toISOString(),
-      description: event.description,
-      type: event.type,
-      image: event.image,
-      dataAiHint: event.dataAiHint,
-      location: event.location,
-      inchargeFacultyName: event.inchargeFacultyId ? (event.inchargeFacultyId as any).name : undefined,
-    }));
-  } catch (error) {
-    console.error('Failed to fetch events:', error);
-    return [];
-  }
 }
+
 
 const eventSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),

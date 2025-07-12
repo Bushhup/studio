@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, Loader2 } from 'lucide-react';
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getMaterials, addMaterial, type AddMaterialInput } from './actions';
+import { useSession } from 'next-auth/react';
 
 const FileTypeIcon = ({ type }: { type: StudyMaterial['fileType'] }) => {
   switch (type) {
@@ -54,13 +54,13 @@ function MaterialCard({ material }: { material: StudyMaterial }) {
 }
 
 function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMaterial) => void }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AddMaterialInput>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, control } = useForm<AddMaterialInput>();
   const { toast } = useToast();
-  const { role } = useMockAuth();
+  const { data: session } = useSession();
 
   const onSubmit: SubmitHandler<AddMaterialInput> = async (data) => {
     try {
-      const newMaterial = await addMaterial({ ...data, uploadedBy: `${role} user` });
+      const newMaterial = await addMaterial({ ...data, uploadedBy: session?.user?.name || 'Faculty' });
       if ('error' in newMaterial) {
         throw new Error(newMaterial.error);
       }
@@ -105,7 +105,7 @@ function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMate
             </div>
             <div>
               <Label htmlFor="fileType">File Type</Label>
-              <Select {...register("fileType")} onValueChange={(value) => (register("fileType").onChange({ target: { name: "fileType", value } }))}>
+              <Select onValueChange={(value) => (register("fileType").onChange({ target: { name: "fileType", value } }))} >
                  <SelectTrigger id="fileType">
                     <SelectValue placeholder="Select file type" />
                  </SelectTrigger>
@@ -137,7 +137,8 @@ function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMate
 
 
 export default function MaterialsPage() {
-  const { role } = useMockAuth();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
   const [materials, setMaterials] = useState<StudyMaterial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

@@ -7,21 +7,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCog, KeyRound, BellRing, Camera } from "lucide-react";
+import { UserCog, KeyRound, BellRing, Camera, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { updateProfile, changePassword } from './actions';
+import { useSession } from 'next-auth/react';
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(6, "Current password is required."),
+  currentPassword: z.string().min(1, "Current password is required."), // Allow any length for checking
   newPassword: z.string().min(6, "New password must be at least 6 characters."),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -33,7 +33,9 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function AccountSettingsPage() {
-  const { role, user, logout } = useMockAuth();
+  const { data: session, update: updateSession } = useSession();
+  const user = session?.user;
+  
   const { toast } = useToast();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +48,7 @@ export default function AccountSettingsPage() {
       .toUpperCase();
   };
 
-  const userName = user?.name || (role ? `${role.charAt(0).toUpperCase() + role.slice(1)} User` : 'User');
+  const userName = user?.name || 'User';
   const userEmail = user?.email || 'user@example.com';
   
   const profileForm = useForm<ProfileFormValues>({
@@ -65,28 +67,37 @@ export default function AccountSettingsPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
+        toast({ title: "Avatar Updated (Mock)", description: "Profile picture changes are not saved in this demo." });
       };
       reader.readAsDataURL(file);
     }
   };
   
   const onProfileSubmit = async (data: ProfileFormValues) => {
-      // In a real app, you would pass the userId
-      // const result = await updateProfile(userId, data);
-      toast({
-        title: "Profile Updated (Mock)",
-        description: `Your name has been changed to ${data.name}. This is a mock action.`,
-      });
+      if (!user?.id) return;
+      
+      const result = await updateProfile(user.id, data);
+      
+      if (result.success) {
+        toast({ title: "Profile Updated", description: result.message });
+        // Trigger a session update to reflect the new name
+        await updateSession({ name: data.name });
+      } else {
+        toast({ title: "Error", description: result.message, variant: "destructive" });
+      }
   };
 
   const onPasswordSubmit = async (data: PasswordFormValues) => {
-     // In a real app, you would pass the userId
-     // const result = await changePassword(userId, data);
-     toast({
-        title: "Password Change (Mock)",
-        description: "Your password has been updated. This is a mock action.",
-     });
-     passwordForm.reset();
+     if (!user?.id) return;
+
+     const result = await changePassword(user.id, { currentPassword: data.currentPassword, newPassword: data.newPassword });
+     
+     if (result.success) {
+        toast({ title: "Password Changed", description: result.message });
+        passwordForm.reset();
+     } else {
+        toast({ title: "Error", description: result.message, variant: "destructive" });
+     }
   };
 
 
@@ -142,7 +153,10 @@ export default function AccountSettingsPage() {
                             <Input id="email" type="email" value={userEmail} disabled />
                         </div>
                     </div>
-                    <Button type="submit" disabled={profileForm.formState.isSubmitting}>Save Profile Changes</Button>
+                    <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                      {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Profile Changes
+                    </Button>
                  </form>
             </div>
           </CardContent>
@@ -170,7 +184,10 @@ export default function AccountSettingsPage() {
                     <Input id="confirmPassword" type="password" {...passwordForm.register("confirmPassword")} />
                      {passwordForm.formState.errors.confirmPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
                 </div>
-                <Button type="submit" disabled={passwordForm.formState.isSubmitting}>Update Password</Button>
+                <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                   {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   Update Password
+                </Button>
             </form>
           </CardContent>
         </Card>

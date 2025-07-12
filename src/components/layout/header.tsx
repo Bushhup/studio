@@ -17,14 +17,16 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
-import { GraduationCap, LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor } from 'lucide-react';
-import { useMockAuth } from '@/hooks/use-mock-auth';
+import { LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor } from 'lucide-react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { useSession, signOut } from 'next-auth/react';
 
 export function Header() {
-  const { role, logout } = useMockAuth();
   const { toggleSidebar } = useSidebar();
   const { setTheme } = useTheme();
+  const { data: session } = useSession();
+  const user = session?.user;
+  const role = user?.role;
 
   const getInitials = (name: string) => {
     return name
@@ -34,8 +36,11 @@ export function Header() {
       .toUpperCase();
   };
   
-  const userName = role ? `${role.charAt(0).toUpperCase() + role.slice(1)} User` : "User";
+  const userName = user?.name || (role ? `${role.charAt(0).toUpperCase() + role.slice(1)} User` : "User");
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/' });
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-md md:px-6">
@@ -109,7 +114,7 @@ export function Header() {
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

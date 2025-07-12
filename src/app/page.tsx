@@ -9,9 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft } from 'lucide-react';
 import type { Role } from '@/types';
-import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { signIn, useSession } from 'next-auth/react';
 
 const roleIcons = {
   admin: <UserCog className="h-10 w-10 mx-auto mb-4" />,
@@ -23,37 +22,49 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { login, role: currentRole, isLoading } = useMockAuth();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (!isLoading && currentRole) {
+    if (status === 'authenticated' && session?.user?.role) {
       let redirectPath = '/home';
-      if (currentRole === 'admin') redirectPath = '/admin/dashboard';
-      else if (currentRole === 'faculty') redirectPath = '/faculty/dashboard';
-      else if (currentRole === 'student') redirectPath = '/student/dashboard';
+      if (session.user.role === 'admin') redirectPath = '/admin/dashboard';
+      else if (session.user.role === 'faculty') redirectPath = '/faculty/dashboard';
+      else if (session.user.role === 'student') redirectPath = '/student/dashboard';
       router.replace(redirectPath);
     }
-  }, [currentRole, isLoading, router]);
+  }, [status, session, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedRole && username && password) {
-      const result = await login(selectedRole, username, password);
-      if (!result.success) {
-        toast({
-          title: "Login Failed",
-          description: result.message || "Invalid credentials or role.",
-          variant: "destructive",
-        });
-      }
-    } else {
-        toast({
-            title: "Missing Information",
-            description: "Please enter your username and password.",
-            variant: "destructive"
-        })
+    if (!selectedRole || !username || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a role, and enter your username and password.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoggingIn(true);
+
+    const result = await signIn('credentials', {
+      redirect: false,
+      username: username,
+      password: password,
+      role: selectedRole,
+    });
+    
+    setIsLoggingIn(false);
+
+    if (!result?.ok || result?.error) {
+      toast({
+        title: "Login Failed",
+        description: "Invalid credentials or role. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -68,11 +79,11 @@ export default function LoginPage() {
   };
 
 
-  if (isLoading || (!isLoading && currentRole)) {
+  if (status === 'loading' || status === 'authenticated') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
-          <GraduationCap className="h-16 w-16 text-primary" />
+          <GraduationCap className="h-16 w-16 text-primary animate-pulse" />
           <p className="text-xl font-medium text-foreground">Loading MCA Dept...</p>
         </div>
       </div>
@@ -141,8 +152,8 @@ export default function LoginPage() {
                 />
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!username || !password || isLoading}>
-                  {isLoading ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!username || !password || isLoggingIn}>
+                  {isLoggingIn ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
                 </Button>
             </form>
           )}
