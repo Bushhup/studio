@@ -69,4 +69,5 @@ export interface Subject {
   name: string; // e.g., "Advanced Java"
   code: string; // e.g., "CS-501"
   classId: string; // The ID of the class it belongs to
+  facultyId: string; // The ID of the faculty handling the subject
 }

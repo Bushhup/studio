@@ -2,24 +2,29 @@
 'use server';
 
 import { connectToDB } from '@/lib/mongoose';
-import SubjectModel from '@/models/subject.model';
+import SubjectModel, { ISubject } from '@/models/subject.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
+import { Subject } from '@/types';
 
-const createSubjectSchema = z.object({
+
+const subjectSchema = z.object({
     name: z.string().min(3, "Subject name is required."),
     code: z.string().min(3, "Subject code is required."),
     classId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
         message: "Invalid class ID.",
     }),
+    facultyId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
+        message: "Invalid faculty ID.",
+    }),
 });
 
-export type CreateSubjectInput = z.infer<typeof createSubjectSchema>;
+export type SubjectInput = z.infer<typeof subjectSchema>;
 
-export async function createSubject(data: CreateSubjectInput): Promise<{ success: boolean; message: string }> {
+export async function createSubject(data: SubjectInput): Promise<{ success: boolean; message: string }> {
     try {
-        const validation = createSubjectSchema.safeParse(data);
+        const validation = subjectSchema.safeParse(data);
         if (!validation.success) {
             return { success: false, message: validation.error.errors.map(e => e.message).join(', ') };
         }
@@ -40,6 +45,100 @@ export async function createSubject(data: CreateSubjectInput): Promise<{ success
 
     } catch (error) {
         console.error('Error creating subject:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred.' };
+    }
+}
+
+export async function getSubjects(): Promise<(Subject & { className: string, facultyName: string })[]> {
+    try {
+        await connectToDB();
+        const subjects = await SubjectModel.find({})
+            .populate('classId', 'name')
+            .populate('facultyId', 'name')
+            .lean();
+
+        return subjects.map(subject => ({
+            id: subject._id.toString(),
+            name: subject.name,
+            code: subject.code,
+            classId: subject.classId._id.toString(),
+            facultyId: subject.facultyId._id.toString(),
+            className: (subject.classId as any)?.name || 'N/A',
+            facultyName: (subject.facultyId as any)?.name || 'N/A',
+        }));
+    } catch (error) {
+        console.error('Error fetching subjects:', error);
+        return [];
+    }
+}
+
+
+export async function updateSubject(subjectId: string, data: SubjectInput): Promise<{ success: boolean; message: string }> {
+    try {
+        const validation = subjectSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, message: validation.error.errors.map(e => e.message).join(', ') };
+        }
+
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+            return { success: false, message: "Invalid subject ID." };
+        }
+
+        const subjectToUpdate = await SubjectModel.findById(subjectId);
+        if (!subjectToUpdate) {
+            return { success: false, message: "Subject not found." };
+        }
+        
+        if (data.code !== subjectToUpdate.code) {
+            const existingSubject = await SubjectModel.findOne({ code: data.code });
+            if (existingSubject) {
+                return { success: false, message: 'A subject with this code already exists.' };
+            }
+        }
+        
+        subjectToUpdate.name = data.name;
+        subjectToUpdate.code = data.code;
+        subjectToUpdate.classId = data.classId;
+        subjectToUpdate.facultyId = data.facultyId;
+
+        await subjectToUpdate.save();
+
+        revalidatePath('/admin/subjects');
+        return { success: true, message: "Subject updated successfully." };
+
+    } catch (error) {
+        console.error('Error updating subject:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred.' };
+    }
+}
+
+
+export async function deleteSubject(subjectId: string): Promise<{ success: boolean; message: string }> {
+    try {
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+            return { success: false, message: "Invalid subject ID." };
+        }
+
+        const result = await SubjectModel.findByIdAndDelete(subjectId);
+
+        if (!result) {
+            return { success: false, message: "Subject not found." };
+        }
+
+        revalidatePath('/admin/subjects');
+        return { success: true, message: "Subject deleted successfully." };
+    } catch (error) {
+        console.error('Error deleting subject:', error);
         if (error instanceof Error) {
             return { success: false, message: error.message };
         }
