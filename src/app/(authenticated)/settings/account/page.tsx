@@ -1,11 +1,95 @@
+
+'use client';
+
+import { useState, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCog, KeyRound, BellRing } from "lucide-react";
+import { UserCog, KeyRound, BellRing, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useMockAuth } from '@/hooks/use-mock-auth';
+import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { updateProfile, changePassword } from './actions';
+
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(6, "Current password is required."),
+  newPassword: z.string().min(6, "New password must be at least 6 characters."),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "New passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function AccountSettingsPage() {
+  const { role, user, logout } = useMockAuth();
+  const { toast } = useToast();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const userName = user?.name || (role ? `${role.charAt(0).toUpperCase() + role.slice(1)} User` : 'User');
+  const userEmail = user?.email || 'user@example.com';
+  
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { name: userName },
+  });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+  });
+  
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const onProfileSubmit = async (data: ProfileFormValues) => {
+      // In a real app, you would pass the userId
+      // const result = await updateProfile(userId, data);
+      toast({
+        title: "Profile Updated (Mock)",
+        description: `Your name has been changed to ${data.name}. This is a mock action.`,
+      });
+  };
+
+  const onPasswordSubmit = async (data: PasswordFormValues) => {
+     // In a real app, you would pass the userId
+     // const result = await changePassword(userId, data);
+     toast({
+        title: "Password Change (Mock)",
+        description: "Your password has been updated. This is a mock action.",
+     });
+     passwordForm.reset();
+  };
+
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
@@ -20,24 +104,47 @@ export default function AccountSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><UserCog className="h-5 w-5"/> Profile Information</CardTitle>
-            <CardDescription>Update your personal details.</CardDescription>
+            <CardDescription>Update your personal details and profile picture.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue="Current User Name" />
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-6">
+                <div className="relative">
+                    <Avatar className="h-24 w-24 border-4 border-primary/50">
+                        <AvatarImage src={avatarPreview || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="user avatar" />
+                        <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                    </Avatar>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <Camera className="h-4 w-4" />
+                        <span className="sr-only">Change profile picture</span>
+                    </Button>
+                    <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                    />
                 </div>
-                <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" defaultValue="user@example.com" disabled />
-                </div>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 flex-grow">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input id="name" {...profileForm.register("name")} />
+                             {profileForm.formState.errors.name && <p className="text-sm text-destructive mt-1">{profileForm.formState.errors.name.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" type="email" value={userEmail} disabled />
+                        </div>
+                    </div>
+                    <Button type="submit" disabled={profileForm.formState.isSubmitting}>Save Profile Changes</Button>
+                 </form>
             </div>
-            <div>
-                <Label htmlFor="department">Department (Role Specific)</Label>
-                <Input id="department" defaultValue="MCA Department" disabled />
-            </div>
-            <Button>Save Profile Changes</Button>
           </CardContent>
         </Card>
 
@@ -46,20 +153,25 @@ export default function AccountSettingsPage() {
             <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Change Password</CardTitle>
             <CardDescription>Update your account password for better security.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" />
-            </div>
-            <div>
-                <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" />
-            </div>
-            <div>
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" />
-            </div>
-            <Button>Update Password</Button>
+          <CardContent>
+            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 max-w-md">
+                <div>
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input id="currentPassword" type="password" {...passwordForm.register("currentPassword")} />
+                    {passwordForm.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.currentPassword.message}</p>}
+                </div>
+                <div>
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input id="newPassword" type="password" {...passwordForm.register("newPassword")} />
+                     {passwordForm.formState.errors.newPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.newPassword.message}</p>}
+                </div>
+                <div>
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input id="confirmPassword" type="password" {...passwordForm.register("confirmPassword")} />
+                     {passwordForm.formState.errors.confirmPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
+                </div>
+                <Button type="submit" disabled={passwordForm.formState.isSubmitting}>Update Password</Button>
+            </form>
           </CardContent>
         </Card>
         
@@ -87,7 +199,7 @@ export default function AccountSettingsPage() {
               </Label>
               <Switch id="inapp-notifications" defaultChecked />
             </div>
-            <Button>Save Notification Settings</Button>
+            <Button onClick={() => toast({ title: "Preferences Saved (Mock)", description: "Your notification settings have been updated."})}>Save Notification Settings</Button>
           </CardContent>
         </Card>
       </div>

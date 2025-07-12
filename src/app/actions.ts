@@ -4,6 +4,7 @@
 import { connectToDB } from '@/lib/mongoose';
 import UserModel from '@/models/user.model';
 import { z } from 'zod';
+import type { User, Role } from '@/types';
 
 const loginSchema = z.object({
   username: z.string(),
@@ -53,4 +54,36 @@ export async function login(data: LoginInput): Promise<LoginResult> {
     console.error('Login error:', error);
     return { success: false, message: 'An internal server error occurred.' };
   }
+}
+
+
+export async function getUserDetails(username: string, role: Role): Promise<User | null> {
+    if (role === 'admin' && username === 'Admin01') {
+        return {
+            id: 'admin01',
+            name: 'Admin User',
+            email: 'admin@mca-dept.edu',
+            role: 'admin'
+        };
+    }
+    
+    try {
+        await connectToDB();
+        const user = await UserModel.findOne({ name: username, role: role }).lean();
+
+        if (!user) {
+            return null;
+        }
+
+        return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role as Role,
+        };
+
+    } catch (error) {
+        console.error('Failed to fetch user details:', error);
+        return null;
+    }
 }
