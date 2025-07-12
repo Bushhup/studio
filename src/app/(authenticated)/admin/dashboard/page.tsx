@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, Settings, Briefcase, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getUserCounts } from "../users/actions";
+import Link from "next/link";
 
 export default async function AdminDashboardPage() {
   const { students, faculty } = await getUserCounts();
@@ -50,31 +51,33 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline">Quick Actions</CardTitle>
             <CardDescription>Manage core department functions.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="justify-start text-left"><Users className="mr-2 h-4 w-4"/> Manage Users</Button>
-            <Button variant="outline" className="justify-start text-left"><Settings className="mr-2 h-4 w-4"/> System Settings</Button>
-            <Button variant="outline" className="justify-start text-left"><Briefcase className="mr-2 h-4 w-4"/> Placement Hub</Button>
-            <Button variant="outline" className="justify-start text-left"><Bell className="mr-2 h-4 w-4"/> Post Notice</Button>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="font-headline">Recent Activity</CardTitle>
-            <CardDescription>Overview of recent system interactions.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>New faculty 'Dr. Smith' added.</li>
-              <li>'AI Workshop' event published.</li>
-              <li>Student feedback batch summarized.</li>
-              <li>3 new placement opportunities posted.</li>
-            </ul>
+            <Button asChild variant="outline" className="justify-start text-left">
+              <Link href="/admin/users">
+                <Users className="mr-2 h-4 w-4"/> Manage Users
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start text-left">
+              <Link href="/settings/account">
+                <Settings className="mr-2 h-4 w-4"/> System Settings
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start text-left">
+              <Link href="/placements">
+                <Briefcase className="mr-2 h-4 w-4"/> Placement Hub
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start text-left">
+              <Link href="/home">
+                <Bell className="mr-2 h-4 w-4"/> Post Notice
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
