@@ -46,8 +46,6 @@ export async function login(data: LoginInput): Promise<LoginResult> {
       return { success: false, message: 'Incorrect password.' };
     }
 
-    // You would typically set a session cookie or JWT here.
-    // For this app's purpose, we are handling state on the client.
     return { success: true };
 
   } catch (error) {

@@ -9,7 +9,7 @@ export interface IClass extends Class, Document {
 const ClassSchema = new Schema<IClass>({
   name: { type: String, required: true },
   academicYear: { type: String, required: true },
-  inchargeFaculty: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  inchargeFaculty: { type: Schema.Types.ObjectId, ref: 'User' },
 });
 
 const ClassModel = models.Class || model<IClass>('Class', ClassSchema);
