@@ -14,7 +14,7 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
   try {
     await connectToDB();
 
-    let user: (User & { classId?: string }) | null = null;
+    let user: (User & { classId?: mongoose.Schema.Types.ObjectId }) | null = null;
     if (userId) {
         user = await UserModel.findById(userId).lean();
     }
@@ -35,7 +35,7 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
         orConditions.push({ classIds: userClassId });
       }
       if (userRole === 'faculty') {
-        orConditions.push({ inchargeFacultyId: userId }); // Events they are in charge of
+        orConditions.push({ inchargeFacultyId: new mongoose.Types.ObjectId(userId) }); // Events they are in charge of
         if (userFacultyClassIds.length > 0) {
             orConditions.push({ classIds: { $in: userFacultyClassIds } }); // Events for classes they manage
         }
@@ -87,11 +87,13 @@ export async function addEvent(data: AddEventInput): Promise<{ success: boolean;
     try {
         await connectToDB();
         
+        const isFacultyIdValid = data.inchargeFacultyId && data.inchargeFacultyId !== 'none' && mongoose.Types.ObjectId.isValid(data.inchargeFacultyId);
+        
         const newEvent = new Event({
             ...data,
             date: new Date(data.date),
             classIds: data.classIds?.map(id => new mongoose.Types.ObjectId(id)) || [],
-            inchargeFacultyId: data.inchargeFacultyId ? new mongoose.Types.ObjectId(data.inchargeFacultyId) : undefined,
+            inchargeFacultyId: isFacultyIdValid ? new mongoose.Types.ObjectId(data.inchargeFacultyId) : undefined,
             dataAiHint: `${data.type} ${data.title}` // Auto-generate a hint
         });
 

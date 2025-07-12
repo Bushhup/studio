@@ -203,7 +203,7 @@ function AddEventForm({
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select faculty" /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
                             {faculty.map(f => (
                                 <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
                             ))}
