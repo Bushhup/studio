@@ -114,6 +114,7 @@ export async function getUsers(): Promise<IUser[]> {
         
         const users = await UserModel.aggregate([
             { $match: { role: { $ne: 'admin' } } },
+            { $sort: { name: 1 } }, // Sort by name in ascending order
             {
                 $lookup: {
                     from: 'classes',
@@ -235,7 +236,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
 export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'>[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role }).select('id name').lean();
+        const users = await UserModel.find({ role }).select('id name').sort({ name: 1 }).lean();
         return users.map(user => ({
             id: user._id.toString(),
             name: user.name,
@@ -263,40 +264,45 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         if (!userToUpdate) {
             return { success: false, message: "User not found." };
         }
+        
+        const updatePayload: Partial<IUser> = {};
 
         // Check for uniqueness if email or name are being changed
         if (data.email && data.email !== userToUpdate.email) {
-            const existingUser = await UserModel.findOne({ email: data.email });
+            const existingUser = await UserModel.findOne({ email: data.email, _id: { $ne: userId } });
             if (existingUser) return { success: false, message: "Email already in use." };
-            userToUpdate.email = data.email;
+            updatePayload.email = data.email;
         }
 
         if (data.name && data.name !== userToUpdate.name) {
-             const existingUser = await UserModel.findOne({ name: data.name });
+             const existingUser = await UserModel.findOne({ name: data.name, _id: { $ne: userId } });
             if (existingUser) return { success: false, message: "Username already in use." };
-            userToUpdate.name = data.name;
+            updatePayload.name = data.name;
         }
 
         // Update password only if a new one is provided
         if (data.password) {
-            userToUpdate.password = data.password;
+            updatePayload.password = data.password;
         }
 
         // Update classId for students
         if (userToUpdate.role === 'student') {
-            userToUpdate.classId = data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined;
+            updatePayload.classId = data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined;
         }
 
-        await userToUpdate.save();
+        await UserModel.updateOne({ _id: userId }, { $set: updatePayload });
 
         if (userToUpdate.role === 'faculty') {
             const facultyId = new mongoose.Types.ObjectId(userId);
-            // Remove this faculty from any classes they were previously in charge of
+            
+            // Atomically update classes:
+            // 1. Unset this faculty from all classes they were previously in charge of
             await ClassModel.updateMany(
                 { inchargeFaculty: facultyId },
                 { $unset: { inchargeFaculty: "" } }
             );
-            // Assign this faculty to the new set of classes
+            
+            // 2. Set this faculty to the new set of classes
             if (data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
                  await ClassModel.updateMany(
                     { _id: { $in: data.inchargeOfClasses.map(id => new mongoose.Types.ObjectId(id)) } },

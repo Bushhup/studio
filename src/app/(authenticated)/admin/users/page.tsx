@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check, BookCopy, School } from "lucide-react";
+import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check, Filter, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -474,14 +474,14 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
                     <div className="flex flex-wrap gap-1">
                       {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
                     </div>
-                  ) : 'N/A'}
+                  ) : <span className="text-muted-foreground">N/A</span>}
                 </TableCell>
                 <TableCell>
                   {user.handlingSubjects && user.handlingSubjects.length > 0 ? (
                      <div className="flex flex-wrap gap-1">
                       {user.handlingSubjects.map(s => <Badge key={s.id} variant="outline" title={s.name}>{s.code}</Badge>)}
                     </div>
-                  ) : 'N/A'}
+                  ) : <span className="text-muted-foreground">N/A</span>}
                 </TableCell>
               </>
             ) : (
@@ -531,20 +531,36 @@ export default function AdminUsersPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [dialogRole, setDialogRole] = useState<'student' | 'faculty'>('student');
+  
   const [users, setUsers] = useState<IUser[]>([]);
   const [classList, setClassList] = useState<IClass[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
+  
   const [userToEdit, setUserToEdit] = useState<IUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [classFilter, setClassFilter] = useState('all');
+
   const { toast } = useToast();
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const fetchedUsers = await getUsers();
+      const [fetchedUsers, fetchedClasses] = await Promise.all([
+          getUsers(),
+          getClasses(),
+      ]);
       setUsers(fetchedUsers);
+      const plainClasses = fetchedClasses.map(c => ({
+        ...c,
+        id: c.id.toString(),
+        inchargeFaculty: c.inchargeFaculty?.toString() || '',
+      }))
+      setClassList(plainClasses as IClass[]);
     } catch {
-      toast({ title: "Error", description: "Could not fetch users.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch users or classes.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -553,19 +569,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  useEffect(() => {
-    if (isAddDialogOpen || isEditDialogOpen) {
-      getClasses().then((classes) => {
-         const plainClasses = classes.map(c => ({
-          ...c,
-          id: c.id.toString(),
-          inchargeFaculty: c.inchargeFaculty?.toString() || '',
-        }))
-        setClassList(plainClasses as IClass[]);
-      });
-    }
-  }, [isAddDialogOpen, isEditDialogOpen]);
   
   const handleOpenAddDialog = (role: 'student' | 'faculty') => {
     setDialogRole(role);
@@ -597,8 +600,16 @@ export default function AdminUsersPage() {
     setUserToDelete(null);
   };
   
-  const studentUsers = users.filter(u => u.role === 'student');
-  const facultyUsers = users.filter(u => u.role === 'faculty');
+  const filteredUsers = useMemo(() => {
+      return users.filter(user => {
+          const nameMatch = user.name.toLowerCase().includes(searchTerm.toLowerCase());
+          const classMatch = user.role === 'student' ? (classFilter === 'all' || (user as any).classId === classFilter) : true;
+          return nameMatch && classMatch;
+      });
+  }, [users, searchTerm, classFilter]);
+  
+  const studentUsers = filteredUsers.filter(u => u.role === 'student');
+  const facultyUsers = filteredUsers.filter(u => u.role === 'faculty');
 
   return (
     <div className="container mx-auto py-8">
@@ -652,8 +663,19 @@ export default function AdminUsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>User Lists</CardTitle>
-          <CardDescription>A list of all student and faculty accounts.</CardDescription>
+          <CardTitle>User Lists & Filters</CardTitle>
+          <div className="mt-4 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by username..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
            <Tabs defaultValue="students" className="w-full">
@@ -661,7 +683,19 @@ export default function AdminUsersPage() {
                 <TabsTrigger value="students">Students</TabsTrigger>
                 <TabsTrigger value="faculty">Faculty</TabsTrigger>
               </TabsList>
-              <TabsContent value="students">
+              <TabsContent value="students" className="space-y-4">
+                 <div className="mt-4 flex justify-end">
+                    <Select value={classFilter} onValueChange={setClassFilter}>
+                        <SelectTrigger className="w-full sm:w-[250px]">
+                            <Filter className="mr-2 h-4 w-4" />
+                            <SelectValue placeholder="Filter by class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Classes</SelectItem>
+                            {classList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
                  {isLoading ? (
                     <div className="flex justify-center items-center py-10">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
