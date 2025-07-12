@@ -1,2 +1,1 @@
-// This file is obsolete and can be safely deleted.
-// Authentication is now handled by NextAuth.js.
+// This file is obsolete and has been intentionally left empty. It can be safely deleted.
