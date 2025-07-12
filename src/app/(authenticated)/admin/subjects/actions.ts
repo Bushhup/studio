@@ -36,7 +36,11 @@ export async function createSubject(data: SubjectInput): Promise<{ success: bool
             return { success: false, message: 'A subject with this code already exists.' };
         }
 
-        const newSubject = new SubjectModel(data);
+        const newSubject = new SubjectModel({
+            ...data,
+            classId: new mongoose.Types.ObjectId(data.classId),
+            facultyId: new mongoose.Types.ObjectId(data.facultyId),
+        });
         await newSubject.save();
 
         revalidatePath('/admin/subjects');
@@ -94,22 +98,24 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
                     code: 1,
                     classId: 1,
                     facultyId: 1,
-                    className: { $ifNull: ['$classDetails.name', 'N/A'] },
-                    facultyName: { $ifNull: ['$facultyDetails.name', 'N/A'] }
+                    'classDetails.name': 1,
+                    'facultyDetails.name': 1
                 }
             }
         ]);
         
         // Convert the aggregated data to the expected shape
-        return subjectsData.map(subject => ({
+        const results = subjectsData.map(subject => ({
             id: subject._id.toString(),
             name: subject.name,
             code: subject.code,
             classId: subject.classId.toString(),
             facultyId: subject.facultyId.toString(),
-            className: subject.className,
-            facultyName: subject.facultyName,
+            className: subject.classDetails?.name || 'N/A',
+            facultyName: subject.facultyDetails?.name || 'N/A',
         }));
+
+        return results;
 
     } catch (error) {
         console.error('Error fetching subjects with aggregate:', error);
