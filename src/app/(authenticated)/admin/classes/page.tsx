@@ -8,44 +8,73 @@ import { z } from 'zod';
 import type { IUser } from '@/models/user.model';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { School, PlusCircle, Loader2, Users } from "lucide-react";
+import { School, PlusCircle, Loader2, Users, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { createClass, getClasses, getStudentsByClass, type CreateClassInput, type IClassWithStudentCount } from './actions';
+import { createClass, getClasses, getStudentsByClass, updateClass, deleteClass, type ClassInput, type IClassWithStudentCount } from './actions';
 import { getUsersByRole } from '../users/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const createClassSchema = z.object({
+
+const classSchema = z.object({
   name: z.string().min(3, "Class name must be at least 3 characters."),
   academicYear: z.string().regex(/^\d{4}-\d{4}$/, "Academic year must be in YYYY-YYYY format."),
   inchargeFaculty: z.string().min(1, "You must select an in-charge faculty."),
 });
 
-function CreateClassForm({ setIsOpen, facultyList, onClassAdded }: { setIsOpen: (open: boolean) => void; facultyList: Pick<IUser, 'id' | 'name'>[]; onClassAdded: () => void; }) {
+function ClassForm({ 
+  setIsOpen, 
+  facultyList, 
+  onFormSubmit, 
+  initialData 
+}: { 
+  setIsOpen: (open: boolean) => void; 
+  facultyList: Pick<IUser, 'id' | 'name'>[]; 
+  onFormSubmit: () => void;
+  initialData?: IClassWithStudentCount;
+}) {
   const { toast } = useToast();
-  const form = useForm<CreateClassInput>({
-    resolver: zodResolver(createClassSchema),
+  const isEditMode = !!initialData;
+
+  const form = useForm<ClassInput>({
+    resolver: zodResolver(classSchema),
     defaultValues: {
-      name: "",
-      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-      inchargeFaculty: "",
+      name: initialData?.name || "",
+      academicYear: initialData?.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+      inchargeFaculty: initialData?.inchargeFaculty as string || "",
     },
   });
 
   const { formState: { isSubmitting } } = form;
 
-  const onSubmit = async (data: CreateClassInput) => {
-    const result = await createClass(data);
+  const onSubmit = async (data: ClassInput) => {
+    const action = isEditMode 
+      ? updateClass(initialData!.id, data) 
+      : createClass(data);
+
+    const result = await action;
+
     if (result.success) {
       toast({
         title: "Success!",
         description: result.message,
       });
-      onClassAdded();
+      onFormSubmit();
       setIsOpen(false);
       form.reset();
     } else {
@@ -115,8 +144,8 @@ function CreateClassForm({ setIsOpen, facultyList, onClassAdded }: { setIsOpen: 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting || facultyList.length === 0}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-            Create Class
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
+            {isEditMode ? 'Save Changes' : 'Create Class'}
           </Button>
         </DialogFooter>
       </form>
@@ -124,7 +153,13 @@ function CreateClassForm({ setIsOpen, facultyList, onClassAdded }: { setIsOpen: 
   );
 }
 
-function ClassesTable({ classes, facultyList, onRowClick }: { classes: IClassWithStudentCount[], facultyList: Pick<IUser, 'id' | 'name'>[], onRowClick: (classInfo: IClassWithStudentCount) => void }) {
+function ClassesTable({ classes, facultyList, onRowClick, onSelectEdit, onSelectDelete }: { 
+    classes: IClassWithStudentCount[], 
+    facultyList: Pick<IUser, 'id' | 'name'>[], 
+    onRowClick: (classInfo: IClassWithStudentCount) => void,
+    onSelectEdit: (classInfo: IClassWithStudentCount) => void,
+    onSelectDelete: (classInfo: IClassWithStudentCount) => void,
+}) {
   const facultyMap = new Map(facultyList.map(f => [f.id, f.name]));
 
   return (
@@ -135,19 +170,44 @@ function ClassesTable({ classes, facultyList, onRowClick }: { classes: IClassWit
           <TableHead>Academic Year</TableHead>
           <TableHead>In-charge Faculty</TableHead>
           <TableHead className="text-center">Student Count</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {classes.length > 0 ? classes.map((c) => (
-          <TableRow key={c.id} onClick={() => onRowClick(c)} className="cursor-pointer">
-            <TableCell className="font-medium">{c.name}</TableCell>
-            <TableCell>{c.academicYear}</TableCell>
-            <TableCell>{facultyMap.get(c.inchargeFaculty as string) || 'N/A'}</TableCell>
-            <TableCell className="text-center">{c.studentCount}</TableCell>
+          <TableRow key={c.id} >
+            <TableCell className="font-medium cursor-pointer" onClick={() => onRowClick(c)}>{c.name}</TableCell>
+            <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{c.academicYear}</TableCell>
+            <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{facultyMap.get(c.inchargeFaculty as string) || 'N/A'}</TableCell>
+            <TableCell className="text-center cursor-pointer" onClick={() => onRowClick(c)}>{c.studentCount}</TableCell>
+            <TableCell className="text-right">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onSelect={() => onSelectEdit(c)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        className="text-destructive"
+                        onSelect={() => onSelectDelete(c)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </TableCell>
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center">
+            <TableCell colSpan={5} className="h-24 text-center">
               No classes found. Create one to get started.
             </TableCell>
           </TableRow>
@@ -212,12 +272,16 @@ function StudentListDialog({
 
 
 export default function AdminClassesPage() {
-    const [isAddClassDialogOpen, setIsAddClassDialogOpen] = useState(false);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [isStudentListDialogOpen, setIsStudentListDialogOpen] = useState(false);
     
     const [allFaculty, setAllFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
     const [classes, setClasses] = useState<IClassWithStudentCount[]>([]);
+    
     const [selectedClass, setSelectedClass] = useState<IClassWithStudentCount | null>(null);
+    const [classToEdit, setClassToEdit] = useState<IClassWithStudentCount | null>(null);
+    const [classToDelete, setClassToDelete] = useState<IClassWithStudentCount | null>(null);
+
     const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
     
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -233,7 +297,7 @@ export default function AdminClassesPage() {
                 getUsersByRole('faculty')
             ]);
             setClasses(fetchedClasses);
-            setAllFaculty(fetchedFaculty);
+            setAllFaculty(fetchedFaculty.map(f => ({ id: f.id.toString(), name: f.name })));
         } catch (error) {
             toast({ title: "Error", description: "Could not fetch page data.", variant: "destructive" });
         } finally {
@@ -258,6 +322,28 @@ export default function AdminClassesPage() {
             setIsLoadingStudents(false);
         }
     };
+    
+    const handleOpenEditDialog = (classInfo: IClassWithStudentCount) => {
+      setClassToEdit(classInfo);
+      setIsFormDialogOpen(true);
+    };
+
+    const handleOpenCreateDialog = () => {
+      setClassToEdit(null); // Ensure we are in "create" mode
+      setIsFormDialogOpen(true);
+    };
+
+    const handleDeleteClass = async () => {
+        if (!classToDelete) return;
+        const result = await deleteClass(classToDelete.id);
+        if (result.success) {
+            toast({ title: "Success", description: result.message });
+            fetchPageData();
+        } else {
+            toast({ title: "Error", description: result.message, variant: "destructive" });
+        }
+        setClassToDelete(null);
+    };
 
   return (
     <div className="container mx-auto py-8">
@@ -269,23 +355,28 @@ export default function AdminClassesPage() {
             <p className="text-muted-foreground">Create, manage, and view classes and their student lists.</p>
           </div>
         </div>
-        <Dialog open={isAddClassDialogOpen} onOpenChange={setIsAddClassDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-5 w-5" /> Create New Class
-            </Button>
-          </DialogTrigger>
+        <Button onClick={handleOpenCreateDialog}>
+            <PlusCircle className="mr-2 h-5 w-5" /> Create New Class
+        </Button>
+      </div>
+
+      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle className="font-headline">Create New Class</DialogTitle>
-                <DialogDescription>Fill in the details for the new class.</DialogDescription>
+                <DialogTitle className="font-headline">{classToEdit ? 'Edit Class' : 'Create New Class'}</DialogTitle>
+                <DialogDescription>{classToEdit ? 'Update the details for this class.' : 'Fill in the details for the new class.'}</DialogDescription>
             </DialogHeader>
             <div className="py-4">
-                <CreateClassForm setIsOpen={setIsAddClassDialogOpen} facultyList={allFaculty} onClassAdded={fetchPageData} />
+                <ClassForm 
+                    setIsOpen={setIsFormDialogOpen} 
+                    facultyList={allFaculty} 
+                    onFormSubmit={fetchPageData}
+                    initialData={classToEdit || undefined}
+                />
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Class List</CardTitle>
@@ -297,10 +388,17 @@ export default function AdminClassesPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <ClassesTable classes={classes} facultyList={allFaculty} onRowClick={handleClassRowClick} />
+            <ClassesTable 
+                classes={classes} 
+                facultyList={allFaculty} 
+                onRowClick={handleClassRowClick}
+                onSelectEdit={handleOpenEditDialog}
+                onSelectDelete={setClassToDelete}
+            />
           )}
         </CardContent>
       </Card>
+
       <StudentListDialog
         isOpen={isStudentListDialogOpen}
         setIsOpen={setIsStudentListDialogOpen}
@@ -308,6 +406,29 @@ export default function AdminClassesPage() {
         students={studentsInClass}
         isLoading={isLoadingStudents}
       />
+      
+      <AlertDialog open={!!classToDelete} onOpenChange={() => setClassToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the class for{' '}
+              <span className="font-semibold">{classToDelete?.name}</span>. 
+              You can only delete classes with no students assigned.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setClassToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteClass}
+            >
+              Yes, delete class
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

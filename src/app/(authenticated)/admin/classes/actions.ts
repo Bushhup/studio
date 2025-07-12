@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
 
-const createClassSchema = z.object({
+const classSchema = z.object({
   name: z.string().min(3, "Class name must be at least 3 characters."),
   academicYear: z.string().regex(/^\d{4}-\d{4}$/, "Academic year must be in YYYY-YYYY format."),
   inchargeFaculty: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
@@ -16,11 +16,11 @@ const createClassSchema = z.object({
   }),
 });
 
-export type CreateClassInput = z.infer<typeof createClassSchema>;
+export type ClassInput = z.infer<typeof classSchema>;
 
-export async function createClass(data: CreateClassInput): Promise<{ success: boolean; message: string }> {
+export async function createClass(data: ClassInput): Promise<{ success: boolean; message: string }> {
   try {
-    const validation = createClassSchema.safeParse(data);
+    const validation = classSchema.safeParse(data);
     if (!validation.success) {
       return { success: false, message: validation.error.errors.map(e => e.message).join(', ') };
     }
@@ -43,6 +43,75 @@ export async function createClass(data: CreateClassInput): Promise<{ success: bo
   }
 }
 
+export async function updateClass(classId: string, data: ClassInput): Promise<{ success: boolean; message: string }> {
+    try {
+        const validation = classSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, message: validation.error.errors.map(e => e.message).join(', ') };
+        }
+
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(classId)) {
+            return { success: false, message: "Invalid class ID." };
+        }
+
+        const classToUpdate = await ClassModel.findById(classId);
+        if (!classToUpdate) {
+            return { success: false, message: "Class not found." };
+        }
+
+        classToUpdate.name = data.name;
+        classToUpdate.academicYear = data.academicYear;
+        classToUpdate.inchargeFaculty = data.inchargeFaculty;
+
+        await classToUpdate.save();
+
+        revalidatePath('/admin/classes');
+        return { success: true, message: "Class updated successfully." };
+
+    } catch (error) {
+        console.error('Error updating class:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred while updating the class.' };
+    }
+}
+
+
+export async function deleteClass(classId: string): Promise<{ success: boolean; message: string }> {
+    try {
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(classId)) {
+            return { success: false, message: "Invalid class ID." };
+        }
+        
+        // Check if there are any students assigned to this class
+        const studentCount = await UserModel.countDocuments({ classId: new mongoose.Types.ObjectId(classId) });
+        if (studentCount > 0) {
+            return { success: false, message: `Cannot delete class. There are ${studentCount} student(s) assigned to it.` };
+        }
+
+        const result = await ClassModel.findByIdAndDelete(classId);
+
+        if (!result) {
+            return { success: false, message: "Class not found." };
+        }
+
+        revalidatePath('/admin/classes');
+        return { success: true, message: "Class deleted successfully." };
+    } catch (error) {
+        console.error('Error deleting class:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred while deleting the class.' };
+    }
+}
+
+
 export interface IClassWithStudentCount extends IClass {
     studentCount: number;
 }
@@ -51,11 +120,10 @@ export async function getClasses(): Promise<IClassWithStudentCount[]> {
     try {
         await connectToDB();
         
-        // Use aggregation to count students for each class
         const classesWithCounts = await ClassModel.aggregate([
             {
                 $lookup: {
-                    from: 'users', // The collection name for the UserModel
+                    from: 'users',
                     localField: '_id',
                     foreignField: 'classId',
                     as: 'students'
@@ -76,12 +144,11 @@ export async function getClasses(): Promise<IClassWithStudentCount[]> {
             },
             {
                 $project: {
-                    students: 0 // Exclude the students array from the final output
+                    students: 0 
                 }
             }
         ]);
 
-        // Manually serialize the objects to ensure they are plain objects
         return classesWithCounts.map(c => ({
             id: c._id.toString(),
             name: c.name,
@@ -104,7 +171,7 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
         }
 
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
-            .sort({ name: 'asc' }) // Sort by name in ascending order
+            .sort({ name: 'asc' })
             .select('id name')
             .lean();
         
