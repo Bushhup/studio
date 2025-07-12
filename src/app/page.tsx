@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft } from 'lucide-react';
+import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Loader2 } from 'lucide-react';
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, useSession } from 'next-auth/react';
@@ -158,8 +158,17 @@ export default function LoginPage() {
                 />
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={!username || !password || isLoggingIn}>
-                  {isLoggingIn ? 'Logging in...' : <><LogIn className="mr-2 h-5 w-5" /> Login</>}
+                <Button type="submit" className="w-full" disabled={!username || !password || isLoggingIn}>
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="mr-2 h-5 w-5" /> Login
+                    </>
+                  )}
                 </Button>
             </form>
           )}
