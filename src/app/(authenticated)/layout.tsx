@@ -55,7 +55,7 @@ export default function AuthenticatedLayout({
             <SidebarNav userRole={role} />
           </SidebarContent>
           <SidebarFooter className="p-2">
-             {/* Placeholder for footer items like dark mode toggle or quick settings */}
+             {/* Placeholder for footer items like quick settings */}
           </SidebarFooter>
         </Sidebar>
         <SidebarRail />

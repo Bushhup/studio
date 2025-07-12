@@ -44,20 +44,12 @@ const navItems: NavItem[] = [
     label: 'Study Materials', 
     icon: BookOpenText, 
     roles: ['admin', 'faculty', 'student'],
-    // subItems: [
-    //   { href: '/materials/view', label: 'View Materials', icon: DownloadCloud, roles: ['admin', 'faculty', 'student'] },
-    //   { href: '/materials/upload', label: 'Upload Material', icon: UploadCloud, roles: ['admin', 'faculty'] },
-    // ]
   },
   { 
     href: '/feedback', 
     label: 'Feedback', 
     icon: MessageSquareText, 
     roles: ['admin', 'faculty', 'student'],
-    // subItems: [
-    //   { href: '/feedback/submit', label: 'Submit Feedback', icon: Send, roles: ['student'] },
-    //   { href: '/feedback/summary', label: 'View Summary (AI)', icon: Sparkles, roles: ['admin', 'faculty'] },
-    // ]
   },
   { href: '/placements', label: 'Placements Hub', icon: Briefcase, roles: ['admin', 'student'] },
 
@@ -91,7 +83,7 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
     <SidebarMenu>
       {filteredNavItems.map((item) => {
         const href = item.isDashboardLink ? getDashboardPath(userRole) : item.href;
-        const isActive = pathname === href || (item.subItems && item.subItems.some(sub => pathname === sub.href));
+        const isActive = pathname.startsWith(href) && (href !== '/' || pathname === '/');
         
         return (
           <SidebarMenuItem key={item.href}>
@@ -125,7 +117,7 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
         <SidebarGroup className="mt-auto">
           <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarMenuItem>
-             <SidebarMenuButton asChild tooltip={{ children: "Account Settings" }}>
+             <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Account Settings" }}>
                 <Link href="/settings/account">
                     <UserCog className="h-5 w-5" />
                     <span>Account Settings</span>
