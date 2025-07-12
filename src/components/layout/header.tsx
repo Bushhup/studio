@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { GraduationCap, LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor } from 'lucide-react';
 import { useMockAuth } from '@/hooks/use-mock-auth';
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'; // Assuming SidebarTrigger is exported
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 
 export function Header() {
   const { role, logout } = useMockAuth();
@@ -39,10 +40,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-md md:px-6">
         <div className="md:hidden">
-          <SidebarTrigger asChild>
-             <Button variant="ghost" size="icon" aria-label="Toggle sidebar">
-                <PanelLeft className="h-6 w-6" />
-             </Button>
+          <SidebarTrigger>
+             <PanelLeft className="h-6 w-6" />
           </SidebarTrigger>
         </div>
         <div className="hidden md:block">
