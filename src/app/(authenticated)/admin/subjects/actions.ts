@@ -98,8 +98,8 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
                     code: 1,
                     classId: 1,
                     facultyId: 1,
-                    'classDetails.name': 1,
-                    'facultyDetails.name': 1
+                    className: { $ifNull: ['$classDetails.name', 'N/A'] },
+                    facultyName: { $ifNull: ['$facultyDetails.name', 'N/A'] }
                 }
             }
         ]);
@@ -111,8 +111,8 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             code: subject.code,
             classId: subject.classId.toString(),
             facultyId: subject.facultyId.toString(),
-            className: subject.classDetails?.name || 'N/A',
-            facultyName: subject.facultyDetails?.name || 'N/A',
+            className: subject.className,
+            facultyName: subject.facultyName,
         }));
 
         return results;
