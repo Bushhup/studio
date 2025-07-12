@@ -14,35 +14,42 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
   try {
     await connectToDB();
 
-    let user: (User & { classId?: mongoose.Schema.Types.ObjectId }) | null = null;
-    if (userId) {
-        user = await UserModel.findById(userId).lean();
-    }
+    const user = await UserModel.findById(userId).lean();
 
     const query: any = {};
 
+    // If the user is not an admin, we apply filtering logic
     if (userRole !== 'admin') {
-      const userClassId = user?.classId;
-      const userFacultyClasses = userRole === 'faculty' ? await ClassModel.find({ inchargeFaculty: userId }).select('_id').lean() : [];
-      const userFacultyClassIds = userFacultyClasses.map(c => c._id);
-      
       const orConditions: any[] = [
-        { classIds: { $size: 0 } }, // Global events
-        { classIds: { $exists: false } } // Or events where classIds is not set
+        // Events with no classes assigned (global events)
+        { classIds: { $exists: true, $size: 0 } }, 
       ];
 
-      if (userClassId) {
-        orConditions.push({ classIds: userClassId });
+      // If the user is a student and has a classId, find events for their class
+      if (userRole === 'student' && user?.classId) {
+        orConditions.push({ classIds: user.classId });
       }
+
+      // If the user is a faculty member
       if (userRole === 'faculty') {
-        orConditions.push({ inchargeFacultyId: new mongoose.Types.ObjectId(userId) }); // Events they are in charge of
-        if (userFacultyClassIds.length > 0) {
-            orConditions.push({ classIds: { $in: userFacultyClassIds } }); // Events for classes they manage
+        // Find events where they are personally the in-charge faculty
+        orConditions.push({ inchargeFacultyId: new mongoose.Types.ObjectId(userId) });
+        
+        // Find classes where this faculty is the in-charge
+        const facultyClasses = await ClassModel.find({ inchargeFaculty: userId }).select('_id').lean();
+        const facultyClassIds = facultyClasses.map(c => c._id);
+        
+        // If they are in charge of any classes, find events for those classes
+        if (facultyClassIds.length > 0) {
+          orConditions.push({ classIds: { $in: facultyClassIds } });
         }
       }
+      
       query.$or = orConditions;
     }
 
+    // Admins will have an empty query object, fetching all events.
+    // Other roles will have the $or condition applied.
     const events = await Event.find(query)
         .populate({ path: 'inchargeFacultyId', select: 'name' })
         .sort({ date: 'asc' })
