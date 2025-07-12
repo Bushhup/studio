@@ -141,7 +141,7 @@ export default function LoginPage() {
                     type="text"
                     placeholder="Enter your username"
                     value={username}
-                    onChange={(e) => setUsername(e.targesrc/app/(authenticated)/layout.tsxt.value)}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                 />
                 </div>
