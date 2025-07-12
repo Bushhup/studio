@@ -90,7 +90,10 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
 export async function getUsers(): Promise<IUser[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role: { $ne: 'admin' } }).populate('classId', 'name academicYear').lean();
+        const users = await UserModel.find({ role: { $ne: 'admin' } })
+            .select('+password') // Explicitly include the password
+            .populate('classId', 'name academicYear')
+            .lean();
         
         const plainUsers = users.map(user => {
             const plainUser: any = {
