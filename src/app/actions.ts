@@ -25,16 +25,15 @@ export async function login(data: LoginInput): Promise<LoginResult> {
   if (data.role === 'admin') {
     if (data.username === 'Admin01' && data.password === 'shaosaid05413') {
       return { success: true };
-    } else {
-      return { success: false, message: 'Invalid admin credentials.' };
     }
+    // If admin credentials are wrong, return failure immediately.
+    return { success: false, message: 'Invalid admin credentials.' };
   }
 
   // Database authentication for faculty and students
   try {
     await connectToDB();
     
-    // Find user by username and role, and explicitly include the password
     const user = await UserModel.findOne({ name: data.username, role: data.role }).select('+password');
 
     if (!user) {
