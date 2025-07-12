@@ -48,6 +48,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ExtendedUser } from './actions';
 
 
 const addUserSchema = z.object({
@@ -246,7 +247,7 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
   );
 }
 
-function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUser, setIsOpen: (open: boolean) => void, classList: IClass[], onUserUpdated: () => void }) {
+function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: ExtendedUser, setIsOpen: (open: boolean) => void, classList: IClass[], onUserUpdated: () => void }) {
   const { toast } = useToast();
   
   const initialInchargeClasses = user.inchargeOfClasses?.map(c => c.id) || [];
@@ -257,7 +258,7 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUs
       name: user.name,
       email: user.email,
       password: "",
-      classId: user.role === 'student' ? (user as any).classId : "",
+      classId: user.role === 'student' ? user.classId : "",
       inchargeOfClasses: initialInchargeClasses,
     },
   });
@@ -438,7 +439,7 @@ function PasswordCell({ password }: { password?: string }) {
 }
 
 
-function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUser[], onSelectEdit: (user: IUser) => void, onSelectDelete: (user: IUser) => void, role: 'student' | 'faculty' }) {
+function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: ExtendedUser[], onSelectEdit: (user: ExtendedUser) => void, onSelectDelete: (user: ExtendedUser) => void, role: 'student' | 'faculty' }) {
   const isFacultyRole = role === 'faculty';
 
   return (
@@ -490,7 +491,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
               </>
             ) : (
               <TableCell>
-                <Badge variant="secondary">{(user as any).className || 'N/A'}</Badge>
+                <Badge variant="secondary">{user.className || 'N/A'}</Badge>
               </TableCell>
             )}
             <TableCell className="text-right">
@@ -536,13 +537,13 @@ export default function AdminUsersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [dialogRole, setDialogRole] = useState<'student' | 'faculty'>('student');
   
-  const [users, setUsers] = useState<IUser[]>([]);
+  const [users, setUsers] = useState<ExtendedUser[]>([]);
   const [classList, setClassList] = useState<IClass[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   
-  const [userToEdit, setUserToEdit] = useState<IUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
+  const [userToEdit, setUserToEdit] = useState<ExtendedUser | null>(null);
+  const [userToDelete, setUserToDelete] = useState<ExtendedUser | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [classFilter, setClassFilter] = useState('all');
@@ -579,7 +580,7 @@ export default function AdminUsersPage() {
     setIsAddDialogOpen(true);
   };
   
-  const handleOpenEditDialog = (user: IUser) => {
+  const handleOpenEditDialog = (user: ExtendedUser) => {
     setUserToEdit(user);
     setIsEditDialogOpen(true);
   };
@@ -607,7 +608,7 @@ export default function AdminUsersPage() {
   const filteredUsers = useMemo(() => {
       return users.filter(user => {
           const nameMatch = user.name.toLowerCase().includes(searchTerm.toLowerCase());
-          const classMatch = user.role === 'student' ? (classFilter === 'all' || (user as any).classId === classFilter) : true;
+          const classMatch = user.role === 'student' ? (classFilter === 'all' || user.classId === classFilter) : true;
           return nameMatch && classMatch;
       });
   }, [users, searchTerm, classFilter]);

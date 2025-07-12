@@ -108,7 +108,13 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
   }
 }
 
-export async function getUsers(): Promise<IUser[]> {
+export type ExtendedUser = IUser & {
+    className?: string;
+    inchargeOfClasses?: { id: string; name: string }[];
+    handlingSubjects?: { id: string; name: string; code: string; className: string }[];
+};
+
+export async function getUsers(): Promise<ExtendedUser[]> {
     try {
         await connectToDB();
         
@@ -209,7 +215,7 @@ export async function getUsers(): Promise<IUser[]> {
             return plainUser;
         });
 
-        return plainUsers as IUser[];
+        return plainUsers as ExtendedUser[];
     } catch (error) {
         console.error('Error fetching users:', error);
         return [];

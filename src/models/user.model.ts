@@ -7,8 +7,6 @@ export interface IUser extends UserType, Document {
   email: string;
   password?: string;
   classId?: mongoose.Schema.Types.ObjectId;
-  inchargeOfClasses?: { id: string; name: string }[];
-  handlingSubjects?: { id: string; name: string; code: string, className: string }[];
 }
 
 const UserSchema = new Schema<IUser>({
