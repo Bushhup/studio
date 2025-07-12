@@ -3,16 +3,51 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import Event from '@/models/event.model';
-import type { AppEvent } from '@/types';
+import UserModel from '@/models/user.model';
+import ClassModel from '@/models/class.model';
+import type { AppEvent, Role, User } from '@/types';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 
-export async function getEvents(): Promise<AppEvent[]> {
+export async function getEventsForUser(userId: string, userRole: Role): Promise<AppEvent[]> {
   try {
     await connectToDB();
-    const events = await Event.find({}).sort({ date: 'asc' }).lean();
 
-    // lean() returns plain JS objects, so we just need to format the _id and date
+    let user: (User & { classId?: string }) | null = null;
+    if (userId) {
+        user = await UserModel.findById(userId).lean();
+    }
+
+    const query: any = {};
+
+    if (userRole !== 'admin') {
+      const userClassId = user?.classId;
+      const userFacultyClasses = userRole === 'faculty' ? await ClassModel.find({ inchargeFaculty: userId }).select('_id').lean() : [];
+      const userFacultyClassIds = userFacultyClasses.map(c => c._id);
+      
+      const orConditions: any[] = [
+        { classIds: { $size: 0 } }, // Global events
+        { classIds: { $exists: false } } // Or events where classIds is not set
+      ];
+
+      if (userClassId) {
+        orConditions.push({ classIds: userClassId });
+      }
+      if (userRole === 'faculty') {
+        orConditions.push({ inchargeFacultyId: userId }); // Events they are in charge of
+        if (userFacultyClassIds.length > 0) {
+            orConditions.push({ classIds: { $in: userFacultyClassIds } }); // Events for classes they manage
+        }
+      }
+      query.$or = orConditions;
+    }
+
+    const events = await Event.find(query)
+        .populate({ path: 'inchargeFacultyId', select: 'name' })
+        .sort({ date: 'asc' })
+        .lean();
+
     return events.map((event: any) => ({
       id: event._id.toString(),
       title: event.title,
@@ -22,6 +57,7 @@ export async function getEvents(): Promise<AppEvent[]> {
       image: event.image,
       dataAiHint: event.dataAiHint,
       location: event.location,
+      inchargeFacultyName: event.inchargeFacultyId ? (event.inchargeFacultyId as any).name : undefined,
     }));
   } catch (error) {
     console.error('Failed to fetch events:', error);
@@ -36,6 +72,8 @@ const eventSchema = z.object({
   type: z.enum(['lecture', 'hackathon', 'fest', 'internship_fair', 'exam', 'notice']),
   location: z.string().min(3, 'Location is required.'),
   image: z.string().url().optional().or(z.literal('')),
+  classIds: z.array(z.string()).optional(),
+  inchargeFacultyId: z.string().optional(),
 });
 
 export type AddEventInput = z.infer<typeof eventSchema>;
@@ -52,6 +90,8 @@ export async function addEvent(data: AddEventInput): Promise<{ success: boolean;
         const newEvent = new Event({
             ...data,
             date: new Date(data.date),
+            classIds: data.classIds?.map(id => new mongoose.Types.ObjectId(id)) || [],
+            inchargeFacultyId: data.inchargeFacultyId ? new mongoose.Types.ObjectId(data.inchargeFacultyId) : undefined,
             dataAiHint: `${data.type} ${data.title}` // Auto-generate a hint
         });
 

@@ -18,6 +18,8 @@ const EventSchema = new Schema<IEvent>({
   location: { type: String, required: true },
   image: { type: String, required: false },
   dataAiHint: { type: String, required: false },
+  classIds: [{ type: Schema.Types.ObjectId, ref: 'Class' }],
+  inchargeFacultyId: { type: Schema.Types.ObjectId, ref: 'User' },
 });
 
 // Use existing model if it exists, otherwise create a new one

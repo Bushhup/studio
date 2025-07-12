@@ -2,11 +2,11 @@ import type { AppEvent } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { CalendarDays, Info, MapPin, Tag } from 'lucide-react';
+import { CalendarDays, Info, MapPin, Tag, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EventCardProps {
-  event: AppEvent;
+  event: AppEvent & { inchargeFacultyName?: string };
 }
 
 const eventTypeColors: Record<AppEvent['type'], string> = {
@@ -19,7 +19,7 @@ const eventTypeColors: Record<AppEvent['type'], string> = {
 };
 
 export function EventCard({ event }: EventCardProps) {
-  const { title, date, description, type, image, dataAiHint, location } = event;
+  const { title, date, description, type, image, dataAiHint, location, inchargeFacultyName } = event;
   
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -57,6 +57,12 @@ export function EventCard({ event }: EventCardProps) {
           <div className="flex items-center text-sm text-muted-foreground">
             <MapPin className="mr-2 h-4 w-4" />
             <span>{location}</span>
+          </div>
+        )}
+        {inchargeFacultyName && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <UserCheck className="mr-2 h-4 w-4" />
+            <span>In-charge: {inchargeFacultyName}</span>
           </div>
         )}
       </CardHeader>

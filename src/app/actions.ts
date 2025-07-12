@@ -60,7 +60,7 @@ export async function login(data: LoginInput): Promise<LoginResult> {
 export async function getUserDetails(username: string, role: Role): Promise<User | null> {
     if (role === 'admin' && username === 'Admin01') {
         return {
-            id: 'admin01',
+            id: 'admin_user_placeholder',
             name: 'Admin User',
             email: 'admin@mca-dept.edu',
             role: 'admin'
@@ -80,6 +80,7 @@ export async function getUserDetails(username: string, role: Role): Promise<User
             name: user.name,
             email: user.email,
             role: user.role as Role,
+            classId: user.classId ? user.classId.toString() : undefined,
         };
 
     } catch (error) {

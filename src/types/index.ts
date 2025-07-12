@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  classId?: string;
 }
 
 export interface AppEvent {
@@ -18,6 +19,8 @@ export interface AppEvent {
   location: string;
   image?: string;
   dataAiHint?: string;
+  classIds?: string[]; // Array of Class IDs
+  inchargeFacultyId?: string; // User ID of faculty
 }
 
 export interface StudyMaterial {
