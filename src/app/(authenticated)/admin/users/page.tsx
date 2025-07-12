@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { IClass } from '@/models/class.model';
 import type { IUser } from '@/models/user.model';
 import { getClasses } from '../classes/actions';
-import { getUsers, addUser, deleteUser, type AddUserInput } from './actions';
+import { getUsers, addUser, deleteUser, updateUser, type AddUserInput, type UpdateUserInput } from './actions';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,13 @@ const addUserSchema = z.object({
 }, {
     message: "A class must be selected for students.",
     path: ["classId"],
+});
+
+const updateUserSchema = z.object({
+  name: z.string().min(2, "Username must be at least 2 characters.").optional(),
+  email: z.string().email("Invalid email address.").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
+  classId: z.string().optional(),
 });
 
 
@@ -181,6 +188,118 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
   );
 }
 
+function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUser, setIsOpen: (open: boolean) => void, classList: IClass[], onUserUpdated: () => void }) {
+  const { toast } = useToast();
+  const form = useForm<UpdateUserInput>({
+    resolver: zodResolver(updateUserSchema),
+    defaultValues: {
+      name: user.name,
+      email: user.email,
+      password: "",
+      classId: user.role === 'student' ? (user as any).classId : "",
+    },
+  });
+
+  const { formState: { isSubmitting } } = form;
+
+  const onSubmit = async (data: UpdateUserInput) => {
+    const result = await updateUser(user.id, data);
+    if (result.success) {
+      toast({
+        title: "Success!",
+        description: result.message,
+      });
+      onUserUpdated();
+      setIsOpen(false);
+    } else {
+      toast({
+        title: "Error",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., john.doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="user@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>New Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="Leave blank to keep current password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {user.role === 'student' && (
+          <FormField
+            control={form.control}
+            name="classId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assign to Class</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {classList.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+}
+
+
 function PasswordCell({ password }: { password?: string }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -205,7 +324,7 @@ function PasswordCell({ password }: { password?: string }) {
 }
 
 
-function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete: (user: IUser) => void }) {
+function UsersTable({ users, onSelectEdit, onSelectDelete }: { users: IUser[], onSelectEdit: (user: IUser) => void, onSelectDelete: (user: IUser) => void }) {
   return (
      <Table>
       <TableHeader>
@@ -236,7 +355,7 @@ function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete:
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem disabled>
+                    <DropdownMenuItem onSelect={() => onSelectEdit(user)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
@@ -265,11 +384,13 @@ function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete:
 
 
 export default function AdminUsersPage() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [dialogRole, setDialogRole] = useState<'student' | 'faculty'>('student');
   const [users, setUsers] = useState<IUser[]>([]);
   const [classList, setClassList] = useState<IClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userToEdit, setUserToEdit] = useState<IUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
   const { toast } = useToast();
 
@@ -290,10 +411,20 @@ export default function AdminUsersPage() {
   }, []);
 
   useEffect(() => {
-    if (isDialogOpen) {
+    if (isAddDialogOpen || isEditDialogOpen) {
       getClasses().then(setClassList);
     }
-  }, [isDialogOpen]);
+  }, [isAddDialogOpen, isEditDialogOpen]);
+  
+  const handleOpenAddDialog = (role: 'student' | 'faculty') => {
+    setDialogRole(role);
+    setIsAddDialogOpen(true);
+  };
+  
+  const handleOpenEditDialog = (user: IUser) => {
+    setUserToEdit(user);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
@@ -315,11 +446,6 @@ export default function AdminUsersPage() {
     setUserToDelete(null);
   };
   
-  const handleOpenDialog = (role: 'student' | 'faculty') => {
-    setDialogRole(role);
-    setIsDialogOpen(true);
-  };
-
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'faculty');
 
@@ -334,15 +460,17 @@ export default function AdminUsersPage() {
           </div>
         </div>
         <div className="flex gap-2">
-            <Button onClick={() => handleOpenDialog('student')}>
+            <Button onClick={() => handleOpenAddDialog('student')}>
               <UserPlus className="mr-2 h-5 w-5" /> Add Student
             </Button>
-            <Button onClick={() => handleOpenDialog('faculty')} variant="secondary">
+            <Button onClick={() => handleOpenAddDialog('faculty')} variant="secondary">
               <UserPlus className="mr-2 h-5 w-5" /> Add Faculty
             </Button>
         </div>
       </div>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      
+      {/* Add User Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="font-headline capitalize">Add New {dialogRole}</DialogTitle>
@@ -351,10 +479,26 @@ export default function AdminUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <AddUserForm setIsOpen={setIsDialogOpen} classList={classList} role={dialogRole} onUserAdded={fetchUsers} />
+              <AddUserForm setIsOpen={setIsAddDialogOpen} classList={classList} role={dialogRole} onUserAdded={fetchUsers} />
             </div>
           </DialogContent>
-        </Dialog>
+      </Dialog>
+      
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="font-headline capitalize">Edit {userToEdit?.role}</DialogTitle>
+              <DialogDescription>
+                Update the details for {userToEdit?.name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {userToEdit && <EditUserForm user={userToEdit} setIsOpen={setIsEditDialogOpen} classList={classList} onUserUpdated={fetchUsers} />}
+            </div>
+          </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle>User Lists</CardTitle>
@@ -372,7 +516,7 @@ export default function AdminUsersPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <UsersTable users={studentUsers} onSelectDelete={setUserToDelete} />
+                    <UsersTable users={studentUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} />
                   )}
               </TabsContent>
               <TabsContent value="faculty">
@@ -381,7 +525,7 @@ export default function AdminUsersPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <UsersTable users={facultyUsers} onSelectDelete={setUserToDelete} />
+                    <UsersTable users={facultyUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} />
                   )}
               </TabsContent>
             </Tabs>
@@ -412,5 +556,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    

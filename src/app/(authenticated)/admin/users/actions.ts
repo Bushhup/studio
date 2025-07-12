@@ -24,8 +24,17 @@ const addUserSchema = z.object({
     path: ["classId"],
 });
 
-
 export type AddUserInput = z.infer<typeof addUserSchema>;
+
+const updateUserSchema = z.object({
+  name: z.string().min(2, "Username must be at least 2 characters.").optional(),
+  email: z.string().email("Invalid email address.").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
+  classId: z.string().optional(),
+});
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
 
 export async function getUserCounts(): Promise<{ students: number; faculty: number }> {
   try {
@@ -160,5 +169,60 @@ export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<
     } catch (error) {
         console.error(`Error fetching ${role}s:`, error);
         return [];
+    }
+}
+
+export async function updateUser(userId: string, data: UpdateUserInput): Promise<{ success: boolean; message: string }> {
+    try {
+        const validation = updateUserSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, message: validation.error.errors.map(e => e.message).join(', ') };
+        }
+
+        await connectToDB();
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return { success: false, message: "Invalid user ID." };
+        }
+
+        const userToUpdate = await UserModel.findById(userId);
+        if (!userToUpdate) {
+            return { success: false, message: "User not found." };
+        }
+
+        // Check for uniqueness if email or name are being changed
+        if (data.email && data.email !== userToUpdate.email) {
+            const existingUser = await UserModel.findOne({ email: data.email });
+            if (existingUser) return { success: false, message: "Email already in use." };
+            userToUpdate.email = data.email;
+        }
+
+        if (data.name && data.name !== userToUpdate.name) {
+             const existingUser = await UserModel.findOne({ name: data.name });
+            if (existingUser) return { success: false, message: "Username already in use." };
+            userToUpdate.name = data.name;
+        }
+
+        // Update password only if a new one is provided
+        if (data.password) {
+            userToUpdate.password = data.password;
+        }
+
+        // Update classId for students
+        if (userToUpdate.role === 'student') {
+            userToUpdate.classId = data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined;
+        }
+
+        await userToUpdate.save();
+
+        revalidatePath('/admin/users');
+        return { success: true, message: "User updated successfully." };
+
+    } catch (error) {
+        console.error('Error updating user:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred while updating the user.' };
     }
 }
