@@ -7,6 +7,7 @@ export interface IUser extends UserType, Document {
   email: string;
   password?: string;
   classId?: mongoose.Schema.Types.ObjectId;
+  inchargeOfClasses?: { id: string; name: string }[];
 }
 
 const UserSchema = new Schema<IUser>({
@@ -18,7 +19,7 @@ const UserSchema = new Schema<IUser>({
     required: true,
   },
   password: { type: String, required: true, select: true }, // Password is required and selected by default now
-  classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false }, // Link to the Class model
+  classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false }, // Link to the Class model for students
 });
 
 const UserModel = models.User || model<IUser>('User', UserSchema);

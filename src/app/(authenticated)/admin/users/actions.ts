@@ -3,6 +3,7 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import UserModel, { IUser } from '@/models/user.model';
+import ClassModel from '@/models/class.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
@@ -14,6 +15,7 @@ const addUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty']),
   classId: z.string().optional(),
+  inchargeOfClasses: z.array(z.string()).optional(), // For faculty
 }).refine(data => {
     if (data.role === 'student' && !data.classId) {
         return false;
@@ -31,6 +33,7 @@ const updateUserSchema = z.object({
   email: z.string().email("Invalid email address.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
   classId: z.string().optional(),
+  inchargeOfClasses: z.array(z.string()).optional(), // For faculty
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
@@ -83,7 +86,16 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
     
     await newUser.save();
     
+    // If it's a faculty member and classes are assigned, update those classes
+    if (data.role === 'faculty' && data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
+      await ClassModel.updateMany(
+        { _id: { $in: data.inchargeOfClasses } },
+        { $set: { inchargeFaculty: newUser._id } }
+      );
+    }
+    
     revalidatePath('/admin/users');
+    revalidatePath('/admin/classes');
 
     return { success: true, message: `User '${data.name}' added successfully as a ${data.role}.` };
 
@@ -99,10 +111,44 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
 export async function getUsers(): Promise<IUser[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role: { $ne: 'admin' } })
-            .select('+password') // Explicitly include the password
-            .populate('classId', 'name academicYear')
-            .lean();
+        
+        const users = await UserModel.aggregate([
+            { $match: { role: { $ne: 'admin' } } },
+            {
+                $lookup: {
+                    from: 'classes',
+                    localField: '_id',
+                    foreignField: 'inchargeFaculty',
+                    as: 'inchargeClasses'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'classes',
+                    localField: 'classId',
+                    foreignField: '_id',
+                    as: 'studentClass'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$studentClass',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    email: 1,
+                    password: 1,
+                    role: 1,
+                    classId: 1,
+                    className: '$studentClass.name',
+                    inchargeOfClasses: '$inchargeClasses'
+                }
+            }
+        ]);
         
         const plainUsers = users.map(user => {
             const plainUser: any = {
@@ -111,14 +157,18 @@ export async function getUsers(): Promise<IUser[]> {
                 email: user.email,
                 role: user.role,
                 password: user.password,
-                className: 'N/A'
+                className: user.className || 'N/A'
             };
 
-            if (user.classId && typeof user.classId === 'object') {
-                plainUser.classId = (user.classId as any)._id.toString();
-                plainUser.className = (user.classId as any).name || 'N/A';
-            } else if (user.classId) {
-                 plainUser.classId = user.classId.toString();
+            if (user.role === 'student' && user.classId) {
+                plainUser.classId = user.classId.toString();
+            }
+            
+            if (user.role === 'faculty') {
+                plainUser.inchargeOfClasses = user.inchargeOfClasses.map((c: any) => ({
+                    id: c._id.toString(),
+                    name: c.name
+                }));
             }
 
             return plainUser;
@@ -145,8 +195,17 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
         if (!result) {
             return { success: false, message: "User not found." };
         }
+        
+        // If a faculty is deleted, unassign them from being in-charge of any class
+        if (result.role === 'faculty') {
+            await ClassModel.updateMany(
+                { inchargeFaculty: new mongoose.Types.ObjectId(userId) },
+                { $unset: { inchargeFaculty: "" } }
+            );
+        }
 
         revalidatePath('/admin/users');
+        revalidatePath('/admin/classes');
         return { success: true, message: `User deleted successfully.` };
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -215,7 +274,24 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
 
         await userToUpdate.save();
 
+        if (userToUpdate.role === 'faculty') {
+            const facultyId = new mongoose.Types.ObjectId(userId);
+            // Remove this faculty from any classes they were previously in charge of
+            await ClassModel.updateMany(
+                { inchargeFaculty: facultyId },
+                { $unset: { inchargeFaculty: "" } }
+            );
+            // Assign this faculty to the new set of classes
+            if (data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
+                 await ClassModel.updateMany(
+                    { _id: { $in: data.inchargeOfClasses.map(id => new mongoose.Types.ObjectId(id)) } },
+                    { $set: { inchargeFaculty: facultyId } }
+                );
+            }
+        }
+
         revalidatePath('/admin/users');
+        revalidatePath('/admin/classes');
         return { success: true, message: "User updated successfully." };
 
     } catch (error) {

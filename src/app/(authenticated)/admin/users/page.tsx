@@ -9,10 +9,11 @@ import type { IClass } from '@/models/class.model';
 import type { IUser } from '@/models/user.model';
 import { getClasses } from '../classes/actions';
 import { getUsers, addUser, deleteUser, updateUser, type AddUserInput, type UpdateUserInput } from './actions';
+import { cn } from '@/lib/utils';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff } from "lucide-react";
+import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,13 +39,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 
 const addUserSchema = z.object({
@@ -53,6 +56,7 @@ const addUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty']),
   classId: z.string().optional(),
+  inchargeOfClasses: z.array(z.string()).optional(),
 }).refine(data => {
     if (data.role === 'student' && (!data.classId || data.classId.length === 0)) {
         return false;
@@ -68,6 +72,7 @@ const updateUserSchema = z.object({
   email: z.string().email("Invalid email address.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
   classId: z.string().optional(),
+  inchargeOfClasses: z.array(z.string()).optional(),
 });
 
 
@@ -81,6 +86,7 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
       password: "",
       role: role,
       classId: "",
+      inchargeOfClasses: [],
     },
   });
 
@@ -104,6 +110,9 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
       });
     }
   };
+  
+  const selectedClasses = form.watch('inchargeOfClasses') || [];
+  const classMap = new Map(classList.map(c => [c.id, c.name]));
 
   return (
     <Form {...form}>
@@ -176,6 +185,55 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
           />
         )}
         
+        {role === 'faculty' && (
+           <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
+              <FormItem>
+                <FormLabel>In-charge of Classes (Optional)</FormLabel>
+                 <FormControl>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                <div className="truncate">
+                                    {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
+                                </div>
+                             </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search classes..." />
+                                <CommandList>
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {classList.map((cls) => {
+                                            const isSelected = selectedClasses.includes(cls.id);
+                                            return (
+                                                <CommandItem
+                                                    key={cls.id}
+                                                    onSelect={() => {
+                                                        const newSelection = isSelected 
+                                                            ? selectedClasses.filter(id => id !== cls.id)
+                                                            : [...selectedClasses, cls.id];
+                                                        field.onChange(newSelection);
+                                                    }}
+                                                >
+                                                    <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                        <Check className="h-4 w-4" />
+                                                    </div>
+                                                    <span>{cls.name}</span>
+                                                </CommandItem>
+                                            )
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+        )}
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
@@ -190,6 +248,9 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
 
 function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUser, setIsOpen: (open: boolean) => void, classList: IClass[], onUserUpdated: () => void }) {
   const { toast } = useToast();
+  
+  const initialInchargeClasses = user.inchargeOfClasses?.map(c => c.id) || [];
+  
   const form = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema),
     defaultValues: {
@@ -197,6 +258,7 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUs
       email: user.email,
       password: "",
       classId: user.role === 'student' ? (user as any).classId : "",
+      inchargeOfClasses: initialInchargeClasses,
     },
   });
 
@@ -219,6 +281,9 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUs
       });
     }
   };
+
+  const selectedClasses = form.watch('inchargeOfClasses') || [];
+  const classMap = new Map(classList.map(c => [c.id, c.name]));
 
   return (
     <Form {...form}>
@@ -286,6 +351,55 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: IUs
             )}
           />
         )}
+
+        {user.role === 'faculty' && (
+           <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
+              <FormItem>
+                <FormLabel>In-charge of Classes (Optional)</FormLabel>
+                 <FormControl>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                <div className="truncate">
+                                    {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
+                                </div>
+                             </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search classes..." />
+                                <CommandList>
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {classList.map((cls) => {
+                                            const isSelected = selectedClasses.includes(cls.id);
+                                            return (
+                                                <CommandItem
+                                                    key={cls.id}
+                                                    onSelect={() => {
+                                                        const newSelection = isSelected 
+                                                            ? selectedClasses.filter(id => id !== cls.id)
+                                                            : [...selectedClasses, cls.id];
+                                                        field.onChange(newSelection);
+                                                    }}
+                                                >
+                                                    <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                        <Check className="h-4 w-4" />
+                                                    </div>
+                                                    <span>{cls.name}</span>
+                                                </CommandItem>
+                                            )
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+        )}
         
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
@@ -324,7 +438,7 @@ function PasswordCell({ password }: { password?: string }) {
 }
 
 
-function UsersTable({ users, onSelectEdit, onSelectDelete }: { users: IUser[], onSelectEdit: (user: IUser) => void, onSelectDelete: (user: IUser) => void }) {
+function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUser[], onSelectEdit: (user: IUser) => void, onSelectDelete: (user: IUser) => void, role: 'student' | 'faculty' }) {
   return (
      <Table>
       <TableHeader>
@@ -332,7 +446,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete }: { users: IUser[], o
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Password</TableHead>
-          <TableHead>Assigned Class</TableHead>
+          <TableHead>{role === 'student' ? 'Assigned Class' : 'In-charge Of'}</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -344,7 +458,17 @@ function UsersTable({ users, onSelectEdit, onSelectDelete }: { users: IUser[], o
             <TableCell>
               <PasswordCell password={user.password} />
             </TableCell>
-            <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
+            <TableCell>
+                {user.role === 'student' ? (
+                    (user as any).className || 'N/A'
+                 ) : user.inchargeOfClasses && user.inchargeOfClasses.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                        {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
+                    </div>
+                ) : (
+                    'N/A'
+                )}
+            </TableCell>
             <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -412,7 +536,14 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (isAddDialogOpen || isEditDialogOpen) {
-      getClasses().then(setClassList);
+      getClasses().then((classes) => {
+         const plainClasses = classes.map(c => ({
+          ...c,
+          id: c.id.toString(),
+          inchargeFaculty: c.inchargeFaculty?.toString() || '',
+        }))
+        setClassList(plainClasses as IClass[]);
+      });
     }
   }, [isAddDialogOpen, isEditDialogOpen]);
   
@@ -478,7 +609,7 @@ export default function AdminUsersPage() {
                 Enter the details below to create a new {dialogRole} account.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
+            <div className="py-4 max-h-[70vh] overflow-y-auto pr-2">
               <AddUserForm setIsOpen={setIsAddDialogOpen} classList={classList} role={dialogRole} onUserAdded={fetchUsers} />
             </div>
           </DialogContent>
@@ -493,7 +624,7 @@ export default function AdminUsersPage() {
                 Update the details for {userToEdit?.name}.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
+            <div className="py-4 max-h-[70vh] overflow-y-auto pr-2">
               {userToEdit && <EditUserForm user={userToEdit} setIsOpen={setIsEditDialogOpen} classList={classList} onUserUpdated={fetchUsers} />}
             </div>
           </DialogContent>
@@ -516,7 +647,7 @@ export default function AdminUsersPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <UsersTable users={studentUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} />
+                    <UsersTable users={studentUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="student" />
                   )}
               </TabsContent>
               <TabsContent value="faculty">
@@ -525,7 +656,7 @@ export default function AdminUsersPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <UsersTable users={facultyUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} />
+                    <UsersTable users={facultyUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="faculty" />
                   )}
               </TabsContent>
             </Tabs>
