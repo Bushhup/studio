@@ -12,7 +12,7 @@ import { getUsers, addUser, deleteUser, type AddUserInput } from './actions';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -181,6 +181,30 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
   );
 }
 
+function PasswordCell({ password }: { password?: string }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  if (!password) {
+    return <span className="text-muted-foreground">N/A</span>;
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-mono">{isVisible ? password : '••••••••'}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={() => setIsVisible(!isVisible)}
+        aria-label={isVisible ? "Hide password" : "Show password"}
+      >
+        {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+}
+
+
 function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete: (user: IUser) => void }) {
   return (
      <Table>
@@ -198,7 +222,9 @@ function UsersTable({ users, onSelectDelete }: { users: IUser[], onSelectDelete:
           <TableRow key={user.id}>
             <TableCell className="font-medium">{user.name}</TableCell>
             <TableCell>{user.email}</TableCell>
-            <TableCell>{user.password}</TableCell>
+            <TableCell>
+              <PasswordCell password={user.password} />
+            </TableCell>
             <TableCell>{user.role === 'student' ? (user as any).className || 'N/A' : 'N/A'}</TableCell>
             <TableCell className="text-right">
                 <DropdownMenu>
@@ -386,3 +412,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    
