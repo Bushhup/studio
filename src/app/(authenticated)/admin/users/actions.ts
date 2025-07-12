@@ -124,6 +124,14 @@ export async function getUsers(): Promise<IUser[]> {
             },
             {
                 $lookup: {
+                    from: 'subjects', // collection name for subjects
+                    localField: '_id',
+                    foreignField: 'facultyId',
+                    as: 'handlingSubjects'
+                }
+            },
+            {
+                $lookup: {
                     from: 'classes',
                     localField: 'classId',
                     foreignField: '_id',
@@ -145,7 +153,8 @@ export async function getUsers(): Promise<IUser[]> {
                     role: 1,
                     classId: 1,
                     className: '$studentClass.name',
-                    inchargeOfClasses: '$inchargeClasses'
+                    inchargeOfClasses: '$inchargeClasses',
+                    handlingSubjects: '$handlingSubjects',
                 }
             }
         ]);
@@ -168,6 +177,11 @@ export async function getUsers(): Promise<IUser[]> {
                 plainUser.inchargeOfClasses = user.inchargeOfClasses.map((c: any) => ({
                     id: c._id.toString(),
                     name: c.name
+                }));
+                plainUser.handlingSubjects = user.handlingSubjects.map((s: any) => ({
+                    id: s._id.toString(),
+                    name: s.name,
+                    code: s.code
                 }));
             }
 
@@ -206,6 +220,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
 
         revalidatePath('/admin/users');
         revalidatePath('/admin/classes');
+        revalidatePath('/admin/subjects');
         return { success: true, message: `User deleted successfully.` };
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -292,6 +307,7 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
 
         revalidatePath('/admin/users');
         revalidatePath('/admin/classes');
+        revalidatePath('/admin/subjects');
         return { success: true, message: "User updated successfully." };
 
     } catch (error) {

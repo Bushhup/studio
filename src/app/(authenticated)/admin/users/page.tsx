@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check } from "lucide-react";
+import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check, BookCopy, School } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -446,7 +446,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Password</TableHead>
-          <TableHead>{role === 'student' ? 'Assigned Class' : 'In-charge Of'}</TableHead>
+          <TableHead>{role === 'student' ? 'Assigned Info' : 'Assignments'}</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -460,13 +460,29 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
             </TableCell>
             <TableCell>
                 {user.role === 'student' ? (
-                    (user as any).className || 'N/A'
-                 ) : user.inchargeOfClasses && user.inchargeOfClasses.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                        {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
+                     <Badge variant="secondary">{(user as any).className || 'N/A'}</Badge>
+                 ) : (
+                    <div className="flex flex-col gap-2">
+                        {user.inchargeOfClasses && user.inchargeOfClasses.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <School className="h-4 w-4 text-muted-foreground" />
+                                <div className="flex flex-wrap gap-1">
+                                    {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
+                                </div>
+                            </div>
+                        )}
+                         {user.handlingSubjects && user.handlingSubjects.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <BookCopy className="h-4 w-4 text-muted-foreground" />
+                                <div className="flex flex-wrap gap-1">
+                                    {user.handlingSubjects.map(s => <Badge key={s.id} variant="outline" title={s.name}>{s.code}</Badge>)}
+                                </div>
+                            </div>
+                        )}
+                        {(!user.inchargeOfClasses || user.inchargeOfClasses.length === 0) && (!user.handlingSubjects || user.handlingSubjects.length === 0) && (
+                            'N/A'
+                        )}
                     </div>
-                ) : (
-                    'N/A'
                 )}
             </TableCell>
             <TableCell className="text-right">
