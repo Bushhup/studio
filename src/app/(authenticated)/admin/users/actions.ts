@@ -310,8 +310,8 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         }
 
         // Update classId for students
-        if (userToUpdate.role === 'student') {
-            updatePayload.classId = data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined;
+        if (userToUpdate.role === 'student' && data.classId) {
+            updatePayload.classId = new mongoose.Types.ObjectId(data.classId);
         }
 
         await UserModel.updateOne({ _id: userId }, { $set: updatePayload });
@@ -348,3 +348,5 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         return { success: false, message: 'An unknown error occurred while updating the user.' };
     }
 }
+
+    
