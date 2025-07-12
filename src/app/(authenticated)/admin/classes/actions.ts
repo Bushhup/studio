@@ -46,7 +46,15 @@ export async function getClasses(): Promise<IClass[]> {
     try {
         await connectToDB();
         const classes = await ClassModel.find({}).lean();
-        return classes.map(c => ({...c, id: c._id.toString() }));
+        
+        // Manually serialize the objects to ensure they are plain objects
+        return classes.map(c => ({
+            ...c,
+            id: c._id.toString(),
+            _id: undefined, // remove _id
+            inchargeFaculty: c.inchargeFaculty.toString(),
+        })) as IClass[];
+
     } catch (error) {
         console.error('Error fetching classes:', error);
         return [];
