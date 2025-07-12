@@ -12,7 +12,7 @@ import type { Subject } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookCopy, PlusCircle, Loader2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -322,7 +322,10 @@ export default function AdminSubjectsPage() {
         </Button>
       </div>
 
-       <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+       <Dialog open={isFormDialogOpen} onOpenChange={(isOpen) => {
+          if (!isOpen) setSubjectToEdit(null); // Reset edit state on close
+          setIsFormDialogOpen(isOpen);
+       }}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle className="font-headline">{subjectToEdit ? 'Edit Subject' : 'Add New Subject'}</DialogTitle>

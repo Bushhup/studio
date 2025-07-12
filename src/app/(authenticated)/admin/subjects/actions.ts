@@ -64,8 +64,8 @@ export async function getSubjects(): Promise<(Subject & { className: string, fac
             id: subject._id.toString(),
             name: subject.name,
             code: subject.code,
-            classId: subject.classId._id.toString(),
-            facultyId: subject.facultyId._id.toString(),
+            classId: subject.classId?._id.toString() ?? '',
+            facultyId: subject.facultyId?._id.toString() ?? '',
             className: (subject.classId as any)?.name || 'N/A',
             facultyName: (subject.facultyId as any)?.name || 'N/A',
         }));
@@ -96,7 +96,7 @@ export async function updateSubject(subjectId: string, data: SubjectInput): Prom
         
         if (data.code !== subjectToUpdate.code) {
             const existingSubject = await SubjectModel.findOne({ code: data.code });
-            if (existingSubject) {
+            if (existingSubject && existingSubject._id.toString() !== subjectId) {
                 return { success: false, message: 'A subject with this code already exists.' };
             }
         }
