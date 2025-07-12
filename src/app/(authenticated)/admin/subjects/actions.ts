@@ -57,32 +57,63 @@ export type ExtendedSubject = Subject & { className: string, facultyName: string
 export async function getSubjects(): Promise<ExtendedSubject[]> {
     try {
         await connectToDB();
-        // Use .lean() to get plain JavaScript objects from the query
-        const subjects = await SubjectModel.find({})
-            .populate('classId', 'name')
-            .populate('facultyId', 'name')
-            .lean();
+        
+        const subjectsData = await SubjectModel.aggregate([
+            {
+                $lookup: {
+                    from: 'classes', // The collection name for the Class model
+                    localField: 'classId',
+                    foreignField: '_id',
+                    as: 'classDetails'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$classDetails',
+                    preserveNullAndEmptyArrays: true // Keep subjects even if their class is deleted
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users', // The collection name for the User model
+                    localField: 'facultyId',
+                    foreignField: '_id',
+                    as: 'facultyDetails'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$facultyDetails',
+                    preserveNullAndEmptyArrays: true // Keep subjects even if their faculty is deleted
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    code: 1,
+                    classId: 1,
+                    facultyId: 1,
+                    className: { $ifNull: ['$classDetails.name', 'N/A'] },
+                    facultyName: { $ifNull: ['$facultyDetails.name', 'N/A'] }
+                }
+            }
+        ]);
+        
+        // Convert the aggregated data to the expected shape
+        return subjectsData.map(subject => ({
+            id: subject._id.toString(),
+            name: subject.name,
+            code: subject.code,
+            classId: subject.classId.toString(),
+            facultyId: subject.facultyId.toString(),
+            className: subject.className,
+            facultyName: subject.facultyName,
+        }));
 
-        // The .lean() method returns plain objects, so we cast the populated fields
-        // to a type that reflects their potential structure or null if not found.
-        return subjects.map(subject => {
-            const classIdObj = subject.classId as { _id: mongoose.Types.ObjectId; name: string } | null;
-            const facultyIdObj = subject.facultyId as { _id: mongoose.Types.ObjectId; name: string } | null;
-
-            return {
-                id: subject._id.toString(),
-                name: subject.name,
-                code: subject.code,
-                // Safely access properties, providing fallbacks if the populated document is null
-                classId: classIdObj?._id.toString() || '',
-                facultyId: facultyIdObj?._id.toString() || '',
-                className: classIdObj?.name || 'N/A',
-                facultyName: facultyIdObj?.name || 'N/A',
-            };
-        });
     } catch (error) {
-        console.error('Error fetching subjects:', error);
-        return [];
+        console.error('Error fetching subjects with aggregate:', error);
+        return []; // Return empty array on error
     }
 }
 
