@@ -14,19 +14,19 @@ body {
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 270 100% 25%; /* Indigo #4B0082 */
-    --primary-foreground: 0 0% 98%; /* White/Light for text on Indigo */
+    --primary: 276 100% 50%; /* Brighter Violet #8F00FF */
+    --primary-foreground: 0 0% 98%; /* White/Light for text on Violet */
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 276 100% 50%; /* Violet #8F00FF */
-    --accent-foreground: 0 0% 98%; /* White/Light for text on Violet */
+    --accent: 270 100% 40%; /* Indigo for accents now */
+    --accent-foreground: 0 0% 98%; /* White/Light for text on Indigo */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 80%; 
     --input: 240 5.9% 85%; 
-    --ring: 276 100% 50%; /* Accent color for rings */
+    --ring: 276 100% 50%; /* Primary color for rings */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -37,10 +37,10 @@ body {
     /* Sidebar specific colors */
     --sidebar-background: 0 0% 98%; /* Very light gray, almost white */
     --sidebar-foreground: 240 5.3% 26.1%; /* Dark text */
-    --sidebar-primary: 270 100% 25%; /* Indigo for active/primary items */
-    --sidebar-primary-foreground: 0 0% 98%; /* Light text on indigo */
-    --sidebar-accent: 276 100% 50%; /* Violet for hover/accent items */
-    --sidebar-accent-foreground: 0 0% 98%; /* Light text on violet */
+    --sidebar-primary: 276 100% 50%; /* Brighter Violet for active/primary items */
+    --sidebar-primary-foreground: 0 0% 98%; /* Light text on violet */
+    --sidebar-accent: 270 100% 40%; /* Indigo for hover/accent items */
+    --sidebar-accent-foreground: 0 0% 98%; /* Light text on indigo */
     --sidebar-border: 240 5.9% 90%; /* Border for sidebar elements */
     --sidebar-ring: 276 100% 50%; /* Violet for focus rings */
   }
@@ -52,14 +52,14 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 270 100% 75%; /* Lighter Indigo for dark mode */
-    --primary-foreground: 270 100% 15%; 
+    --primary: 276 100% 70%; /* Lighter Violet for dark mode */
+    --primary-foreground: 276 100% 10%; 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 276 100% 70%; /* Lighter Violet for dark mode */
-    --accent-foreground: 276 100% 10%;
+    --accent: 270 100% 75%; /* Lighter Indigo for dark mode accents */
+    --accent-foreground: 270 100% 15%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
@@ -74,10 +74,10 @@ body {
     /* Dark Sidebar specific colors */
     --sidebar-background: 240 5.9% 10%; /* Dark gray */
     --sidebar-foreground: 0 0% 95%; /* Light text */
-    --sidebar-primary: 270 100% 75%; /* Lighter Indigo */
-    --sidebar-primary-foreground: 270 100% 15%;
-    --sidebar-accent: 276 100% 70%; /* Lighter Violet */
-    --sidebar-accent-foreground: 276 100% 10%;
+    --sidebar-primary: 276 100% 70%; /* Lighter Violet */
+    --sidebar-primary-foreground: 276 100% 10%;
+    --sidebar-accent: 270 100% 75%; /* Lighter Indigo */
+    --sidebar-accent-foreground: 270 100% 15%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 276 100% 70%;
   }
