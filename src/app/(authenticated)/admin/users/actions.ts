@@ -114,7 +114,7 @@ export async function getUsers(): Promise<IUser[]> {
         
         const users = await UserModel.aggregate([
             { $match: { role: { $ne: 'admin' } } },
-            { $sort: { name: 1 } }, // Sort by name in ascending order
+            { $sort: { name: 1 } },
             {
                 $lookup: {
                     from: 'classes',
@@ -125,9 +125,28 @@ export async function getUsers(): Promise<IUser[]> {
             },
             {
                 $lookup: {
-                    from: 'subjects', // collection name for subjects
-                    localField: '_id',
-                    foreignField: 'facultyId',
+                    from: 'subjects',
+                    let: { faculty_id: '$_id' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$facultyId', '$$faculty_id'] } } },
+                        {
+                            $lookup: {
+                                from: 'classes',
+                                localField: 'classId',
+                                foreignField: '_id',
+                                as: 'classDetails'
+                            }
+                        },
+                        { $unwind: { path: '$classDetails', preserveNullAndEmptyArrays: true } },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                code: 1,
+                                className: { $ifNull: ['$classDetails.name', 'N/A'] }
+                            }
+                        }
+                    ],
                     as: 'handlingSubjects'
                 }
             },
@@ -182,7 +201,8 @@ export async function getUsers(): Promise<IUser[]> {
                 plainUser.handlingSubjects = user.handlingSubjects.map((s: any) => ({
                     id: s._id.toString(),
                     name: s.name,
-                    code: s.code
+                    code: s.code,
+                    className: s.className
                 }));
             }
 

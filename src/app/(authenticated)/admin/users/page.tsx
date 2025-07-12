@@ -478,8 +478,12 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
                 </TableCell>
                 <TableCell>
                   {user.handlingSubjects && user.handlingSubjects.length > 0 ? (
-                     <div className="flex flex-wrap gap-1">
-                      {user.handlingSubjects.map(s => <Badge key={s.id} variant="outline" title={s.name}>{s.code}</Badge>)}
+                     <div className="flex flex-col gap-1 items-start">
+                      {user.handlingSubjects.map(s => (
+                        <Badge key={s.id} variant="outline" className="font-normal">
+                          {s.name} <span className="text-muted-foreground ml-1.5">({s.className})</span>
+                        </Badge>
+                      ))}
                     </div>
                   ) : <span className="text-muted-foreground">N/A</span>}
                 </TableCell>
