@@ -18,16 +18,18 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const result = await loginAction({ 
+        const loginResult = await loginAction({ 
           username: credentials.username, 
           password: credentials.password, 
           role: credentials.role as Role 
         });
 
-        if (result.success) {
-          // Fetch user details to store in the session
+        if (loginResult.success) {
+          // If login is successful, fetch the complete user details to return to NextAuth
           const user = await getUserDetails(credentials.username, credentials.role as Role);
+          
           if (user) {
+            // Return the user object for NextAuth to use
             return {
               id: user.id,
               name: user.name,
@@ -37,7 +39,9 @@ export const authOptions: NextAuthOptions = {
             };
           }
         }
-        return null; // Return null if authentication fails
+        
+        // If login failed or user details couldn't be fetched, return null
+        return null;
       },
     }),
   ],
@@ -49,7 +53,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // When a user signs in, the `user` object is available.
+      // When a user signs in, the `user` object is available from authorize.
       // We persist the user's role and id to the token.
       if (user) {
         token.id = user.id;
