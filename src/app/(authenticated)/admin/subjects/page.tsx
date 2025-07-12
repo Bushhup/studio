@@ -269,7 +269,7 @@ export default function AdminSubjectsPage() {
                 getUsersByRole('faculty')
             ]);
             setSubjects(fetchedSubjects);
-            setClassList(fetchedClasses.map(c => ({ id: c.id, name: c.name, academicYear: c.academicYear })));
+            setClassList(fetchedClasses.map(c => ({ id: c.id.toString(), name: c.name, academicYear: c.academicYear })));
             setFacultyList(fetchedFaculty.map(f => ({ id: f.id.toString(), name: f.name })));
         } catch (error) {
             toast({ title: "Error", description: "Could not fetch page data.", variant: "destructive" });

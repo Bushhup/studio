@@ -63,6 +63,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             .lean();
 
         return subjects.map(subject => {
+            // Safely access populated data and convert ObjectIDs to strings
             const classIdObj = subject.classId as { _id: mongoose.Types.ObjectId, name: string } | null;
             const facultyIdObj = subject.facultyId as { _id: mongoose.Types.ObjectId, name: string } | null;
 
@@ -70,8 +71,8 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
                 id: subject._id.toString(),
                 name: subject.name,
                 code: subject.code,
-                classId: classIdObj?._id?.toString() ?? '',
-                facultyId: facultyIdObj?._id?.toString() ?? '',
+                classId: classIdObj?._id.toString() || '',
+                facultyId: facultyIdObj?._id.toString() || '',
                 className: classIdObj?.name || 'N/A',
                 facultyName: facultyIdObj?.name || 'N/A',
             };
