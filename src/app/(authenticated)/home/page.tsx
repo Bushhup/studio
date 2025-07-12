@@ -5,30 +5,10 @@ import { useState, useEffect } from 'react';
 import { EventCard } from '@/components/event-card';
 import type { AppEvent } from '@/types';
 import { CalendarClock, List, LayoutGrid, Loader2 } from 'lucide-react';
-import { connectToDB } from '@/lib/mongoose';
-import Event from '@/models/event.model';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { getEvents } from './actions';
 
-async function getEvents(): Promise<AppEvent[]> {
-  // This function is defined here but will be called within a useEffect hook.
-  // In a real application, this might be moved to a dedicated actions file.
-  await connectToDB();
-  try {
-    const events = await Event.find({}).sort({ date: 'asc' }).lean();
-
-    return events.map((event: any) => ({
-      ...event,
-      id: event._id.toString(),
-      date: event.date.toISOString(),
-      _id: undefined,
-      __v: undefined,
-    }));
-  } catch (error) {
-    console.error('Failed to fetch events:', error);
-    return [];
-  }
-}
 
 function EventListView({ events }: { events: AppEvent[] }) {
   return (
@@ -64,11 +44,16 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchEvents() {
       setIsLoading(true);
-      const fetchedEvents = await getEvents();
-      // The sorting can be done client-side as well
-      const sortedEvents = fetchedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setEvents(sortedEvents);
-      setIsLoading(false);
+      try {
+        const fetchedEvents = await getEvents();
+        const sortedEvents = fetchedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        setEvents(sortedEvents);
+      } catch (error) {
+          console.error('Failed to fetch events:', error);
+          // Optionally, set an error state to show a message to the user
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchEvents();
   }, []);
