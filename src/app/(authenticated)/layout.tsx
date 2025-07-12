@@ -25,7 +25,6 @@ export default function AuthenticatedLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
 
   const role = session?.user?.role;
 
@@ -35,19 +34,6 @@ export default function AuthenticatedLayout({
     }
   }, [status, router]);
   
-  // Role-based route protection
-  useEffect(() => {
-      if (status === 'authenticated' && role) {
-        if (pathname.startsWith('/admin') && role !== 'admin') {
-            router.replace('/home');
-        } else if (pathname.startsWith('/faculty') && role !== 'faculty') {
-            router.replace('/home');
-        } else if (pathname.startsWith('/student') && role !== 'student') {
-            router.replace('/home');
-        }
-      }
-  }, [status, role, pathname, router]);
-
   if (status === 'loading' || !role) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">

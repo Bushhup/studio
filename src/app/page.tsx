@@ -59,10 +59,16 @@ export default function LoginPage() {
     
     setIsLoggingIn(false);
 
-    if (!result?.ok || result?.error) {
+    if (result?.ok && !result?.error) {
+        let redirectPath = '/home';
+        if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
+        else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
+        else if (selectedRole === 'student') redirectPath = '/student/dashboard';
+        router.replace(redirectPath);
+    } else {
       toast({
         title: "Login Failed",
-        description: "Invalid credentials or role. Please try again.",
+        description: result?.error || "Invalid credentials or role. Please try again.",
         variant: "destructive",
       });
     }
@@ -135,7 +141,7 @@ export default function LoginPage() {
                     type="text"
                     placeholder="Enter your username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => setUsername(e.targesrc/app/(authenticated)/layout.tsxt.value)}
                     required
                 />
                 </div>
