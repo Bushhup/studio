@@ -52,7 +52,9 @@ export async function createSubject(data: SubjectInput): Promise<{ success: bool
     }
 }
 
-export async function getSubjects(): Promise<(Subject & { className: string, facultyName: string })[]> {
+export type ExtendedSubject = Subject & { className: string, facultyName: string };
+
+export async function getSubjects(): Promise<ExtendedSubject[]> {
     try {
         await connectToDB();
         const subjects = await SubjectModel.find({})
@@ -103,8 +105,8 @@ export async function updateSubject(subjectId: string, data: SubjectInput): Prom
         
         subjectToUpdate.name = data.name;
         subjectToUpdate.code = data.code;
-        subjectToUpdate.classId = data.classId;
-        subjectToUpdate.facultyId = data.facultyId;
+        subjectToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
+        subjectToUpdate.facultyId = new mongoose.Types.ObjectId(data.facultyId);
 
         await subjectToUpdate.save();
 

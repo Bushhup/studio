@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { IClass } from '@/models/class.model';
 import type { IUser } from '@/models/user.model';
-import type { Subject } from '@/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 
-import { createSubject, getSubjects, updateSubject, deleteSubject, type SubjectInput } from './actions';
+import { createSubject, getSubjects, updateSubject, deleteSubject, type SubjectInput, type ExtendedSubject } from './actions';
 import { getClasses } from '../classes/actions';
 import { getUsersByRole } from '../users/actions';
 
@@ -41,8 +40,6 @@ const subjectSchema = z.object({
   classId: z.string().min(1, "You must select a class."),
   facultyId: z.string().min(1, "You must select a faculty handler."),
 });
-
-type ExtendedSubject = Subject & { className: string; facultyName: string };
 
 function SubjectForm({ 
   setIsOpen, 
@@ -273,7 +270,7 @@ export default function AdminSubjectsPage() {
             ]);
             setSubjects(fetchedSubjects);
             setClassList(fetchedClasses.map(c => ({ id: c.id, name: c.name, academicYear: c.academicYear })));
-            setFacultyList(fetchedFaculty.map(f => ({ id: f.id, name: f.name })));
+            setFacultyList(fetchedFaculty.map(f => ({ id: f.id.toString(), name: f.name })));
         } catch (error) {
             toast({ title: "Error", description: "Could not fetch page data.", variant: "destructive" });
         } finally {
