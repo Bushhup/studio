@@ -15,6 +15,9 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
     await connectToDB();
 
     const user = await UserModel.findById(userId).lean();
+    if (!user && userRole !== 'admin') {
+        return []; // If user not found (and isn't admin), return no events
+    }
 
     const query: any = {};
 
@@ -22,7 +25,7 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
     if (userRole !== 'admin') {
       const orConditions: any[] = [
         // Events with no classes assigned (global events)
-        { classIds: { $exists: true, $size: 0 } }, 
+        { $or: [ { classIds: { $exists: false } }, { classIds: { $size: 0 } } ]},
       ];
 
       // If the user is a student and has a classId, find events for their class
