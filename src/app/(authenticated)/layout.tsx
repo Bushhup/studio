@@ -16,6 +16,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { GraduationCap } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AuthenticatedLayout({
   children,
