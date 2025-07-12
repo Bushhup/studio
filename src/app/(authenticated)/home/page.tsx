@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { EventCard } from '@/components/event-card';
 import type { AppEvent, IClass, IUser } from '@/types';
-import { CalendarClock, List, LayoutGrid, Loader2, Plus, Calendar as CalendarIcon, X } from 'lucide-react';
+import { CalendarClock, List, LayoutGrid, Loader2, Plus, Calendar as CalendarIcon, X, Check, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,14 +18,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { getEventsForUser, addEvent, AddEventInput } from './actions';
+import { getEventsForUser, addEvent } from './actions';
 import { getClasses } from '../admin/classes/actions';
 import { getUsersByRole } from '../admin/users/actions';
 import { useMockAuth } from '@/hooks/use-mock-auth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-
+import Image from 'next/image';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 function EventListView({ events }: { events: AppEvent[] }) {
   return (
@@ -61,7 +62,7 @@ const eventSchema = z.object({
   date: z.date({ required_error: "A date is required." }),
   type: z.enum(['lecture', 'hackathon', 'fest', 'internship_fair', 'exam', 'notice']),
   location: z.string().min(3, 'Location is required.'),
-  image: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
+  image: z.string().optional().or(z.literal('')),
   classIds: z.array(z.string()).optional(),
   inchargeFacultyId: z.string().optional(),
 });
@@ -78,6 +79,9 @@ function AddEventForm({
     faculty: Pick<IUser, 'id' | 'name'>[]
 }) {
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+
     const form = useForm<z.infer<typeof eventSchema>>({
         resolver: zodResolver(eventSchema),
         defaultValues: {
@@ -104,6 +108,19 @@ function AddEventForm({
         }
     }
     
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const dataUrl = reader.result as string;
+                setImagePreview(dataUrl);
+                form.setValue('image', dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const selectedClasses = form.watch('classIds') || [];
     const classMap = new Map(classes.map(c => [c.id, c.name]));
 
@@ -212,9 +229,28 @@ function AddEventForm({
                     <FormMessage /></FormItem>
                 )} />
 
-                 <FormField control={form.control} name="image" render={({ field }) => (
-                    <FormItem><FormLabel>Image URL (Optional)</FormLabel><FormControl><Input placeholder="https://placehold.co/600x400.png" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <FormItem>
+                    <FormLabel>Event Image (Optional)</FormLabel>
+                    <FormControl>
+                         <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Image
+                        </Button>
+                    </FormControl>
+                     <Input 
+                        type="file" 
+                        className="hidden" 
+                        ref={fileInputRef} 
+                        accept="image/*"
+                        onChange={handleFileChange}
+                    />
+                    {imagePreview && (
+                        <div className="mt-4 relative w-full h-48">
+                            <Image src={imagePreview} alt="Event image preview" fill style={{objectFit: 'contain'}} className="rounded-md border"/>
+                        </div>
+                    )}
+                </FormItem>
+
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
@@ -226,11 +262,6 @@ function AddEventForm({
         </Form>
     );
 }
-
-// Needed for multi-select popover
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check } from "lucide-react";
-
 
 export default function HomePage() {
   const [events, setEvents] = useState<AppEvent[]>([]);
@@ -300,14 +331,11 @@ export default function HomePage() {
         </div>
       ) : viewMode === 'timeline' ? (
         <div className="relative pl-8">
-            {/* Vertical timeline bar */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-border rounded-full ml-[calc(0.375rem-1px)]"></div>
-
             {events.map((event) => (
             <div key={event.id} className="mb-10 flex items-start">
-                {/* Timeline Dot */}
                 <div className="absolute left-0 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-background mt-1"></div>
-                <div className="ml-4 flex-1"> {/* Indent content to the right of the dot */}
+                <div className="ml-4 flex-1">
                 <EventCard event={event} />
                 </div>
             </div>

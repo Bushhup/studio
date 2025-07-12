@@ -71,7 +71,7 @@ const eventSchema = z.object({
   date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date format.' }),
   type: z.enum(['lecture', 'hackathon', 'fest', 'internship_fair', 'exam', 'notice']),
   location: z.string().min(3, 'Location is required.'),
-  image: z.string().url().optional().or(z.literal('')),
+  image: z.string().optional().or(z.literal('')),
   classIds: z.array(z.string()).optional(),
   inchargeFacultyId: z.string().optional(),
 });
