@@ -439,6 +439,8 @@ function PasswordCell({ password }: { password?: string }) {
 
 
 function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUser[], onSelectEdit: (user: IUser) => void, onSelectDelete: (user: IUser) => void, role: 'student' | 'faculty' }) {
+  const isFacultyRole = role === 'faculty';
+
   return (
      <Table>
       <TableHeader>
@@ -446,7 +448,14 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Password</TableHead>
-          <TableHead>{role === 'student' ? 'Assigned Info' : 'Assignments'}</TableHead>
+          {isFacultyRole ? (
+            <>
+              <TableHead>In-charge Of</TableHead>
+              <TableHead>Subjects Handled</TableHead>
+            </>
+          ) : (
+            <TableHead>Assigned Class</TableHead>
+          )}
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -458,33 +467,28 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
             <TableCell>
               <PasswordCell password={user.password} />
             </TableCell>
-            <TableCell>
-                {user.role === 'student' ? (
-                     <Badge variant="secondary">{(user as any).className || 'N/A'}</Badge>
-                 ) : (
-                    <div className="flex flex-col gap-2">
-                        {user.inchargeOfClasses && user.inchargeOfClasses.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <School className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex flex-wrap gap-1">
-                                    {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
-                                </div>
-                            </div>
-                        )}
-                         {user.handlingSubjects && user.handlingSubjects.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <BookCopy className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex flex-wrap gap-1">
-                                    {user.handlingSubjects.map(s => <Badge key={s.id} variant="outline" title={s.name}>{s.code}</Badge>)}
-                                </div>
-                            </div>
-                        )}
-                        {(!user.inchargeOfClasses || user.inchargeOfClasses.length === 0) && (!user.handlingSubjects || user.handlingSubjects.length === 0) && (
-                            'N/A'
-                        )}
+            {isFacultyRole ? (
+              <>
+                <TableCell>
+                  {user.inchargeOfClasses && user.inchargeOfClasses.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {user.inchargeOfClasses.map(c => <Badge key={c.id} variant="secondary">{c.name}</Badge>)}
                     </div>
-                )}
-            </TableCell>
+                  ) : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  {user.handlingSubjects && user.handlingSubjects.length > 0 ? (
+                     <div className="flex flex-wrap gap-1">
+                      {user.handlingSubjects.map(s => <Badge key={s.id} variant="outline" title={s.name}>{s.code}</Badge>)}
+                    </div>
+                  ) : 'N/A'}
+                </TableCell>
+              </>
+            ) : (
+              <TableCell>
+                <Badge variant="secondary">{(user as any).className || 'N/A'}</Badge>
+              </TableCell>
+            )}
             <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -512,7 +516,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: IUse
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={5} className="h-24 text-center">
+            <TableCell colSpan={isFacultyRole ? 6 : 5} className="h-24 text-center">
               No users found.
             </TableCell>
           </TableRow>
