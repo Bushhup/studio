@@ -19,7 +19,7 @@ const eventTypeColors: Record<AppEvent['type'], string> = {
 };
 
 export function EventCard({ event }: EventCardProps) {
-  const { title, date, description, type, image, dataAiHint } = event;
+  const { title, date, description, type, image, dataAiHint, location } = event;
   
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -36,8 +36,8 @@ export function EventCard({ event }: EventCardProps) {
           <Image 
             src={image} 
             alt={title} 
-            layout="fill" 
-            objectFit="cover"
+            fill={true}
+            style={{ objectFit: 'cover' }}
             data-ai-hint={dataAiHint || "event image"}
           />
         </div>
@@ -49,16 +49,21 @@ export function EventCard({ event }: EventCardProps) {
             <Tag className="mr-1 h-3 w-3" /> {type.replace('_', ' ')}
           </Badge>
         </div>
-        <div className="flex items-center text-sm text-muted-foreground">
+        <div className="flex items-center text-sm text-muted-foreground pt-1">
           <CalendarDays className="mr-2 h-4 w-4" />
           <time dateTime={date}>{formattedDate}</time>
         </div>
+         {location && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="mr-2 h-4 w-4" />
+            <span>{location}</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <p className="text-foreground/80 line-clamp-3">{description}</p>
       </CardContent>
       <CardFooter className="flex justify-between items-center text-sm text-muted-foreground">
-        {/* Can add more info like location or organizer */}
         <div className="flex items-center">
            <Info className="mr-2 h-4 w-4" />
            <span>More details available.</span>

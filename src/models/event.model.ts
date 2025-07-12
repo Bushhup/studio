@@ -15,6 +15,7 @@ const EventSchema = new Schema<IEvent>({
     enum: ['lecture', 'hackathon', 'fest', 'internship_fair', 'exam', 'notice'],
     required: true 
   },
+  location: { type: String, required: true },
   image: { type: String, required: false },
   dataAiHint: { type: String, required: false },
 });

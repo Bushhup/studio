@@ -15,6 +15,7 @@ export interface AppEvent {
   date: string; // ISO string
   description: string;
   type: 'lecture' | 'hackathon' | 'fest' | 'internship_fair' | 'exam' | 'notice';
+  location: string;
   image?: string;
   dataAiHint?: string;
 }
