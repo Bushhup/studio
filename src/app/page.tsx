@@ -22,7 +22,7 @@ const roleIcons = {
 export default function LoginPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [username, setUsername] =useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
@@ -31,7 +31,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     const welcomeTimer = setTimeout(() => {
-        // If the user is already authenticated when the timer ends, redirect them.
         if (status === 'authenticated') {
             let redirectPath = '/home';
             if (session.user.role === 'admin') redirectPath = '/admin/dashboard';
@@ -39,10 +38,9 @@ export default function LoginPage() {
             else if (session.user.role === 'student') redirectPath = '/student/dashboard';
             router.replace(redirectPath);
         } else {
-            // Otherwise, just show the login form.
             setShowWelcome(false);
         }
-    }, 1500); // 1.5 seconds
+    }, 1500);
 
     return () => clearTimeout(welcomeTimer);
   }, [status, session, router]);
@@ -62,7 +60,7 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     const result = await signIn('credentials', {
-      redirect: false, // We handle the redirect manually
+      redirect: false,
       username: username,
       password: password,
       role: selectedRole,
@@ -79,12 +77,11 @@ export default function LoginPage() {
         if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
         else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
         else if (selectedRole === 'student') redirectPath = '/student/dashboard';
-        // Use router.push for immediate redirection
         router.push(redirectPath);
     } else {
       toast({
         title: "Login Failed",
-        description: result?.error || "Invalid credentials or role. Please try again.",
+        description: "Invalid credentials or role. Please try again.",
         variant: "destructive",
       });
     }
@@ -180,7 +177,7 @@ export default function LoginPage() {
                   />
                   </div>
                   <div className="flex justify-center">
-                    <Button type="submit" disabled={!username || !password || isLoggingIn}>
+                    <Button type="submit" disabled={!username || !password || isLoggingIn} className="w-full">
                       {isLoggingIn ? (
                         <>
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />

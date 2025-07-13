@@ -25,8 +25,6 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (user) {
-            // The login action now returns the full user object on success.
-            // This object, including the id, is returned to NextAuth.
             return {
                 id: user.id,
                 name: user.name,
@@ -34,11 +32,11 @@ export const authOptions: NextAuthOptions = {
                 role: user.role,
                 classId: user.classId,
             };
-        } else {
-            // If loginAction returns null, it means authentication failed.
-            // Return null to indicate failure to NextAuth, which then sets the error message.
-            return null;
         }
+        
+        // If loginAction returns null, authentication failed.
+        // Return null to indicate failure to NextAuth.
+        return null;
       },
     }),
   ],
@@ -50,8 +48,6 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // When a user signs in, the `user` object is available from authorize.
-      // We persist the user's role and id to the token.
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
@@ -60,8 +56,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // We pass the role and id from the token to the session object,
-      // so it's available on the client side.
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
@@ -70,7 +64,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET, // Ensure this is set in your .env file
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export const auth = () => getServerSession(authOptions);
