@@ -15,33 +15,43 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.role || !credentials.username || !credentials.password) {
-          return null;
+          throw new Error("Invalid credentials provided.");
         }
 
-        const loginResult = await loginAction({ 
-          username: credentials.username, 
-          password: credentials.password, 
-          role: credentials.role as Role 
-        });
+        try {
+            const loginResult = await loginAction({ 
+                username: credentials.username, 
+                password: credentials.password, 
+                role: credentials.role as Role 
+            });
 
-        if (loginResult.success) {
-          // If login is successful, fetch the complete user details to return to NextAuth
-          const user = await getUserDetails(credentials.username, credentials.role as Role);
-          
-          if (user) {
-            // Return the user object for NextAuth to use
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              classId: user.classId,
-            };
-          }
+            if (loginResult.success) {
+                // If login is successful, fetch the complete user details to return to NextAuth
+                const user = await getUserDetails(credentials.username, credentials.role as Role);
+                
+                if (user) {
+                    // Return the user object for NextAuth to use
+                    return {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                        classId: user.classId,
+                    };
+                } else {
+                     // This case should ideally not happen if login succeeds, but as a safeguard:
+                    throw new Error("Login succeeded but user details could not be found.");
+                }
+            } else {
+                // If loginAction returns success: false, throw an error with the message
+                throw new Error(loginResult.message || "Invalid credentials.");
+            }
+        } catch (error) {
+            // Catch any errors thrown from loginAction or getUserDetails
+            // and re-throw them so NextAuth can display them to the user.
+            const errorMessage = (error instanceof Error) ? error.message : "An unknown authentication error occurred.";
+            throw new Error(errorMessage);
         }
-        
-        // If login failed or user details couldn't be fetched, return null
-        return null;
       },
     }),
   ],
