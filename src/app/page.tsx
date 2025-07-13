@@ -106,10 +106,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-6 sm:p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       {showWelcome ? (
           <div className="animate-in fade-in-0 duration-1000">
-            <h1 className="text-8xl sm:text-9xl font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
+            <h1 className="text-7xl sm:text-8xl md:text-9xl font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
               Welcome
             </h1>
           </div>
