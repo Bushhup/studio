@@ -11,6 +11,8 @@ const SubjectSchema = new Schema<ISubject>({
   code: { type: String, required: true, unique: true },
   classId: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
   facultyId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+}, {
+  collection: 'subjects' // Explicitly set collection name
 });
 
 const SubjectModel = models.Subject || model<ISubject>('Subject', SubjectSchema);

@@ -184,11 +184,16 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                 }
             },
             {
+                $addFields: {
+                   password: '$password' // Make password available
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     name: 1,
                     email: 1,
-                    password: 1, // Explicitly include the password field
+                    password: 1,
                     role: 1,
                     classId: 1,
                     className: '$studentClass.name',
@@ -306,38 +311,36 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
             return { success: false, message: "Invalid user ID." };
         }
 
-        const userToUpdate = await UserModel.findById(userId);
+        const userToUpdate = await UserModel.findById(userId).select('+password');
         if (!userToUpdate) {
             return { success: false, message: "User not found." };
         }
         
-        const updatePayload: Partial<IUser> = {};
-
         // Check for uniqueness if email or name are being changed
         if (data.email && data.email !== userToUpdate.email) {
             const existingUser = await UserModel.findOne({ email: data.email, _id: { $ne: userId } });
             if (existingUser) return { success: false, message: "Email already in use." };
-            updatePayload.email = data.email;
+            userToUpdate.email = data.email;
         }
 
         if (data.name && data.name !== userToUpdate.name) {
              const existingUser = await UserModel.findOne({ name: data.name, _id: { $ne: userId } });
             if (existingUser) return { success: false, message: "Username already in use." };
-            updatePayload.name = data.name;
+            userToUpdate.name = data.name;
         }
 
         // Update password only if a new one is provided
         if (data.password) {
-            updatePayload.password = data.password;
+            userToUpdate.password = data.password;
         }
 
         // Update classId for students
         if (userToUpdate.role === 'student' && data.classId) {
-            updatePayload.classId = new mongoose.Types.ObjectId(data.classId);
+            userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
         }
-
-        await UserModel.updateOne({ _id: userId }, { $set: updatePayload });
-
+        
+        await userToUpdate.save();
+        
         if (userToUpdate.role === 'faculty') {
             const facultyId = new mongoose.Types.ObjectId(userId);
             

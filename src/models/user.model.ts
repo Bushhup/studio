@@ -17,12 +17,12 @@ const UserSchema = new Schema<IUser>({
     enum: ['admin', 'faculty', 'student'],
     required: true,
   },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false }, // Hide by default
   classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false }, // Link to the Class model for students
+}, {
+  collection: 'users' // Explicitly set collection name
 });
 
 const UserModel = models.User || model<IUser>('User', UserSchema);
 
 export default UserModel;
-
-    

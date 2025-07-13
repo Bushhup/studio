@@ -10,6 +10,8 @@ const ClassSchema = new Schema<IClass>({
   name: { type: String, required: true },
   academicYear: { type: String, required: true },
   inchargeFaculty: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+}, {
+  collection: 'classes' // Explicitly set collection name
 });
 
 const ClassModel = models.Class || model<IClass>('Class', ClassSchema);

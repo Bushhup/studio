@@ -63,7 +63,7 @@ export async function getUserDetails(username: string, role: Role): Promise<User
     
     try {
         await connectToDB();
-        const user = await UserModel.findOne({ name: username, role: role }).lean();
+        const user = await UserModel.findOne({ name: username, role: role }).select('+password').lean();
 
         if (!user) {
             return null;
@@ -73,6 +73,7 @@ export async function getUserDetails(username: string, role: Role): Promise<User
             id: user._id.toString(),
             name: user.name,
             email: user.email,
+            password: user.password,
             role: user.role as Role,
             classId: user.classId ? user.classId.toString() : undefined,
         };
