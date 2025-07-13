@@ -65,7 +65,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
         const subjectsData = await SubjectModel.aggregate([
             {
                 $lookup: {
-                    from: 'Class', // The collection name for the Class model
+                    from: 'classes', // The collection name for the Class model
                     localField: 'classId',
                     foreignField: '_id',
                     as: 'classDetails'
@@ -79,7 +79,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             },
             {
                 $lookup: {
-                    from: 'User', // The collection name for the User model
+                    from: 'users', // The collection name for the User model
                     localField: 'facultyId',
                     foreignField: '_id',
                     as: 'facultyDetails'

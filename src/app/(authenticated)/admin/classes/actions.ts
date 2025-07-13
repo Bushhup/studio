@@ -123,7 +123,7 @@ export async function getClasses(): Promise<IClassWithStudentCount[]> {
         const classesWithCounts = await ClassModel.aggregate([
             {
                 $lookup: {
-                    from: 'User',
+                    from: 'users',
                     localField: '_id',
                     foreignField: 'classId',
                     as: 'students'
