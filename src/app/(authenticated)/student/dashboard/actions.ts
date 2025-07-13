@@ -34,6 +34,7 @@ export async function getStudentDashboardData(studentId: string, userRole: Role)
         const marks = await getMyMarks(studentId);
         let recentMarkText = "N/A";
         if (marks.length > 0) {
+            // getMyMarks sorts by date descending, so the first one is the most recent.
             const mostRecentMark = marks[0];
             recentMarkText = `${mostRecentMark.marksObtained} / ${mostRecentMark.maxMarks}`;
         }
@@ -44,6 +45,7 @@ export async function getStudentDashboardData(studentId: string, userRole: Role)
         
         const eventQuery: any = { date: { $gte: new Date() } };
         const orConditions: any[] = [
+            // Global events
             { classIds: { $exists: false } },
             { classIds: { $size: 0 } },
         ];
