@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { getSubjectsForFaculty, getStudentsForClass } from './actions';
+import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, type MarkInput } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Edit3, Loader2, Users, Save } from "lucide-react";
+import { ClipboardList, Loader2, Users, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,9 @@ type StudentInfo = {
   name: string;
 };
 
+type MarksRecord = Record<string, { marksObtained: number | null, maxMarks: number | null }>;
+
+
 export default function FacultyMarksPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -32,10 +35,13 @@ export default function FacultyMarksPage() {
   const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
   const [students, setStudents] = useState<StudentInfo[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [assessmentName, setAssessmentName] = useState('');
   
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [marks, setMarks] = useState<MarksRecord>({});
 
   useEffect(() => {
     if (facultyId) {
@@ -49,6 +55,7 @@ export default function FacultyMarksPage() {
   const handleSubjectChange = async (subjectId: string) => {
     setSelectedSubjectId(subjectId);
     setStudents([]);
+    setMarks({});
     if (!subjectId) return;
 
     const subject = subjects.find(s => s.id === subjectId);
@@ -57,6 +64,12 @@ export default function FacultyMarksPage() {
       try {
         const fetchedStudents = await getStudentsForClass(subject.classId);
         setStudents(fetchedStudents);
+        // Initialize empty marks for all students
+        const initialMarks = fetchedStudents.reduce((acc, student) => {
+          acc[student.id] = { marksObtained: null, maxMarks: 100 };
+          return acc;
+        }, {} as MarksRecord);
+        setMarks(initialMarks);
       } catch (error) {
         toast({ title: 'Error', description: 'Could not fetch students.', variant: 'destructive' });
       } finally {
@@ -64,14 +77,51 @@ export default function FacultyMarksPage() {
       }
     }
   };
+
+  const handleMarksChange = (studentId: string, value: string) => {
+    setMarks(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        marksObtained: value === '' ? null : Number(value)
+      }
+    }));
+  }
+
+  const handleMaxMarksChange = (studentId: string, value: string) => {
+    setMarks(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        maxMarks: value === '' ? null : Number(value)
+      }
+    }));
+  }
   
-  const handleSaveMarks = () => {
+  const handleSaveMarks = async () => {
+    if (!selectedSubjectId || !assessmentName) {
+      toast({ title: 'Missing Info', description: 'Please select a subject and enter an assessment name.', variant: 'destructive' });
+      return;
+    }
+
     setIsSaving(true);
-    // Mock saving logic
-    setTimeout(() => {
-      toast({ title: 'Marks Saved', description: 'Student marks have been updated successfully. (Mocked)' });
-      setIsSaving(false);
-    }, 1500);
+    const subject = subjects.find(s => s.id === selectedSubjectId);
+    if (!subject) return;
+
+    const marksToSave: MarkInput[] = Object.entries(marks).map(([studentId, mark]) => ({
+      studentId,
+      marksObtained: mark.marksObtained,
+      maxMarks: mark.maxMarks,
+    }));
+
+    const result = await saveOrUpdateMarks(subject.id, subject.classId, assessmentName, marksToSave);
+
+    if (result.success) {
+      toast({ title: 'Marks Saved', description: result.message });
+    } else {
+      toast({ title: 'Error', description: result.message, variant: 'destructive' });
+    }
+    setIsSaving(false);
   }
 
   return (
@@ -104,7 +154,13 @@ export default function FacultyMarksPage() {
                 )}
               </SelectContent>
             </Select>
-            <Input className="w-full sm:w-[300px]" placeholder="Enter assessment name (e.g., Unit Test 1)" disabled={!selectedSubjectId} />
+            <Input 
+              className="w-full sm:w-[300px]" 
+              placeholder="Enter assessment name (e.g., Unit Test 1)" 
+              disabled={!selectedSubjectId} 
+              value={assessmentName}
+              onChange={(e) => setAssessmentName(e.target.value)}
+            />
           </div>
 
           {isLoadingStudents ? (
@@ -132,8 +188,21 @@ export default function FacultyMarksPage() {
                                 <TableRow key={student.id}>
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>{student.name}</TableCell>
-                                    <TableCell><Input type="number" placeholder="Enter marks" /></TableCell>
-                                    <TableCell><Input type="number" defaultValue={100} /></TableCell>
+                                    <TableCell>
+                                      <Input 
+                                        type="number" 
+                                        placeholder="Enter marks"
+                                        value={marks[student.id]?.marksObtained ?? ''}
+                                        onChange={(e) => handleMarksChange(student.id, e.target.value)}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                       <Input 
+                                        type="number"
+                                        value={marks[student.id]?.maxMarks ?? 100}
+                                        onChange={(e) => handleMaxMarksChange(student.id, e.target.value)}
+                                      />
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

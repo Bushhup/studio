@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty } from '../marks/actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getMarksForClass, type MarksDistributionData } from './actions';
+import { getPerformanceDataForClass, type MarksDistributionData, type StudentToWatch } from './actions';
 
 
 const chartConfig = {
@@ -20,11 +20,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const studentsToWatch = [
-    { name: "Charlie Davis", reason: "Low Attendance (65%)", trend: <TrendingDown className="h-4 w-4 text-destructive" /> },
-    { name: "Eve Williams", reason: "Failing in DBMS", trend: <TrendingDown className="h-4 w-4 text-destructive" />},
-    { name: "Frank Miller", reason: "Improved significantly", trend: <TrendingUp className="h-4 w-4 text-green-500" />}
-];
 
 type SubjectInfo = {
   id: string;
@@ -41,7 +36,9 @@ export default function FacultyPerformancePage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingChart, setIsLoadingChart] = useState(false);
+  
   const [chartData, setChartData] = useState<MarksDistributionData[]>([]);
+  const [studentsToWatch, setStudentsToWatch] = useState<StudentToWatch[]>([]);
 
   useEffect(() => {
     if (facultyId) {
@@ -52,30 +49,35 @@ export default function FacultyPerformancePage() {
             if (data.length > 0) {
                 // Automatically select the first subject and load its data
                 handleSubjectChange(data[0].id);
+            } else {
+                setIsLoading(false);
             }
         })
-        .finally(() => setIsLoading(false));
+        .catch(() => setIsLoading(false));
     }
   }, [facultyId]);
 
   const handleSubjectChange = async (subjectId: string) => {
     setSelectedSubjectId(subjectId);
-    if (!subjectId) return;
+    if (!subjectId) {
+        setIsLoading(false);
+        return;
+    };
 
-    const subject = subjects.find(s => s.id === subjectId);
+    const subject = subjects.find(s => s.id === subjectId) || (await getSubjectsForFaculty(facultyId || ''))[0];
     if (subject) {
         setIsLoadingChart(true);
-        setChartData([]); // Clear previous data
-        const data = await getMarksForClass(subject.classId); // We need class performance, so use classId
-        setChartData(data);
+        setChartData([]);
+        setStudentsToWatch([]);
+        const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
+        setChartData(performanceData.distribution);
+        setStudentsToWatch(performanceData.studentsToWatch);
         setIsLoadingChart(false);
     }
+    if (isLoading) setIsLoading(false);
   }
   
   const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
-  const averageScore = chartData.length > 0
-    ? (chartData.reduce((acc, item) => acc + item.average, 0) / chartData.length).toFixed(1)
-    : 'N/A';
 
   return (
     <div className="container mx-auto py-8">
@@ -104,7 +106,7 @@ export default function FacultyPerformancePage() {
           <CardHeader>
             <CardTitle>Marks Distribution</CardTitle>
             <CardDescription>
-                {selectedSubject ? `Class: ${selectedSubject.className}` : 'No class selected'}
+                {selectedSubject ? `Subject: ${selectedSubject.name} (${selectedSubject.className})` : 'No class selected'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -121,6 +123,11 @@ export default function FacultyPerformancePage() {
                     tickLine={false}
                     tickMargin={10}
                     axisLine={false}
+                    interval={0}
+                    angle={-30}
+                    textAnchor="end"
+                    height={60}
+                    fontSize={10}
                     />
                     <Tooltip
                         cursor={false}
@@ -141,7 +148,7 @@ export default function FacultyPerformancePage() {
                 </ChartContainer>
             ) : (
                 <div className="flex justify-center items-center h-[250px]">
-                    <p className="text-muted-foreground">No performance data available for this class.</p>
+                    <p className="text-muted-foreground">No performance data available for this selection.</p>
                 </div>
             )}
           </CardContent>
@@ -149,25 +156,35 @@ export default function FacultyPerformancePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Students to Watch</CardTitle>
-            <CardDescription>Students who might need extra attention or praise.</CardDescription>
+            <CardDescription>Students who might need extra attention based on recent scores.</CardDescription>
           </CardHeader>
           <CardContent>
-             <ul className="space-y-4">
-                {studentsToWatch.map((student, index) => (
-                    <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                        <div className="flex items-center gap-3">
-                             {student.trend}
-                             <div>
-                                <p className="font-medium">{student.name}</p>
-                                <p className="text-sm text-muted-foreground">{student.reason}</p>
-                             </div>
-                        </div>
-                        <Badge variant={student.reason.startsWith('Low') || student.reason.startsWith('Failing') ? 'destructive' : 'secondary'}>
-                          {student.reason.startsWith('Low') || student.reason.startsWith('Failing') ? 'Action needed' : 'Positive'}
-                        </Badge>
-                    </li>
-                ))}
-             </ul>
+             {isLoadingChart ? (
+                  <div className="flex justify-center items-center h-[250px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+             ) : studentsToWatch.length > 0 ? (
+                <ul className="space-y-4">
+                    {studentsToWatch.map((student, index) => (
+                        <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                            <div className="flex items-center gap-3">
+                                {student.trend === 'down' ? <TrendingDown className="h-4 w-4 text-destructive" /> : <TrendingUp className="h-4 w-4 text-green-500" />}
+                                <div>
+                                    <p className="font-medium">{student.name}</p>
+                                    <p className="text-sm text-muted-foreground">{student.reason}</p>
+                                </div>
+                            </div>
+                            <Badge variant={student.trend === 'down' ? 'destructive' : 'secondary'}>
+                            {student.trend === 'down' ? 'Action needed' : 'Positive'}
+                            </Badge>
+                        </li>
+                    ))}
+                </ul>
+             ) : (
+                <div className="flex justify-center items-center h-[250px]">
+                    <p className="text-muted-foreground">No students require special attention at this time.</p>
+                </div>
+             )}
           </CardContent>
         </Card>
       </div>

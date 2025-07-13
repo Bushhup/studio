@@ -4,7 +4,9 @@
 import { connectToDB } from '@/lib/mongoose';
 import SubjectModel from '@/models/subject.model';
 import UserModel from '@/models/user.model';
+import MarkModel from '@/models/mark.model';
 import mongoose from 'mongoose';
+import { revalidatePath } from 'next/cache';
 
 export async function getSubjectsForFaculty(facultyId: string) {
   if (!mongoose.Types.ObjectId.isValid(facultyId)) {
@@ -51,5 +53,66 @@ export async function getStudentsForClass(classId: string) {
   } catch (error) {
      console.error("Error fetching students for class:", error);
     return [];
+  }
+}
+
+export type MarkInput = {
+  studentId: string;
+  marksObtained: number | null;
+  maxMarks: number | null;
+}
+
+export async function saveOrUpdateMarks(
+  subjectId: string, 
+  classId: string,
+  assessmentName: string, 
+  marks: MarkInput[]
+): Promise<{success: boolean, message: string}> {
+  if (!mongoose.Types.ObjectId.isValid(subjectId) || !mongoose.Types.ObjectId.isValid(classId)) {
+    return { success: false, message: 'Invalid subject or class ID.' };
+  }
+  if (!assessmentName.trim()) {
+    return { success: false, message: 'Assessment name is required.' };
+  }
+
+  try {
+    await connectToDB();
+    const subjectObjectId = new mongoose.Types.ObjectId(subjectId);
+    const classObjectId = new mongoose.Types.ObjectId(classId);
+
+    const operations = marks
+      .filter(mark => mark.marksObtained !== null && mark.maxMarks !== null) // Only process entries with marks
+      .map(mark => ({
+        updateOne: {
+          filter: { 
+            studentId: new mongoose.Types.ObjectId(mark.studentId),
+            subjectId: subjectObjectId,
+            classId: classObjectId,
+            assessmentName: assessmentName,
+          },
+          update: { 
+            $set: { 
+              marksObtained: mark.marksObtained, 
+              maxMarks: mark.maxMarks 
+            } 
+          },
+          upsert: true,
+        }
+    }));
+    
+    if (operations.length > 0) {
+      await MarkModel.bulkWrite(operations);
+    }
+    
+    revalidatePath('/faculty/marks');
+    revalidatePath('/faculty/performance'); // Revalidate performance page as well
+    return { success: true, message: 'Marks have been saved successfully.' };
+
+  } catch (error) {
+    console.error("Error saving marks:", error);
+    if (error instanceof Error) {
+        return { success: false, message: error.message };
+    }
+    return { success: false, message: 'An unknown error occurred while saving marks.' };
   }
 }
