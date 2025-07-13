@@ -11,6 +11,7 @@ import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Loader2 } from '
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, useSession } from 'next-auth/react';
+import { cn } from '@/lib/utils';
 
 const roleIcons = {
   admin: <UserCog className="h-10 w-10 mx-auto mb-4" />,
@@ -19,6 +20,7 @@ const roleIcons = {
 };
 
 export default function LoginPage() {
+  const [showWelcome, setShowWelcome] = useState(true);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +28,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    const welcomeTimer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 2500); // 2.5 seconds
+
+    return () => clearTimeout(welcomeTimer);
+  }, []);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role) {
@@ -97,88 +107,97 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-6 sm:p-8">
-      <Card className="w-full max-w-md shadow-2xl overflow-hidden">
-        <CardHeader className="text-center relative">
-           {selectedRole && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 left-4"
-              onClick={handleBack}
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-          )}
-          <div className="mb-4 flex justify-center">
-            <GraduationCap className="h-16 w-16 text-primary" />
+      {showWelcome ? (
+          <div className="animate-in fade-in-0 duration-1000">
+            <h1 className="text-7xl sm:text-8xl font-bold font-headline text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
+              Welcome
+            </h1>
           </div>
-          <CardTitle className="font-headline text-4xl tracking-tight text-primary">MCA Dept</CardTitle>
-          <CardDescription className="text-muted-foreground pt-1">
-            {selectedRole ? `Login as ${selectedRole}` : 'Select your role to begin'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="transition-all duration-500">
-          {!selectedRole ? (
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
-                <Card
-                  key={role}
-                  className="p-6 text-center cursor-pointer hover:bg-muted hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
-                  onClick={() => handleRoleSelect(role)}
-                >
-                  {roleIcons[role]}
-                  <p className="font-semibold capitalize">{role}</p>
-                </Card>
-              ))}
+        ) : (
+        <Card className="w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-top-10 duration-500">
+          <CardHeader className="text-center relative">
+            {selectedRole && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 left-4"
+                onClick={handleBack}
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+            )}
+            <div className="mb-4 flex justify-center">
+              <GraduationCap className="h-16 w-16 text-primary" />
             </div>
-          ) : (
-             <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in-50">
-                <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                    id="username"
-                    type="text"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                />
-                </div>
+            <CardTitle className="font-headline text-4xl tracking-tight text-primary">MCA Dept</CardTitle>
+            <CardDescription className="text-muted-foreground pt-1">
+              {selectedRole ? `Login as ${selectedRole}` : 'Select your role to begin'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="transition-all duration-500">
+            {!selectedRole ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
+                  <Card
+                    key={role}
+                    className="p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
+                    onClick={() => handleRoleSelect(role)}
+                  >
+                    {roleIcons[role]}
+                    <p className="font-semibold capitalize">{role}</p>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in-50">
+                  <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                  />
+                  </div>
 
-                <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                </div>
-
-                <Button type="submit" disabled={!username || !password || isLoggingIn}>
-                  {isLoggingIn ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Logging in...
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="mr-2 h-5 w-5" /> Login
-                    </>
-                  )}
-                </Button>
-            </form>
-          )}
-         
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} MCA Dept. All rights reserved.
-          </p>
-        </CardFooter>
-      </Card>
+                  <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                  />
+                  </div>
+                  <div className="flex justify-center">
+                    <Button type="submit" disabled={!username || !password || isLoggingIn}>
+                      {isLoggingIn ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Logging in...
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="mr-2 h-5 w-5" /> Login
+                        </>
+                      )}
+                    </Button>
+                  </div>
+              </form>
+            )}
+          
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-xs text-muted-foreground">
+              &copy; {new Date().getFullYear()} MCA Dept. All rights reserved.
+            </p>
+          </CardFooter>
+        </Card>
+      )}
     </main>
   );
 }
