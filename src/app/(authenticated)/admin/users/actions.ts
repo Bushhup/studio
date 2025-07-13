@@ -348,5 +348,3 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         return { success: false, message: 'An unknown error occurred while updating the user.' };
     }
 }
-
-    
