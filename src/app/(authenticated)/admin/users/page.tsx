@@ -49,6 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ExtendedUser } from './actions';
+import { ExtendedSubject, getSubjects } from '../subjects/actions';
 
 
 const addUserSchema = z.object({
@@ -58,6 +59,7 @@ const addUserSchema = z.object({
   role: z.enum(['student', 'faculty']),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(),
+  handlingSubjects: z.array(z.string()).optional(),
 }).refine(data => {
     if (data.role === 'student' && (!data.classId || data.classId.length === 0)) {
         return false;
@@ -74,10 +76,17 @@ const updateUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(),
+  handlingSubjects: z.array(z.string()).optional(),
 });
 
 
-function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (open: boolean) => void, classList: IClass[], role: 'student' | 'faculty', onUserAdded: () => void }) {
+function AddUserForm({ setIsOpen, classList, subjectList, role, onUserAdded }: { 
+    setIsOpen: (open: boolean) => void, 
+    classList: IClass[], 
+    subjectList: ExtendedSubject[],
+    role: 'student' | 'faculty', 
+    onUserAdded: () => void 
+}) {
   const { toast } = useToast();
   const form = useForm<AddUserInput>({
     resolver: zodResolver(addUserSchema),
@@ -88,6 +97,7 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
       role: role,
       classId: "",
       inchargeOfClasses: [],
+      handlingSubjects: [],
     },
   });
 
@@ -114,6 +124,9 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
   
   const selectedClasses = form.watch('inchargeOfClasses') || [];
   const classMap = new Map(classList.map(c => [c.id, c.name]));
+
+  const selectedSubjects = form.watch('handlingSubjects') || [];
+  const subjectMap = new Map(subjectList.map(s => [s.id, `${s.name} (${s.code})`]));
 
   return (
     <Form {...form}>
@@ -187,52 +200,100 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
         )}
         
         {role === 'faculty' && (
-           <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
-              <FormItem>
-                <FormLabel>In-charge of Classes (Optional)</FormLabel>
-                 <FormControl>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                             <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                <div className="truncate">
-                                    {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
-                                </div>
-                             </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search classes..." />
-                                <CommandList>
-                                    <CommandEmpty>No results found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {classList.map((cls) => {
-                                            const isSelected = selectedClasses.includes(cls.id);
-                                            return (
-                                                <CommandItem
-                                                    key={cls.id}
-                                                    onSelect={() => {
-                                                        const newSelection = isSelected 
-                                                            ? selectedClasses.filter(id => id !== cls.id)
-                                                            : [...selectedClasses, cls.id];
-                                                        field.onChange(newSelection);
-                                                    }}
-                                                >
-                                                    <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
-                                                        <Check className="h-4 w-4" />
-                                                    </div>
-                                                    <span>{cls.name}</span>
-                                                </CommandItem>
-                                            )
-                                        })}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <>
+                <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>In-charge of Classes (Optional)</FormLabel>
+                        <FormControl>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <div className="truncate">
+                                            {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
+                                        </div>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search classes..." />
+                                        <CommandList>
+                                            <CommandEmpty>No results found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {classList.map((cls) => {
+                                                    const isSelected = selectedClasses.includes(cls.id);
+                                                    return (
+                                                        <CommandItem
+                                                            key={cls.id}
+                                                            onSelect={() => {
+                                                                const newSelection = isSelected 
+                                                                    ? selectedClasses.filter(id => id !== cls.id)
+                                                                    : [...selectedClasses, cls.id];
+                                                                field.onChange(newSelection);
+                                                            }}
+                                                        >
+                                                            <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                                <Check className="h-4 w-4" />
+                                                            </div>
+                                                            <span>{cls.name}</span>
+                                                        </CommandItem>
+                                                    )
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="handlingSubjects" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Subjects Handled (Optional)</FormLabel>
+                        <FormControl>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <div className="truncate">
+                                            {selectedSubjects.length > 0 ? selectedSubjects.map(id => subjectMap.get(id)).join(', ') : "Select subjects..."}
+                                        </div>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search subjects..." />
+                                        <CommandList>
+                                            <CommandEmpty>No results found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {subjectList.map((sub) => {
+                                                    const isSelected = selectedSubjects.includes(sub.id);
+                                                    return (
+                                                        <CommandItem
+                                                            key={sub.id}
+                                                            onSelect={() => {
+                                                                const newSelection = isSelected
+                                                                    ? selectedSubjects.filter(id => id !== sub.id)
+                                                                    : [...selectedSubjects, sub.id];
+                                                                field.onChange(newSelection);
+                                                            }}
+                                                        >
+                                                            <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                                <Check className="h-4 w-4" />
+                                                            </div>
+                                                            <span>{sub.name} ({sub.code})</span>
+                                                        </CommandItem>
+                                                    )
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </>
         )}
 
         <DialogFooter>
@@ -247,10 +308,17 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
   );
 }
 
-function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: ExtendedUser, setIsOpen: (open: boolean) => void, classList: IClass[], onUserUpdated: () => void }) {
+function EditUserForm({ user, setIsOpen, classList, subjectList, onUserUpdated }: { 
+    user: ExtendedUser, 
+    setIsOpen: (open: boolean) => void, 
+    classList: IClass[], 
+    subjectList: ExtendedSubject[], 
+    onUserUpdated: () => void 
+}) {
   const { toast } = useToast();
   
   const initialInchargeClasses = user.inchargeOfClasses?.map(c => c.id) || [];
+  const initialHandlingSubjects = user.handlingSubjects?.map(s => s.id) || [];
   
   const form = useForm<UpdateUserInput>({
     resolver: zodResolver(updateUserSchema),
@@ -260,6 +328,7 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: Ext
       password: "",
       classId: user.role === 'student' ? user.classId : "",
       inchargeOfClasses: initialInchargeClasses,
+      handlingSubjects: initialHandlingSubjects,
     },
   });
 
@@ -285,6 +354,9 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: Ext
 
   const selectedClasses = form.watch('inchargeOfClasses') || [];
   const classMap = new Map(classList.map(c => [c.id, c.name]));
+
+  const selectedSubjects = form.watch('handlingSubjects') || [];
+  const subjectMap = new Map(subjectList.map(s => [s.id, `${s.name} (${s.code})`]));
 
   return (
     <Form {...form}>
@@ -354,52 +426,100 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: Ext
         )}
 
         {user.role === 'faculty' && (
-           <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
-              <FormItem>
-                <FormLabel>In-charge of Classes (Optional)</FormLabel>
-                 <FormControl>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                             <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                <div className="truncate">
-                                    {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
-                                </div>
-                             </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search classes..." />
-                                <CommandList>
-                                    <CommandEmpty>No results found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {classList.map((cls) => {
-                                            const isSelected = selectedClasses.includes(cls.id);
-                                            return (
-                                                <CommandItem
-                                                    key={cls.id}
-                                                    onSelect={() => {
-                                                        const newSelection = isSelected 
-                                                            ? selectedClasses.filter(id => id !== cls.id)
-                                                            : [...selectedClasses, cls.id];
-                                                        field.onChange(newSelection);
-                                                    }}
-                                                >
-                                                    <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
-                                                        <Check className="h-4 w-4" />
-                                                    </div>
-                                                    <span>{cls.name}</span>
-                                                </CommandItem>
-                                            )
-                                        })}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <>
+                <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>In-charge of Classes (Optional)</FormLabel>
+                        <FormControl>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <div className="truncate">
+                                            {selectedClasses.length > 0 ? selectedClasses.map(id => classMap.get(id)).join(', ') : "Select classes..."}
+                                        </div>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search classes..." />
+                                        <CommandList>
+                                            <CommandEmpty>No results found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {classList.map((cls) => {
+                                                    const isSelected = selectedClasses.includes(cls.id);
+                                                    return (
+                                                        <CommandItem
+                                                            key={cls.id}
+                                                            onSelect={() => {
+                                                                const newSelection = isSelected 
+                                                                    ? selectedClasses.filter(id => id !== cls.id)
+                                                                    : [...selectedClasses, cls.id];
+                                                                field.onChange(newSelection);
+                                                            }}
+                                                        >
+                                                            <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                                <Check className="h-4 w-4" />
+                                                            </div>
+                                                            <span>{cls.name}</span>
+                                                        </CommandItem>
+                                                    )
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="handlingSubjects" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Subjects Handled (Optional)</FormLabel>
+                        <FormControl>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <div className="truncate">
+                                            {selectedSubjects.length > 0 ? selectedSubjects.map(id => subjectMap.get(id)).join(', ') : "Select subjects..."}
+                                        </div>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search subjects..." />
+                                        <CommandList>
+                                            <CommandEmpty>No results found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {subjectList.map((sub) => {
+                                                    const isSelected = selectedSubjects.includes(sub.id);
+                                                    return (
+                                                        <CommandItem
+                                                            key={sub.id}
+                                                            onSelect={() => {
+                                                                const newSelection = isSelected
+                                                                    ? selectedSubjects.filter(id => id !== sub.id)
+                                                                    : [...selectedSubjects, sub.id];
+                                                                field.onChange(newSelection);
+                                                            }}
+                                                        >
+                                                            <div className={cn("mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary", isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible")}>
+                                                                <Check className="h-4 w-4" />
+                                                            </div>
+                                                            <span>{sub.name} ({sub.code})</span>
+                                                        </CommandItem>
+                                                    )
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+           </>
         )}
         
         <DialogFooter>
@@ -539,6 +659,7 @@ export default function AdminUsersPage() {
   
   const [users, setUsers] = useState<ExtendedUser[]>([]);
   const [classList, setClassList] = useState<IClass[]>([]);
+  const [subjectList, setSubjectList] = useState<ExtendedSubject[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   
@@ -550,12 +671,13 @@ export default function AdminUsersPage() {
 
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchPageData = async () => {
     setIsLoading(true);
     try {
-      const [fetchedUsers, fetchedClasses] = await Promise.all([
+      const [fetchedUsers, fetchedClasses, fetchedSubjects] = await Promise.all([
           getUsers(),
           getClasses(),
+          getSubjects(),
       ]);
       setUsers(fetchedUsers);
       const plainClasses = fetchedClasses.map(c => ({
@@ -564,15 +686,16 @@ export default function AdminUsersPage() {
         inchargeFaculty: c.inchargeFaculty?.toString() || '',
       }))
       setClassList(plainClasses as IClass[]);
+      setSubjectList(fetchedSubjects);
     } catch {
-      toast({ title: "Error", description: "Could not fetch users or classes.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch page data.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
   
   useEffect(() => {
-    fetchUsers();
+    fetchPageData();
   }, []);
   
   const handleOpenAddDialog = (role: 'student' | 'faculty') => {
@@ -594,7 +717,7 @@ export default function AdminUsersPage() {
         title: "Success",
         description: result.message,
       });
-      fetchUsers(); // Refresh the user list
+      fetchPageData(); // Refresh the user list
     } else {
       toast({
         title: "Error",
@@ -646,7 +769,7 @@ export default function AdminUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto pr-2">
-              <AddUserForm setIsOpen={setIsAddDialogOpen} classList={classList} role={dialogRole} onUserAdded={fetchUsers} />
+              <AddUserForm setIsOpen={setIsAddDialogOpen} classList={classList} subjectList={subjectList} role={dialogRole} onUserAdded={fetchPageData} />
             </div>
           </DialogContent>
       </Dialog>
@@ -661,7 +784,7 @@ export default function AdminUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 max-h-[70vh] overflow-y-auto pr-2">
-              {userToEdit && <EditUserForm user={userToEdit} setIsOpen={setIsEditDialogOpen} classList={classList} onUserUpdated={fetchUsers} />}
+              {userToEdit && <EditUserForm user={userToEdit} setIsOpen={setIsEditDialogOpen} classList={classList} subjectList={subjectList} onUserUpdated={fetchPageData} />}
             </div>
           </DialogContent>
       </Dialog>
@@ -746,5 +869,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    

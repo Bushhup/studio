@@ -4,6 +4,7 @@
 import { connectToDB } from '@/lib/mongoose';
 import UserModel, { IUser } from '@/models/user.model';
 import ClassModel from '@/models/class.model';
+import SubjectModel from '@/models/subject.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
@@ -16,6 +17,7 @@ const addUserSchema = z.object({
   role: z.enum(['student', 'faculty']),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
+  handlingSubjects: z.array(z.string()).optional(), // For faculty
 }).refine(data => {
     if (data.role === 'student' && !data.classId) {
         return false;
@@ -34,6 +36,7 @@ const updateUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
+  handlingSubjects: z.array(z.string()).optional(), // For faculty
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
@@ -86,16 +89,26 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
     
     await newUser.save();
     
-    // If it's a faculty member and classes are assigned, update those classes
-    if (data.role === 'faculty' && data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
-      await ClassModel.updateMany(
-        { _id: { $in: data.inchargeOfClasses } },
-        { $set: { inchargeFaculty: newUser._id } }
-      );
+    if (data.role === 'faculty') {
+        // If it's a faculty member and classes are assigned, update those classes
+        if (data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
+            await ClassModel.updateMany(
+                { _id: { $in: data.inchargeOfClasses } },
+                { $set: { inchargeFaculty: newUser._id } }
+            );
+        }
+        // If subjects are assigned, update those subjects
+        if (data.handlingSubjects && data.handlingSubjects.length > 0) {
+            await SubjectModel.updateMany(
+                { _id: { $in: data.handlingSubjects } },
+                { $set: { facultyId: newUser._id } }
+            )
+        }
     }
     
     revalidatePath('/admin/users');
     revalidatePath('/admin/classes');
+    revalidatePath('/admin/subjects');
 
     return { success: true, message: `User '${data.name}' added successfully as a ${data.role}.` };
 
@@ -237,11 +250,18 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
             return { success: false, message: "User not found." };
         }
         
-        // If a faculty is deleted, unassign them from being in-charge of any class
+        // If a faculty is deleted, unassign them from everything
         if (result.role === 'faculty') {
+            const facultyObjectId = new mongoose.Types.ObjectId(userId);
+            // Unassign from class in-charge
             await ClassModel.updateMany(
-                { inchargeFaculty: new mongoose.Types.ObjectId(userId) },
+                { inchargeFaculty: facultyObjectId },
                 { $unset: { inchargeFaculty: "" } }
+            );
+            // Unassign from subjects handled
+            await SubjectModel.updateMany(
+                { facultyId: facultyObjectId },
+                { $unset: { facultyId: "" } }
             );
         }
 
@@ -333,6 +353,21 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
                  await ClassModel.updateMany(
                     { _id: { $in: data.inchargeOfClasses.map(id => new mongoose.Types.ObjectId(id)) } },
                     { $set: { inchargeFaculty: facultyId } }
+                );
+            }
+
+            // Atomically update subjects:
+            // 1. Unset this faculty from all subjects they were previously handling
+             await SubjectModel.updateMany(
+                { facultyId: facultyId },
+                { $unset: { facultyId: "" } }
+            );
+
+            // 2. Set this faculty to the new set of subjects
+            if (data.handlingSubjects && data.handlingSubjects.length > 0) {
+                 await SubjectModel.updateMany(
+                    { _id: { $in: data.handlingSubjects.map(id => new mongoose.Types.ObjectId(id)) } },
+                    { $set: { facultyId: facultyId } }
                 );
             }
         }
