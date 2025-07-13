@@ -4,20 +4,22 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, BarChart3, ShieldCheck, BookOpenText, Briefcase, MessageSquareText, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/lib/auth-options";
-import { getMyMarks } from "../my-marks/actions"; // Import the new action
+import { getStudentDashboardData } from "./actions";
 
 export default async function StudentDashboardPage() {
   const session = await auth();
   const userName = session?.user?.name || 'Student';
   const studentId = session?.user?.id;
+  const userRole = session?.user?.role;
 
-  let recentMarkText = "N/A";
-  if (studentId) {
-    const marks = await getMyMarks(studentId);
-    if (marks.length > 0) {
-      const mostRecentMark = marks[0]; // The action sorts by date descending
-      recentMarkText = `${mostRecentMark.marksObtained} / ${mostRecentMark.maxMarks}`;
-    }
+  let dashboardData = {
+    attendancePercentage: 0,
+    recentMarkText: "N/A",
+    upcomingEventsCount: 0,
+  };
+
+  if (studentId && userRole) {
+    dashboardData = await getStudentDashboardData(studentId, userRole);
   }
 
   return (
@@ -36,8 +38,8 @@ export default async function StudentDashboardPage() {
             <ShieldCheck className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">85%</div>
-            <p className="text-xs text-muted-foreground">Last updated today (Mock Data)</p>
+            <div className="text-2xl font-bold">{dashboardData.attendancePercentage.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">Based on all classes marked</p>
           </CardContent>
         </Card>
 
@@ -47,7 +49,7 @@ export default async function StudentDashboardPage() {
             <GraduationCap className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{recentMarkText}</div>
+            <div className="text-2xl font-bold">{dashboardData.recentMarkText}</div>
             <p className="text-xs text-muted-foreground">Latest assessment score</p>
           </CardContent>
         </Card>
@@ -58,8 +60,8 @@ export default async function StudentDashboardPage() {
             <CalendarDays className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Guest lecture next week (Mock)</p>
+            <div className="text-2xl font-bold">{dashboardData.upcomingEventsCount}</div>
+            <p className="text-xs text-muted-foreground">Notices & events for you</p>
           </CardContent>
         </Card>
       </div>

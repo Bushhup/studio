@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty, getStudentsForClass } from '../marks/actions'; // Re-using from marks actions
+import { saveAttendance } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ListChecks, CalendarPlus, Loader2, Users, Save, Calendar as CalendarIcon, Clock } from "lucide-react";
@@ -16,20 +17,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import type { AttendanceRecord, StudentInfo, SubjectInfo } from './actions';
 
-type SubjectInfo = {
-  id: string;
-  name: string;
-  classId: string;
-  className: string;
-};
-
-type StudentInfo = {
-  id: string;
-  name: string;
-};
-
-type AttendanceRecord = Record<string, boolean>;
 
 export default function FacultyAttendancePage() {
   const { data: session } = useSession();
@@ -83,14 +72,36 @@ export default function FacultyAttendancePage() {
     }
   };
   
-  const handleSaveAttendance = () => {
+  const handleSaveAttendance = async () => {
+    if (!selectedSubjectId || !date || !period) {
+        toast({ title: 'Missing Info', description: 'Please select subject, date, and period.', variant: 'destructive'});
+        return;
+    }
+
+    const subject = subjects.find(s => s.id === selectedSubjectId);
+    if (!subject) return;
+
     setIsSaving(true);
-    console.log('Saving attendance:', { subjectId: selectedSubjectId, date, period, attendance });
-    // Mock saving logic
-    setTimeout(() => {
-      toast({ title: 'Attendance Saved', description: 'Attendance has been recorded successfully. (Mocked)' });
-      setIsSaving(false);
-    }, 1500);
+    
+    const attendanceData = Object.entries(attendance).map(([studentId, isPresent]) => ({
+      studentId,
+      isPresent,
+    }));
+
+    const result = await saveAttendance({
+        subjectId: selectedSubjectId,
+        classId: subject.classId,
+        date: date.toISOString(),
+        period,
+        attendance: attendanceData
+    });
+
+    if (result.success) {
+      toast({ title: 'Attendance Saved', description: result.message });
+    } else {
+      toast({ title: 'Error', description: result.message, variant: 'destructive' });
+    }
+    setIsSaving(false);
   }
   
   const handleToggleAllPresent = (isChecked: boolean) => {
@@ -109,7 +120,7 @@ export default function FacultyAttendancePage() {
   };
 
   const areAllPresent = students.length > 0 && students.every(s => attendance[s.id]);
-  const periods = Array.from({ length: 8 }, (_, i) => i + 1);
+  const periods = Array.from({ length: 8 }, (_, i) => String(i + 1));
 
   return (
     <div className="container mx-auto py-8">
@@ -170,7 +181,7 @@ export default function FacultyAttendancePage() {
               </SelectTrigger>
               <SelectContent>
                 {periods.map(p => (
-                   <SelectItem key={p} value={String(p)}>Period {p}</SelectItem>
+                   <SelectItem key={p} value={p}>Period {p}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
