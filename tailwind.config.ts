@@ -12,7 +12,7 @@ export default {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Space Grotesk', 'sans-serif'],
-        cursive: ['Great Vibes', 'cursive'],
+        cursive: ['UnifrakturCook', 'cursive'],
         code: ['monospace'],
       },
       colors: {
