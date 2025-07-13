@@ -136,7 +136,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             { $sort: { name: 1 } },
             {
                 $lookup: {
-                    from: 'classes',
+                    from: 'Class',
                     localField: '_id',
                     foreignField: 'inchargeFaculty',
                     as: 'inchargeClasses'
@@ -144,13 +144,13 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             },
             {
                 $lookup: {
-                    from: 'subjects',
+                    from: 'Subject',
                     let: { faculty_id: '$_id' },
                     pipeline: [
                         { $match: { $expr: { $eq: ['$facultyId', '$$faculty_id'] } } },
                         {
                             $lookup: {
-                                from: 'classes',
+                                from: 'Class',
                                 localField: 'classId',
                                 foreignField: '_id',
                                 as: 'classDetails'
@@ -171,7 +171,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             },
             {
                 $lookup: {
-                    from: 'classes',
+                    from: 'Class',
                     localField: 'classId',
                     foreignField: '_id',
                     as: 'studentClass'

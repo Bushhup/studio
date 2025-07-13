@@ -54,7 +54,7 @@ export async function getEventsForUser(userId: string, userRole: Role): Promise<
         }
 
         const events = await Event.find(query)
-            .populate({ path: 'inchargeFacultyId', select: 'name' })
+            .populate({ path: 'inchargeFacultyId', select: 'name', model: 'User' })
             .sort({ date: 'asc' })
             .lean();
 
