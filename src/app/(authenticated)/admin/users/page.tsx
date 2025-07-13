@@ -189,7 +189,7 @@ function AddUserForm({ setIsOpen, classList, role, onUserAdded }: { setIsOpen: (
         {role === 'faculty' && (
            <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
               <FormItem>
-                <FormLabel>Subjects Handled (Optional)</FormLabel>
+                <FormLabel>In-charge of Classes (Optional)</FormLabel>
                  <FormControl>
                     <Popover>
                         <PopoverTrigger asChild>
@@ -356,7 +356,7 @@ function EditUserForm({ user, setIsOpen, classList, onUserUpdated }: { user: Ext
         {user.role === 'faculty' && (
            <FormField control={form.control} name="inchargeOfClasses" render={({ field }) => (
               <FormItem>
-                <FormLabel>Subjects Handled (Optional)</FormLabel>
+                <FormLabel>In-charge of Classes (Optional)</FormLabel>
                  <FormControl>
                     <Popover>
                         <PopoverTrigger asChild>
@@ -746,3 +746,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    
