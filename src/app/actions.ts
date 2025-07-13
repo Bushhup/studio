@@ -21,6 +21,7 @@ export async function login(data: LoginInput): Promise<LoginResult> {
     return { success: false, message: 'Invalid input data.' };
   }
   
+  // Handle admin login separately
   if (data.role === 'admin') {
     if (data.username === 'Admin01' && data.password === 'shaosaid05413') {
       return { success: true };
