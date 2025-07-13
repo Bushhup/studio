@@ -99,7 +99,7 @@ export default function LoginPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
-          <GraduationCap className="h-24 w-24 text-primary animate-pulse" />
+          <GraduationCap className="h-32 w-32 text-primary animate-pulse" />
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       {showWelcome ? (
           <div className="animate-in fade-in-0 duration-1000">
-            <h1 className="text-7xl sm:text-8xl md:text-9xl font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
+            <h1 className="text-8xl sm:text-9xl md:text-[10rem] font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient leading-none">
               Welcome
             </h1>
           </div>
