@@ -54,7 +54,7 @@ export async function getUnreadFeedbackCount(facultyId: string): Promise<number>
 
         // This assumes feedback can be linked directly to a faculty member.
         // The logic might need to be more complex, e.g., finding subjects handled by the faculty
-        // and then finding feedback for those subjects. For now, a direct link is assumed.
+        // and then finding feedback for those subjects.
         const count = await FeedbackModel.countDocuments({ 
             facultyId: facultyObjectId,
             isRead: { $ne: true } // Assuming an `isRead` field exists
