@@ -124,7 +124,7 @@ export default function LoginPage() {
               {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
                 <Card
                   key={role}
-                  className="p-6 text-center cursor-pointer hover:bg-muted hover:border-primary transition-colors"
+                  className="p-6 text-center cursor-pointer hover:bg-muted hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
                   onClick={() => handleRoleSelect(role)}
                 >
                   {roleIcons[role]}
