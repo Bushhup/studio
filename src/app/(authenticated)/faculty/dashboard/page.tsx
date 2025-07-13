@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpenText, ClipboardList, ListChecks, MessageSquareText, Users, BookCopy } from "lucide-react";
-import { getFacultyDashboardStats } from "./actions";
+import { getFacultyDashboardStats, getUnreadFeedbackCount } from "./actions";
 import { auth } from '@/lib/auth-options'; // Using server-side session
 import Link from "next/link";
 
@@ -12,8 +12,12 @@ export default async function FacultyDashboardPage() {
   const userId = session?.user?.id;
   
   let stats = { assignedClassesCount: 0, handlingSubjectsCount: 0 };
+  let unreadFeedback = 0;
+
   if (userId) {
-    stats = await getFacultyDashboardStats(userId);
+    const statsPromise = getFacultyDashboardStats(userId);
+    const feedbackPromise = getUnreadFeedbackCount(userId);
+    [stats, unreadFeedback] = await Promise.all([statsPromise, feedbackPromise]);
   }
 
   return (
@@ -54,7 +58,7 @@ export default async function FacultyDashboardPage() {
             <MessageSquareText className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5 Unread</div>
+            <div className="text-2xl font-bold">{unreadFeedback} Unread</div>
             <p className="text-xs text-muted-foreground">Summaries available</p>
           </CardContent>
         </Card>
