@@ -49,13 +49,17 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
             '80-89': 0,
             '90-100': 0,
         };
-
-        const studentPerformances: { name: string; percentage: number }[] = [];
+        
+        // This will store the lowest score for each student
+        const studentLowestScores: Record<string, { name: string; percentage: number; assessmentName: string }> = {};
 
         marks.forEach(mark => {
-            if (mark.marksObtained != null && mark.maxMarks != null && mark.maxMarks > 0) {
+            if (mark.studentId && (mark.studentId as any).name && mark.marksObtained != null && mark.maxMarks != null && mark.maxMarks > 0) {
                 const percentage = (mark.marksObtained / mark.maxMarks) * 100;
-                
+                const studentId = (mark.studentId as any)._id.toString();
+                const studentName = (mark.studentId as any).name;
+
+                // Populate distribution chart data
                 if (percentage < 40) distribution['0-39 (Fail)']++;
                 else if (percentage < 50) distribution['40-49']++;
                 else if (percentage < 60) distribution['50-59']++;
@@ -64,11 +68,13 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
                 else if (percentage < 90) distribution['80-89']++;
                 else distribution['90-100']++;
 
-                if (mark.studentId && (mark.studentId as any).name) {
-                    studentPerformances.push({
-                        name: (mark.studentId as any).name,
-                        percentage: percentage
-                    });
+                // Check if this is the student's lowest score so far for this subject
+                if (!studentLowestScores[studentId] || percentage < studentLowestScores[studentId].percentage) {
+                    studentLowestScores[studentId] = {
+                        name: studentName,
+                        percentage: percentage,
+                        assessmentName: mark.assessmentName
+                    };
                 }
             }
         });
@@ -78,14 +84,14 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
             count,
         }));
         
-        // Find students with scores below 50%
-        const studentsToWatchData = studentPerformances
-            .filter(student => student.percentage < 50)
-            .sort((a, b) => a.percentage - b.percentage) // Sort lowest first
+        // Sort students by their lowest score and take the bottom 3
+        const studentsToWatchData = Object.values(studentLowestScores)
+            .sort((a, b) => a.percentage - b.percentage)
+            .slice(0, 3) // Get the 3 students with the lowest scores
             .map(student => ({
                 name: student.name,
-                reason: `Low Score (${student.percentage.toFixed(1)}%)`,
-                trend: 'down' as const
+                reason: `Score: ${student.percentage.toFixed(1)}% in '${student.assessmentName}'`,
+                trend: 'down' as const,
             }));
 
 
