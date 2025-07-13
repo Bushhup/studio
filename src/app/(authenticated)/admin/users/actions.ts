@@ -175,6 +175,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     _id: 1,
                     name: 1,
                     email: 1,
+                    password: 1, // Explicitly include the password field
                     role: 1,
                     classId: 1,
                     className: '$studentClass.name',
@@ -189,6 +190,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                 id: user._id.toString(),
                 name: user.name,
                 email: user.email,
+                password: user.password,
                 role: user.role,
                 className: user.className || 'N/A'
             };
