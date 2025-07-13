@@ -22,7 +22,7 @@ const roleIcons = {
 export default function LoginPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] =useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
@@ -108,8 +108,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       {showWelcome ? (
-          <div className="animate-in fade-in-0 duration-1000">
-            <h1 className="text-8xl sm:text-9xl md:text-[10rem] font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient leading-none">
+          <div className="animate-in fade-in-0 duration-1000 flex items-center justify-center p-4">
+            <h1 className="text-8xl sm:text-9xl md:text-[10rem] font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient leading-tight">
               Welcome
             </h1>
           </div>
