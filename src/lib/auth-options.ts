@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
             }
         } catch (error) {
             // Catch any other unexpected errors during the login process.
+            console.error("Authorization error:", error);
             const errorMessage = (error instanceof Error) ? error.message : "An unknown authentication error occurred.";
             // Throwing an error here will also signal a login failure to NextAuth.
             throw new Error(errorMessage);

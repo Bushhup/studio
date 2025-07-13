@@ -42,7 +42,7 @@ export default function LoginPage() {
             // Otherwise, just show the login form.
             setShowWelcome(false);
         }
-    }, 3000); // 3 seconds
+    }, 1500); // 1.5 seconds
 
     return () => clearTimeout(welcomeTimer);
   }, [status, session, router]);
@@ -71,6 +71,10 @@ export default function LoginPage() {
     setIsLoggingIn(false);
 
     if (result?.ok && !result.error) {
+        toast({
+            title: "Login Successful",
+            description: "Redirecting to your dashboard...",
+        });
         let redirectPath = '/home';
         if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
         else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
