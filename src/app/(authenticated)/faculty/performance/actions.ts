@@ -78,10 +78,10 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
             count,
         }));
         
-        // Find students with the lowest scores to watch
+        // Find students with scores below 50%
         const studentsToWatchData = studentPerformances
-            .sort((a, b) => a.percentage - b.percentage)
-            .slice(0, 3) // Get top 3 lowest performers
+            .filter(student => student.percentage < 50)
+            .sort((a, b) => a.percentage - b.percentage) // Sort lowest first
             .map(student => ({
                 name: student.name,
                 reason: `Low Score (${student.percentage.toFixed(1)}%)`,

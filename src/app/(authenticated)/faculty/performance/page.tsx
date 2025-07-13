@@ -119,15 +119,15 @@ export default function FacultyPerformancePage() {
                 <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
-                    dataKey="range"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    interval={0}
-                    angle={-30}
-                    textAnchor="end"
-                    height={60}
-                    fontSize={10}
+                      dataKey="range"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      interval={0}
+                      angle={-40}
+                      textAnchor="end"
+                      height={70}
+                      fontSize={12}
                     />
                     <Tooltip
                         cursor={false}
