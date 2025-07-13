@@ -32,7 +32,7 @@ export default function LoginPage() {
   useEffect(() => {
     const welcomeTimer = setTimeout(() => {
       setShowWelcome(false);
-    }, 2500); // 2.5 seconds
+    }, 3000); // 3 seconds
 
     return () => clearTimeout(welcomeTimer);
   }, []);
@@ -95,7 +95,7 @@ export default function LoginPage() {
   };
 
 
-  if (status === 'loading' || status === 'authenticated') {
+  if (status === 'loading' || (status === 'authenticated' && !showWelcome)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
@@ -109,7 +109,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-6 sm:p-8">
       {showWelcome ? (
           <div className="animate-in fade-in-0 duration-1000">
-            <h1 className="text-7xl sm:text-8xl font-bold font-headline text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
+            <h1 className="text-8xl sm:text-9xl font-cursive font-bold text-center bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animated-gradient">
               Welcome
             </h1>
           </div>
