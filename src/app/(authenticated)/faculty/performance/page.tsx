@@ -1,24 +1,21 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from 'next-auth/react';
+import { getSubjectsForFaculty } from '../marks/actions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getMarksForClass, type MarksDistributionData } from './actions';
 
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-];
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  count: {
+    label: "Students",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -27,38 +24,126 @@ const studentsToWatch = [
     { name: "Charlie Davis", reason: "Low Attendance (65%)", trend: <TrendingDown className="h-4 w-4 text-destructive" /> },
     { name: "Eve Williams", reason: "Failing in DBMS", trend: <TrendingDown className="h-4 w-4 text-destructive" />},
     { name: "Frank Miller", reason: "Improved significantly", trend: <TrendingUp className="h-4 w-4 text-green-500" />}
-]
+];
+
+type SubjectInfo = {
+  id: string;
+  name: string;
+  classId: string;
+  className: string;
+};
 
 export default function FacultyPerformancePage() {
+  const { data: session } = useSession();
+  const facultyId = session?.user?.id;
+
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingChart, setIsLoadingChart] = useState(false);
+  const [chartData, setChartData] = useState<MarksDistributionData[]>([]);
+
+  useEffect(() => {
+    if (facultyId) {
+      setIsLoading(true);
+      getSubjectsForFaculty(facultyId)
+        .then(data => {
+            setSubjects(data);
+            if (data.length > 0) {
+                // Automatically select the first subject and load its data
+                handleSubjectChange(data[0].id);
+            }
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [facultyId]);
+
+  const handleSubjectChange = async (subjectId: string) => {
+    setSelectedSubjectId(subjectId);
+    if (!subjectId) return;
+
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+        setIsLoadingChart(true);
+        setChartData([]); // Clear previous data
+        const data = await getMarksForClass(subject.classId); // We need class performance, so use classId
+        setChartData(data);
+        setIsLoadingChart(false);
+    }
+  }
+  
+  const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
+  const averageScore = chartData.length > 0
+    ? (chartData.reduce((acc, item) => acc + item.average, 0) / chartData.length).toFixed(1)
+    : 'N/A';
+
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-8 flex items-center gap-3">
-        <BarChart3 className="h-10 w-10 text-primary" />
-        <div>
-          <h1 className="font-headline text-4xl font-bold tracking-tight text-primary">Class Performance Overview</h1>
-          <p className="text-muted-foreground">View performance metrics for your classes.</p>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-3">
+            <BarChart3 className="h-10 w-10 text-primary" />
+            <div>
+            <h1 className="font-headline text-4xl font-bold tracking-tight text-primary">Class Performance Overview</h1>
+            <p className="text-muted-foreground">View performance metrics for your classes.</p>
+            </div>
         </div>
+        <Select onValueChange={handleSubjectChange} value={selectedSubjectId} disabled={isLoading || subjects.length === 0}>
+            <SelectTrigger className="w-full sm:w-[300px]">
+                <School className="mr-2 h-4 w-4"/>
+                <SelectValue placeholder={isLoading ? "Loading classes..." : "Select a class to view performance"} />
+            </SelectTrigger>
+            <SelectContent>
+                {subjects.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.className} ({s.name})</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Marks Distribution (Unit Test 1)</CardTitle>
-            <CardDescription>Average score: 78. Class: MCA-I</CardDescription>
+            <CardTitle>Marks Distribution</CardTitle>
+            <CardDescription>
+                {selectedSubject ? `Class: ${selectedSubject.className}` : 'No class selected'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig}>
-              <BarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-              </BarChart>
-            </ChartContainer>
+            {isLoadingChart ? (
+                 <div className="flex justify-center items-center h-[250px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : chartData.length > 0 ? (
+                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                    dataKey="range"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    />
+                    <Tooltip
+                        cursor={false}
+                        content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                            return (
+                                <div className="p-2 rounded-lg bg-background/80 backdrop-blur-sm border shadow-sm">
+                                <p className="font-bold">{label}</p>
+                                <p className="text-sm text-primary">{`Students: ${payload[0].value}`}</p>
+                                </div>
+                            );
+                            }
+                            return null;
+                        }}
+                    />
+                    <Bar dataKey="count" fill="var(--color-count)" radius={8} />
+                </BarChart>
+                </ChartContainer>
+            ) : (
+                <div className="flex justify-center items-center h-[250px]">
+                    <p className="text-muted-foreground">No performance data available for this class.</p>
+                </div>
+            )}
           </CardContent>
         </Card>
         <Card>

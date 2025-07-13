@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty, getStudentsForClass } from '../marks/actions'; // Re-using from marks actions
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ListChecks, CalendarPlus, Loader2, Users, Save, Calendar as CalendarIcon } from "lucide-react";
+import { ListChecks, CalendarPlus, Loader2, Users, Save, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ export default function FacultyAttendancePage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [period, setPeriod] = useState('');
   
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
@@ -84,7 +85,7 @@ export default function FacultyAttendancePage() {
   
   const handleSaveAttendance = () => {
     setIsSaving(true);
-    console.log('Saving attendance:', { subjectId: selectedSubjectId, date, attendance });
+    console.log('Saving attendance:', { subjectId: selectedSubjectId, date, period, attendance });
     // Mock saving logic
     setTimeout(() => {
       toast({ title: 'Attendance Saved', description: 'Attendance has been recorded successfully. (Mocked)' });
@@ -108,6 +109,7 @@ export default function FacultyAttendancePage() {
   };
 
   const areAllPresent = students.length > 0 && students.every(s => attendance[s.id]);
+  const periods = Array.from({ length: 8 }, (_, i) => i + 1);
 
   return (
     <div className="container mx-auto py-8">
@@ -121,10 +123,10 @@ export default function FacultyAttendancePage() {
       <Card>
         <CardHeader>
           <CardTitle>Mark Attendance</CardTitle>
-          <CardDescription>Select class, subject, and date to mark attendance.</CardDescription>
+          <CardDescription>Select subject, date, and period to mark attendance.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
             <Select onValueChange={handleSubjectChange} disabled={isLoadingSubjects}>
               <SelectTrigger className="w-full sm:w-[300px]">
                 <SelectValue placeholder={isLoadingSubjects ? "Loading subjects..." : "Select subject..."} />
@@ -161,6 +163,17 @@ export default function FacultyAttendancePage() {
                 />
               </PopoverContent>
             </Popover>
+            <Select onValueChange={setPeriod} value={period}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                 <Clock className="mr-2 h-4 w-4"/>
+                <SelectValue placeholder="Select Period" />
+              </SelectTrigger>
+              <SelectContent>
+                {periods.map(p => (
+                   <SelectItem key={p} value={String(p)}>Period {p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           {isLoadingStudents ? (
@@ -211,7 +224,7 @@ export default function FacultyAttendancePage() {
                  </CardContent>
               </Card>
                <div className="flex justify-end">
-                <Button onClick={handleSaveAttendance} disabled={isSaving}>
+                <Button onClick={handleSaveAttendance} disabled={isSaving || !period}>
                   {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                   Save Attendance
                 </Button>
