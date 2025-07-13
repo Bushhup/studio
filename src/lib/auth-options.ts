@@ -1,8 +1,9 @@
 
 import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { login as loginAction } from '@/app/actions';
-import type { Role } from '@/types';
+import type { Role, User } from '@/types';
+import { connectToDB } from "./mongoose";
+import UserModel from "@/models/user.model";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,25 +19,41 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await loginAction({ 
-            username: credentials.username, 
-            password: credentials.password, 
-            role: credentials.role as Role 
-        });
+        const { username, password, role } = credentials;
 
-        if (user) {
+        if (role === 'admin') {
+            if (username === 'Admin01' && password === 'shaosaid05413') {
+               return {
+                    id: 'admin_user_placeholder',
+                    name: 'Admin User',
+                    email: 'admin@mca-dept.edu',
+                    role: 'admin'
+                };
+            }
+            return null;
+        }
+
+        try {
+            await connectToDB();
+            
+            const user = await UserModel.findOne({ name: username, role: role }).select('+password').lean();
+
+            if (!user || user.password !== password) {
+              return null;
+            }
+
             return {
-                id: user.id,
+                id: user._id.toString(),
                 name: user.name,
                 email: user.email,
-                role: user.role,
-                classId: user.classId,
+                role: user.role as Role,
+                classId: user.classId ? user.classId.toString() : undefined,
             };
-        }
-        
-        // If loginAction returns null, authentication failed.
-        // Return null to indicate failure to NextAuth.
-        return null;
+
+          } catch (error) {
+            console.error('Login error in authorize:', error);
+            return null;
+          }
       },
     }),
   ],
