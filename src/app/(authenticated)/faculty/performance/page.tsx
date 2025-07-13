@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School, Star } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty } from '../marks/actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getPerformanceDataForClass, type MarksDistributionData, type StudentToWatch } from './actions';
+import { getPerformanceDataForClass, type MarksDistributionData, type StudentPerformanceInfo } from './actions';
 
 
 const chartConfig = {
@@ -38,7 +38,8 @@ export default function FacultyPerformancePage() {
   const [isLoadingChart, setIsLoadingChart] = useState(false);
   
   const [chartData, setChartData] = useState<MarksDistributionData[]>([]);
-  const [studentsToWatch, setStudentsToWatch] = useState<StudentToWatch[]>([]);
+  const [studentsToWatch, setStudentsToWatch] = useState<StudentPerformanceInfo[]>([]);
+  const [topPerformers, setTopPerformers] = useState<StudentPerformanceInfo[]>([]);
 
   useEffect(() => {
     if (facultyId) {
@@ -47,7 +48,6 @@ export default function FacultyPerformancePage() {
         .then(data => {
             setSubjects(data);
             if (data.length > 0) {
-                // Automatically select the first subject and load its data
                 handleSubjectChange(data[0].id);
             } else {
                 setIsLoading(false);
@@ -69,9 +69,11 @@ export default function FacultyPerformancePage() {
         setIsLoadingChart(true);
         setChartData([]);
         setStudentsToWatch([]);
+        setTopPerformers([]);
         const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
         setChartData(performanceData.distribution);
         setStudentsToWatch(performanceData.studentsToWatch);
+        setTopPerformers(performanceData.topPerformers);
         setIsLoadingChart(false);
     }
     if (isLoading) setIsLoading(false);
@@ -101,7 +103,7 @@ export default function FacultyPerformancePage() {
             </SelectContent>
         </Select>
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Marks Distribution</CardTitle>
@@ -124,9 +126,6 @@ export default function FacultyPerformancePage() {
                       tickMargin={10}
                       axisLine={false}
                       interval={0}
-                      angle={-40}
-                      textAnchor="end"
-                      height={70}
                       fontSize={12}
                     />
                     <Tooltip
@@ -153,40 +152,72 @@ export default function FacultyPerformancePage() {
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Students to Watch</CardTitle>
-            <CardDescription>Students who might need extra attention based on recent scores.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             {isLoadingChart ? (
-                  <div className="flex justify-center items-center h-[250px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-             ) : studentsToWatch.length > 0 ? (
-                <ul className="space-y-4">
-                    {studentsToWatch.map((student, index) => (
-                        <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                            <div className="flex items-center gap-3">
-                                {student.trend === 'down' ? <TrendingDown className="h-4 w-4 text-destructive" /> : <TrendingUp className="h-4 w-4 text-green-500" />}
-                                <div>
-                                    <p className="font-medium">{student.name}</p>
-                                    <p className="text-sm text-muted-foreground">{student.reason}</p>
+        <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-yellow-400"/> Top Performers</CardTitle>
+                <CardDescription>Students who are excelling in this subject.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 {isLoadingChart ? (
+                      <div className="flex justify-center items-center h-[250px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                 ) : topPerformers.length > 0 ? (
+                    <ul className="space-y-4">
+                        {topPerformers.map((student, index) => (
+                            <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div className="flex items-center gap-3">
+                                    <TrendingUp className="h-4 w-4 text-green-500" />
+                                    <div>
+                                        <p className="font-medium">{student.name}</p>
+                                        <p className="text-sm text-muted-foreground">{student.reason}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <Badge variant={student.trend === 'down' ? 'destructive' : 'secondary'}>
-                            {student.trend === 'down' ? 'Action needed' : 'Positive'}
-                            </Badge>
-                        </li>
-                    ))}
-                </ul>
-             ) : (
-                <div className="flex justify-center items-center h-[250px]">
-                    <p className="text-muted-foreground">No students require special attention at this time.</p>
-                </div>
-             )}
-          </CardContent>
-        </Card>
+                                <Badge variant="secondary" className="bg-green-100 text-green-800">Outstanding</Badge>
+                            </li>
+                        ))}
+                    </ul>
+                 ) : (
+                    <div className="flex justify-center items-center h-[250px]">
+                        <p className="text-muted-foreground text-center">No students currently in the top performer category (&gt;90%).</p>
+                    </div>
+                 )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Students to Watch</CardTitle>
+                <CardDescription>Students scoring below 50% who might need extra attention.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 {isLoadingChart ? (
+                      <div className="flex justify-center items-center h-[250px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                 ) : studentsToWatch.length > 0 ? (
+                    <ul className="space-y-4">
+                        {studentsToWatch.map((student, index) => (
+                            <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div className="flex items-center gap-3">
+                                    <TrendingDown className="h-4 w-4 text-destructive" />
+                                    <div>
+                                        <p className="font-medium">{student.name}</p>
+                                        <p className="text-sm text-muted-foreground">{student.reason}</p>
+                                    </div>
+                                </div>
+                                <Badge variant="destructive">Action Needed</Badge>
+                            </li>
+                        ))}
+                    </ul>
+                 ) : (
+                    <div className="flex justify-center items-center h-[250px]">
+                        <p className="text-muted-foreground">No students require special attention at this time.</p>
+                    </div>
+                 )}
+              </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
