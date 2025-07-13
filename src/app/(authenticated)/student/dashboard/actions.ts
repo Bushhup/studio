@@ -31,10 +31,9 @@ export async function getStudentDashboardData(studentId: string, userRole: Role)
         const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
 
         // --- Get Recent Mark ---
-        const marks = await getMyMarks(studentId);
+        const marks = await getMyMarks(studentId); // This action sorts by date descending
         let recentMarkText = "N/A";
         if (marks.length > 0) {
-            // getMyMarks sorts by date descending, so the first one is the most recent.
             const mostRecentMark = marks[0];
             recentMarkText = `${mostRecentMark.marksObtained} / ${mostRecentMark.maxMarks}`;
         }
@@ -45,7 +44,7 @@ export async function getStudentDashboardData(studentId: string, userRole: Role)
         
         const eventQuery: any = { date: { $gte: new Date() } };
         const orConditions: any[] = [
-            // Global events
+            // Global events (no target classes)
             { classIds: { $exists: false } },
             { classIds: { $size: 0 } },
         ];

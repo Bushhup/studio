@@ -1,14 +1,38 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, CalendarDays } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 
-const mockAttendance = [
-    { subject: "Advanced Algorithms", attended: 25, total: 30 },
-    { subject: "Operating Systems", attended: 28, total: 30 },
-    { subject: "DBMS", attended: 22, total: 25 },
-];
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { getStudentAttendance, type SubjectAttendance } from './actions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldCheck, CalendarDays, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from '@/hooks/use-toast';
 
 export default function StudentAttendancePage() {
+  const { data: session } = useSession();
+  const studentId = session?.user?.id;
+  const { toast } = useToast();
+  
+  const [attendance, setAttendance] = useState<SubjectAttendance[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (studentId) {
+      setIsLoading(true);
+      getStudentAttendance(studentId)
+        .then(setAttendance)
+        .catch(() => {
+          toast({
+            title: 'Error',
+            description: 'Could not fetch your attendance data.',
+            variant: 'destructive',
+          });
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [studentId, toast]);
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
@@ -24,20 +48,25 @@ export default function StudentAttendancePage() {
           <CardDescription>Your attendance percentage for each subject.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {mockAttendance.map((att, index) => {
-            const percentage = (att.attended / att.total) * 100;
-            return (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : attendance.length > 0 ? (
+            attendance.map((att, index) => (
               <div key={index}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">{att.subject}</span>
-                  <span className={`text-sm font-semibold ${percentage < 75 ? 'text-destructive' : 'text-primary'}`}>
-                    {percentage.toFixed(1)}% ({att.attended}/{att.total})
+                  <span className="text-sm font-medium">{att.subjectName}</span>
+                  <span className={`text-sm font-semibold ${att.percentage < 75 ? 'text-destructive' : 'text-primary'}`}>
+                    {att.percentage.toFixed(1)}% ({att.attended}/{att.total})
                   </span>
                 </div>
-                <Progress value={percentage} aria-label={`${att.subject} attendance ${percentage.toFixed(1)}%`} />
+                <Progress value={att.percentage} aria-label={`${att.subjectName} attendance ${att.percentage.toFixed(1)}%`} />
               </div>
-            );
-          })}
+            ))
+          ) : (
+             <p className="text-center text-muted-foreground py-10">No attendance records found.</p>
+          )}
         </CardContent>
       </Card>
       <Card className="mt-8">
@@ -46,7 +75,10 @@ export default function StudentAttendancePage() {
             <CardDescription>Detailed day-wise attendance records.</CardDescription>
         </CardHeader>
         <CardContent>
-            <p className="text-muted-foreground">This section will show a calendar or list view of your daily attendance status for each subject.</p>
+            <div className="flex items-center justify-center h-24 text-muted-foreground">
+                <CalendarDays className="mr-2 h-5 w-5" />
+                <p>This section will show a calendar or list view of your daily attendance status.</p>
+            </div>
         </CardContent>
       </Card>
     </div>
