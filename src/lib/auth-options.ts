@@ -1,8 +1,8 @@
 
 import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { login as loginAction, getUserDetails } from '@/app/actions';
-import type { Role, User } from '@/types';
+import { login as loginAction } from '@/app/actions';
+import type { Role } from '@/types';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -19,36 +19,28 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            const loginResult = await loginAction({ 
+            const user = await loginAction({ 
                 username: credentials.username, 
                 password: credentials.password, 
                 role: credentials.role as Role 
             });
 
-            if (loginResult.success) {
-                // If login is successful, fetch the complete user details to return to NextAuth
-                const user = await getUserDetails(credentials.username, credentials.role as Role);
-                
-                if (user) {
-                    // Return the user object for NextAuth to use
-                    return {
-                        id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        role: user.role,
-                        classId: user.classId,
-                    };
-                } else {
-                     // This case should ideally not happen if login succeeds, but as a safeguard:
-                    throw new Error("Login succeeded but user details could not be found.");
-                }
+            if (user) {
+                // The login action now returns the full user object on success.
+                // This object, including the id, is returned to NextAuth.
+                return {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    classId: user.classId,
+                };
             } else {
-                // If loginAction returns success: false, throw an error with the message
-                throw new Error(loginResult.message || "Invalid credentials.");
+                // If loginAction returns null, it means authentication failed.
+                throw new Error("Invalid username, password, or role.");
             }
         } catch (error) {
-            // Catch any errors thrown from loginAction or getUserDetails
-            // and re-throw them so NextAuth can display them to the user.
+            // Catch any other unexpected errors during the login process.
             const errorMessage = (error instanceof Error) ? error.message : "An unknown authentication error occurred.";
             throw new Error(errorMessage);
         }

@@ -13,40 +13,49 @@ const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
-export type LoginResult = { success: boolean; message?: string };
 
-export async function login(data: LoginInput): Promise<LoginResult> {
+// This function will now return the user object on success or null on failure.
+export async function login(data: LoginInput): Promise<User | null> {
   const validation = loginSchema.safeParse(data);
   if (!validation.success) {
-    return { success: false, message: 'Invalid input data.' };
+    console.error('Login validation failed:', validation.error);
+    return null;
   }
   
-  // Handle admin login separately
   if (data.role === 'admin') {
     if (data.username === 'Admin01' && data.password === 'shaosaid05413') {
-      return { success: true };
+       return {
+            id: 'admin_user_placeholder',
+            name: 'Admin User',
+            email: 'admin@mca-dept.edu',
+            role: 'admin'
+        };
     }
-    return { success: false, message: 'Invalid admin credentials.' };
+    return null;
   }
 
   try {
     await connectToDB();
     
+    // Fetch the user and their password
     const user = await UserModel.findOne({ name: data.username, role: data.role }).select('+password');
 
-    if (!user) {
-      return { success: false, message: 'No user found with this username and role.' };
-    }
-    
-    if (user.password !== data.password) {
-      return { success: false, message: 'Incorrect password.' };
+    if (!user || user.password !== data.password) {
+      return null;
     }
 
-    return { success: true };
+    // Return the full user object matching the User type
+    return {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role as Role,
+        classId: user.classId ? user.classId.toString() : undefined,
+    };
 
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, message: 'An internal server error occurred.' };
+    return null;
   }
 }
 
@@ -63,7 +72,7 @@ export async function getUserDetails(username: string, role: Role): Promise<User
     
     try {
         await connectToDB();
-        const user = await UserModel.findOne({ name: username, role: role }).select('+password').lean();
+        const user = await UserModel.findOne({ name: username, role: role }).lean();
 
         if (!user) {
             return null;
@@ -73,7 +82,6 @@ export async function getUserDetails(username: string, role: Role): Promise<User
             id: user._id.toString(),
             name: user.name,
             email: user.email,
-            password: user.password,
             role: user.role as Role,
             classId: user.classId ? user.classId.toString() : undefined,
         };
