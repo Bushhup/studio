@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School, Star } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School, Star, UserCheck } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ export default function FacultyPerformancePage() {
   const [chartData, setChartData] = useState<MarksDistributionData[]>([]);
   const [studentsToWatch, setStudentsToWatch] = useState<StudentPerformanceInfo[]>([]);
   const [topPerformers, setTopPerformers] = useState<StudentPerformanceInfo[]>([]);
+  const [averagePerformers, setAveragePerformers] = useState<StudentPerformanceInfo[]>([]);
 
   useEffect(() => {
     if (facultyId) {
@@ -70,10 +71,12 @@ export default function FacultyPerformancePage() {
         setChartData([]);
         setStudentsToWatch([]);
         setTopPerformers([]);
+        setAveragePerformers([]);
         const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
         setChartData(performanceData.distribution);
         setStudentsToWatch(performanceData.studentsToWatch);
         setTopPerformers(performanceData.topPerformers);
+        setAveragePerformers(performanceData.averagePerformers);
         setIsLoadingChart(false);
     }
     if (isLoading) setIsLoading(false);
@@ -152,11 +155,11 @@ export default function FacultyPerformancePage() {
             )}
           </CardContent>
         </Card>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-yellow-400"/> Top Performers</CardTitle>
-                <CardDescription>Students who are excelling in this subject.</CardDescription>
+                <CardDescription>Students excelling in this subject (&gt;90%).</CardDescription>
               </CardHeader>
               <CardContent>
                  {isLoadingChart ? (
@@ -180,15 +183,46 @@ export default function FacultyPerformancePage() {
                     </ul>
                  ) : (
                     <div className="flex justify-center items-center h-[250px]">
-                        <p className="text-muted-foreground text-center">No students currently in the top performer category (&gt;90%).</p>
+                        <p className="text-muted-foreground text-center">No students currently in the top performer category.</p>
                     </div>
                  )}
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Students to Watch</CardTitle>
-                <CardDescription>Students scoring below 50% who might need extra attention.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5 text-blue-500"/> Average Performers</CardTitle>
+                <CardDescription>Students with scores between 50% and 89%.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 {isLoadingChart ? (
+                      <div className="flex justify-center items-center h-[250px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                 ) : averagePerformers.length > 0 ? (
+                    <ul className="space-y-4 max-h-[300px] overflow-y-auto">
+                        {averagePerformers.map((student, index) => (
+                            <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div className="flex items-center gap-3">
+                                    <div>
+                                        <p className="font-medium">{student.name}</p>
+                                        <p className="text-sm text-muted-foreground">{student.reason}</p>
+                                    </div>
+                                </div>
+                                <Badge variant="secondary">Consistent</Badge>
+                            </li>
+                        ))}
+                    </ul>
+                 ) : (
+                    <div className="flex justify-center items-center h-[250px]">
+                        <p className="text-muted-foreground text-center">No students currently in the average performer category.</p>
+                    </div>
+                 )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-destructive"/> Students to Watch</CardTitle>
+                <CardDescription>Students scoring below 50% who might need attention.</CardDescription>
               </CardHeader>
               <CardContent>
                  {isLoadingChart ? (
@@ -212,7 +246,7 @@ export default function FacultyPerformancePage() {
                     </ul>
                  ) : (
                     <div className="flex justify-center items-center h-[250px]">
-                        <p className="text-muted-foreground">No students require special attention at this time.</p>
+                        <p className="text-muted-foreground text-center">No students require special attention at this time.</p>
                     </div>
                  )}
               </CardContent>

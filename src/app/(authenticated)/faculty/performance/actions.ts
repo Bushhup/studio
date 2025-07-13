@@ -20,12 +20,13 @@ export type PerformanceData = {
     distribution: MarksDistributionData[];
     studentsToWatch: StudentPerformanceInfo[];
     topPerformers: StudentPerformanceInfo[];
+    averagePerformers: StudentPerformanceInfo[];
 };
 
 
 export async function getPerformanceDataForClass(classId: string, subjectId: string): Promise<PerformanceData> {
     if (!mongoose.Types.ObjectId.isValid(classId) || !mongoose.Types.ObjectId.isValid(subjectId)) {
-        return { distribution: [], studentsToWatch: [], topPerformers: [] };
+        return { distribution: [], studentsToWatch: [], topPerformers: [], averagePerformers: [] };
     }
     
     try {
@@ -38,7 +39,7 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
             .lean();
 
         if (marks.length === 0) {
-            return { distribution: [], studentsToWatch: [], topPerformers: [] };
+            return { distribution: [], studentsToWatch: [], topPerformers: [], averagePerformers: [] };
         }
 
         const distribution: Record<string, number> = {
@@ -83,6 +84,7 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         
         const studentsToWatch: StudentPerformanceInfo[] = [];
         const topPerformers: StudentPerformanceInfo[] = [];
+        const averagePerformers: StudentPerformanceInfo[] = [];
 
         Object.values(studentMarks).forEach(student => {
             student.scores.forEach(score => {
@@ -93,11 +95,18 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
                         trend: 'down',
                     });
                 }
-                if (score.percentage > 90) {
+                if (score.percentage >= 90) {
                     topPerformers.push({
                         name: student.name,
                         reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
                         trend: 'up',
+                    });
+                }
+                if (score.percentage >= 50 && score.percentage < 90) {
+                    averagePerformers.push({
+                        name: student.name,
+                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        trend: 'stable',
                     });
                 }
             });
@@ -106,16 +115,18 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         // Sort the lists to show most critical/highest first
         const sortedStudentsToWatch = studentsToWatch.sort((a,b) => parseFloat(a.reason.split('%')[0].split(' ').pop()!) - parseFloat(b.reason.split('%')[0].split(' ').pop()!));
         const sortedTopPerformers = topPerformers.sort((a,b) => parseFloat(b.reason.split('%')[0].split(' ').pop()!) - parseFloat(a.reason.split('%')[0].split(' ').pop()!));
+        const sortedAveragePerformers = averagePerformers.sort((a,b) => parseFloat(b.reason.split('%')[0].split(' ').pop()!) - parseFloat(a.reason.split('%')[0].split(' ').pop()!));
 
 
         return { 
             distribution: distributionData, 
             studentsToWatch: sortedStudentsToWatch,
-            topPerformers: sortedTopPerformers
+            topPerformers: sortedTopPerformers,
+            averagePerformers: sortedAveragePerformers
         };
 
     } catch (error) {
         console.error("Error fetching performance data:", error);
-        return { distribution: [], studentsToWatch: [], topPerformers: [] };
+        return { distribution: [], studentsToWatch: [], topPerformers: [], averagePerformers: [] };
     }
 }
