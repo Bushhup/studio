@@ -26,6 +26,7 @@ function calculateGrade(marksObtained: number, maxMarks: number): string {
     if (percentage >= 61) return 'B+';
     if (percentage >= 51) return 'B';
     if (percentage >= 50) return 'C';
+    if (percentage < 50) return 'U';
     return 'U';
 }
 
