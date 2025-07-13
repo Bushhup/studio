@@ -69,6 +69,7 @@ export async function getStudentAttendance(studentId: string): Promise<SubjectAt
         return attendanceData.map(data => ({
             ...data,
             subjectId: data.subjectId.toString(),
+            percentage: parseFloat(data.percentage.toFixed(2)),
         }));
 
     } catch (error) {
