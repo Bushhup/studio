@@ -89,8 +89,7 @@ export default function LoginPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
-          <GraduationCap className="h-16 w-16 text-primary animate-pulse" />
-          <p className="text-xl font-medium text-foreground">Loading MCA Dept...</p>
+          <GraduationCap className="h-24 w-24 text-primary animate-pulse" />
         </div>
       </div>
     );
@@ -158,7 +157,7 @@ export default function LoginPage() {
                 />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={!username || !password || isLoggingIn}>
+                <Button type="submit" disabled={!username || !password || isLoggingIn}>
                   {isLoggingIn ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
