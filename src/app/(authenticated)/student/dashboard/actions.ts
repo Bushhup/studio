@@ -44,7 +44,7 @@ export async function getStudentDashboardData(studentId: string, userRole: Role)
         
         const eventQuery: any = { date: { $gte: new Date() } };
         const orConditions: any[] = [
-            // Global events (no target classes)
+            // Global events (no target classes OR empty array)
             { classIds: { $exists: false } },
             { classIds: { $size: 0 } },
         ];
