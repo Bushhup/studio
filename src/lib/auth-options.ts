@@ -37,11 +37,13 @@ export const authOptions: NextAuthOptions = {
                 };
             } else {
                 // If loginAction returns null, it means authentication failed.
-                throw new Error("Invalid username, password, or role.");
+                // Return null to indicate failure to NextAuth, which then sets the error message.
+                return null;
             }
         } catch (error) {
             // Catch any other unexpected errors during the login process.
             const errorMessage = (error instanceof Error) ? error.message : "An unknown authentication error occurred.";
+            // Throwing an error here will also signal a login failure to NextAuth.
             throw new Error(errorMessage);
         }
       },
