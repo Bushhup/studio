@@ -31,21 +31,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     const welcomeTimer = setTimeout(() => {
-      setShowWelcome(false);
+        // If the user is already authenticated when the timer ends, redirect them.
+        if (status === 'authenticated') {
+            let redirectPath = '/home';
+            if (session.user.role === 'admin') redirectPath = '/admin/dashboard';
+            else if (session.user.role === 'faculty') redirectPath = '/faculty/dashboard';
+            else if (session.user.role === 'student') redirectPath = '/student/dashboard';
+            router.replace(redirectPath);
+        } else {
+            // Otherwise, just show the login form.
+            setShowWelcome(false);
+        }
     }, 3000); // 3 seconds
 
     return () => clearTimeout(welcomeTimer);
-  }, []);
-
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role) {
-      let redirectPath = '/home';
-      if (session.user.role === 'admin') redirectPath = '/admin/dashboard';
-      else if (session.user.role === 'faculty') redirectPath = '/faculty/dashboard';
-      else if (session.user.role === 'student') redirectPath = '/student/dashboard';
-      router.replace(redirectPath);
-    }
   }, [status, session, router]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +62,7 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     const result = await signIn('credentials', {
-      redirect: false,
+      redirect: false, // We handle the redirect manually
       username: username,
       password: password,
       role: selectedRole,
@@ -69,12 +70,13 @@ export default function LoginPage() {
     
     setIsLoggingIn(false);
 
-    if (result?.ok && !result?.error) {
+    if (result?.ok && !result.error) {
         let redirectPath = '/home';
         if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
         else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
         else if (selectedRole === 'student') redirectPath = '/student/dashboard';
-        router.replace(redirectPath);
+        // Use router.push for immediate redirection
+        router.push(redirectPath);
     } else {
       toast({
         title: "Login Failed",
@@ -95,7 +97,7 @@ export default function LoginPage() {
   };
 
 
-  if (status === 'loading' || (status === 'authenticated' && !showWelcome)) {
+  if (status === 'loading' || (status === 'authenticated' && showWelcome)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
