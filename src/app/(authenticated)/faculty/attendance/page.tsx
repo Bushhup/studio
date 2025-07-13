@@ -29,6 +29,8 @@ type StudentInfo = {
   name: string;
 };
 
+type AttendanceRecord = Record<string, boolean>;
+
 export default function FacultyAttendancePage() {
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -43,7 +45,7 @@ export default function FacultyAttendancePage() {
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  const [allPresent, setAllPresent] = useState(false);
+  const [attendance, setAttendance] = useState<AttendanceRecord>({});
 
   useEffect(() => {
     if (facultyId) {
@@ -57,6 +59,7 @@ export default function FacultyAttendancePage() {
   const handleSubjectChange = async (subjectId: string) => {
     setSelectedSubjectId(subjectId);
     setStudents([]);
+    setAttendance({}); // Reset attendance on subject change
     if (!subjectId) return;
 
     const subject = subjects.find(s => s.id === subjectId);
@@ -65,6 +68,12 @@ export default function FacultyAttendancePage() {
       try {
         const fetchedStudents = await getStudentsForClass(subject.classId);
         setStudents(fetchedStudents);
+        // Initialize all students as present
+        const initialAttendance = fetchedStudents.reduce((acc, student) => {
+          acc[student.id] = true;
+          return acc;
+        }, {} as AttendanceRecord);
+        setAttendance(initialAttendance);
       } catch (error) {
         toast({ title: 'Error', description: 'Could not fetch students.', variant: 'destructive' });
       } finally {
@@ -75,12 +84,30 @@ export default function FacultyAttendancePage() {
   
   const handleSaveAttendance = () => {
     setIsSaving(true);
+    console.log('Saving attendance:', { subjectId: selectedSubjectId, date, attendance });
     // Mock saving logic
     setTimeout(() => {
       toast({ title: 'Attendance Saved', description: 'Attendance has been recorded successfully. (Mocked)' });
       setIsSaving(false);
     }, 1500);
   }
+  
+  const handleToggleAllPresent = (isChecked: boolean) => {
+    const newAttendance: AttendanceRecord = {};
+    students.forEach(student => {
+      newAttendance[student.id] = isChecked;
+    });
+    setAttendance(newAttendance);
+  };
+  
+  const handleToggleStudent = (studentId: string, isChecked: boolean) => {
+    setAttendance(prev => ({
+      ...prev,
+      [studentId]: isChecked
+    }));
+  };
+
+  const areAllPresent = students.length > 0 && students.every(s => attendance[s.id]);
 
   return (
     <div className="container mx-auto py-8">
@@ -140,14 +167,18 @@ export default function FacultyAttendancePage() {
              <div className="flex justify-center items-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : selectedSubjectId ? (
+          ) : selectedSubjectId && students.length > 0 ? (
              <div className="space-y-4">
               <Card>
                  <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List</CardTitle>
                        <div className="flex items-center space-x-2">
-                          <Checkbox id="all-present" checked={allPresent} onCheckedChange={(checked) => setAllPresent(!!checked)}/>
+                          <Checkbox 
+                            id="all-present" 
+                            checked={areAllPresent} 
+                            onCheckedChange={(checked) => handleToggleAllPresent(!!checked)}
+                          />
                           <Label htmlFor="all-present" className="text-sm font-medium">Mark all as present</Label>
                         </div>
                     </div>
@@ -167,7 +198,11 @@ export default function FacultyAttendancePage() {
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>{student.name}</TableCell>
                                     <TableCell className="text-center">
-                                      <Checkbox defaultChecked={allPresent} checked={allPresent} aria-label={`Mark ${student.name} as present`} />
+                                      <Checkbox 
+                                        checked={attendance[student.id] ?? false}
+                                        onCheckedChange={(checked) => handleToggleStudent(student.id, !!checked)}
+                                        aria-label={`Mark ${student.name} as present`} 
+                                      />
                                     </TableCell>
                                 </TableRow>
                             ))}
