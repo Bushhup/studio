@@ -12,13 +12,11 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarGroup,
-  SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { 
   LayoutDashboard, CalendarDays, BookOpenText, MessageSquareText, Briefcase, 
-  Users, ClipboardList, GraduationCap, FileText, UploadCloud, DownloadCloud, 
-  Sparkles, ListChecks, BarChart3, ShieldCheck, Settings, UserCog, BookCopy, School
+  Users, ClipboardList, GraduationCap, 
+  ListChecks, BarChart3, ShieldCheck, BookCopy, School
 } from 'lucide-react';
 
 interface NavItem {
@@ -114,16 +112,6 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
           </SidebarMenuItem>
         );
       })}
-        <SidebarGroup className="mt-auto">
-          <SidebarMenuItem>
-             <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Settings" }}>
-                <Link href="/settings/account">
-                    <Settings className="h-5 w-5" />
-                    <span>Settings</span>
-                </Link>
-             </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarGroup>
     </SidebarMenu>
   );
 }

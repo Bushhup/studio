@@ -14,8 +14,11 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarRail,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthenticatedLayout({
@@ -25,6 +28,7 @@ export default function AuthenticatedLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   const role = session?.user?.role;
 
@@ -57,7 +61,16 @@ export default function AuthenticatedLayout({
             <SidebarNav userRole={role} />
           </SidebarContent>
           <SidebarFooter className="p-2">
-             {/* Placeholder for footer items like quick settings */}
+             <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Settings" }}>
+                        <Link href="/settings/account">
+                            <Settings className="h-5 w-5" />
+                            <span>Settings</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
         <SidebarRail />
