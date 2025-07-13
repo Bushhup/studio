@@ -115,12 +115,11 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
         );
       })}
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarMenuItem>
-             <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Account Settings" }}>
+             <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Settings" }}>
                 <Link href="/settings/account">
-                    <UserCog className="h-5 w-5" />
-                    <span>Account Settings</span>
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
                 </Link>
              </SidebarMenuButton>
           </SidebarMenuItem>
