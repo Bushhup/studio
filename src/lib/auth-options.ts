@@ -15,37 +15,29 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.role || !credentials.username || !credentials.password) {
-          throw new Error("Invalid credentials provided.");
+          return null;
         }
 
-        try {
-            const user = await loginAction({ 
-                username: credentials.username, 
-                password: credentials.password, 
-                role: credentials.role as Role 
-            });
+        const user = await loginAction({ 
+            username: credentials.username, 
+            password: credentials.password, 
+            role: credentials.role as Role 
+        });
 
-            if (user) {
-                // The login action now returns the full user object on success.
-                // This object, including the id, is returned to NextAuth.
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    classId: user.classId,
-                };
-            } else {
-                // If loginAction returns null, it means authentication failed.
-                // Return null to indicate failure to NextAuth, which then sets the error message.
-                return null;
-            }
-        } catch (error) {
-            // Catch any other unexpected errors during the login process.
-            console.error("Authorization error:", error);
-            const errorMessage = (error instanceof Error) ? error.message : "An unknown authentication error occurred.";
-            // Throwing an error here will also signal a login failure to NextAuth.
-            throw new Error(errorMessage);
+        if (user) {
+            // The login action now returns the full user object on success.
+            // This object, including the id, is returned to NextAuth.
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                classId: user.classId,
+            };
+        } else {
+            // If loginAction returns null, it means authentication failed.
+            // Return null to indicate failure to NextAuth, which then sets the error message.
+            return null;
         }
       },
     }),

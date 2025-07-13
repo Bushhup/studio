@@ -38,7 +38,7 @@ export async function login(data: LoginInput): Promise<User | null> {
     await connectToDB();
     
     // Fetch the user and their password
-    const user = await UserModel.findOne({ name: data.username, role: data.role }).select('+password');
+    const user = await UserModel.findOne({ name: data.username, role: data.role }).select('+password').lean();
 
     if (!user || user.password !== data.password) {
       return null;
