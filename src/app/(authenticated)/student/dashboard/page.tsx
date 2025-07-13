@@ -4,10 +4,21 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, BarChart3, ShieldCheck, BookOpenText, Briefcase, MessageSquareText, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/lib/auth-options";
+import { getMyMarks } from "../my-marks/actions"; // Import the new action
 
 export default async function StudentDashboardPage() {
   const session = await auth();
   const userName = session?.user?.name || 'Student';
+  const studentId = session?.user?.id;
+
+  let recentMarkText = "N/A";
+  if (studentId) {
+    const marks = await getMyMarks(studentId);
+    if (marks.length > 0) {
+      const mostRecentMark = marks[0]; // The action sorts by date descending
+      recentMarkText = `${mostRecentMark.marksObtained} / ${mostRecentMark.maxMarks}`;
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -26,18 +37,18 @@ export default async function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">85%</div>
-            <p className="text-xs text-muted-foreground">Last updated today</p>
+            <p className="text-xs text-muted-foreground">Last updated today (Mock Data)</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Marks (Avg)</CardTitle>
+            <CardTitle className="text-sm font-medium">Recent Marks</CardTitle>
             <GraduationCap className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78.5 / 100</div>
-            <p className="text-xs text-muted-foreground">Unit Test 1</p>
+            <div className="text-2xl font-bold">{recentMarkText}</div>
+            <p className="text-xs text-muted-foreground">Latest assessment score</p>
           </CardContent>
         </Card>
 
@@ -48,7 +59,7 @@ export default async function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Guest lecture next week</p>
+            <p className="text-xs text-muted-foreground">Guest lecture next week (Mock)</p>
           </CardContent>
         </Card>
       </div>
