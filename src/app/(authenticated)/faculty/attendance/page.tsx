@@ -1,8 +1,87 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { getSubjectsForFaculty, getStudentsForClass } from '../marks/actions'; // Re-using from marks actions
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ListChecks, CalendarPlus } from "lucide-react";
+import { ListChecks, CalendarPlus, Loader2, Users, Save, Calendar as CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+
+type SubjectInfo = {
+  id: string;
+  name: string;
+  classId: string;
+  className: string;
+};
+
+type StudentInfo = {
+  id: string;
+  name: string;
+};
 
 export default function FacultyAttendancePage() {
+  const { data: session } = useSession();
+  const { toast } = useToast();
+  const facultyId = session?.user?.id;
+
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [students, setStudents] = useState<StudentInfo[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [allPresent, setAllPresent] = useState(false);
+
+  useEffect(() => {
+    if (facultyId) {
+      setIsLoadingSubjects(true);
+      getSubjectsForFaculty(facultyId)
+        .then(setSubjects)
+        .finally(() => setIsLoadingSubjects(false));
+    }
+  }, [facultyId]);
+
+  const handleSubjectChange = async (subjectId: string) => {
+    setSelectedSubjectId(subjectId);
+    setStudents([]);
+    if (!subjectId) return;
+
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      setIsLoadingStudents(true);
+      try {
+        const fetchedStudents = await getStudentsForClass(subject.classId);
+        setStudents(fetchedStudents);
+      } catch (error) {
+        toast({ title: 'Error', description: 'Could not fetch students.', variant: 'destructive' });
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    }
+  };
+  
+  const handleSaveAttendance = () => {
+    setIsSaving(true);
+    // Mock saving logic
+    setTimeout(() => {
+      toast({ title: 'Attendance Saved', description: 'Attendance has been recorded successfully. (Mocked)' });
+      setIsSaving(false);
+    }, 1500);
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
@@ -15,13 +94,98 @@ export default function FacultyAttendancePage() {
       <Card>
         <CardHeader>
           <CardTitle>Mark Attendance</CardTitle>
-          <CardDescription> Select class, subject, and date to mark attendance.</CardDescription>
+          <CardDescription>Select class, subject, and date to mark attendance.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Form for selecting class/subject/date and student list for marking attendance will be here.</p>
-          <Button className="mt-4">
-            <CalendarPlus className="mr-2 h-4 w-4" /> Mark Today's Attendance
-          </Button>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select onValueChange={handleSubjectChange} disabled={isLoadingSubjects}>
+              <SelectTrigger className="w-full sm:w-[300px]">
+                <SelectValue placeholder={isLoadingSubjects ? "Loading subjects..." : "Select subject..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.length > 0 ? (
+                  subjects.map(subject => (
+                    <SelectItem key={subject.id} value={subject.id}>{subject.name} ({subject.className})</SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground">No subjects assigned to you.</div>
+                )}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full sm:w-[240px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          {isLoadingStudents ? (
+             <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedSubjectId ? (
+             <div className="space-y-4">
+              <Card>
+                 <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List</CardTitle>
+                       <div className="flex items-center space-x-2">
+                          <Checkbox id="all-present" checked={allPresent} onCheckedChange={(checked) => setAllPresent(!!checked)}/>
+                          <Label htmlFor="all-present" className="text-sm font-medium">Mark all as present</Label>
+                        </div>
+                    </div>
+                 </CardHeader>
+                 <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">Roll No.</TableHead>
+                                <TableHead>Student Name</TableHead>
+                                <TableHead className="w-[100px] text-center">Present</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {students.map((student, index) => (
+                                <TableRow key={student.id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{student.name}</TableCell>
+                                    <TableCell className="text-center">
+                                      <Checkbox defaultChecked={allPresent} checked={allPresent} aria-label={`Mark ${student.name} as present`} />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                 </CardContent>
+              </Card>
+               <div className="flex justify-end">
+                <Button onClick={handleSaveAttendance} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                  Save Attendance
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-10">Please select a subject to begin.</p>
+          )}
+
         </CardContent>
       </Card>
     </div>

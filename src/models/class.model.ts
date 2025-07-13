@@ -11,7 +11,7 @@ const ClassSchema = new Schema<IClass>({
   academicYear: { type: String, required: true },
   inchargeFaculty: { type: Schema.Types.ObjectId, ref: 'User', required: false },
 }, {
-  collection: 'classes' // Explicitly set collection name
+  collection: 'classes' 
 });
 
 const ClassModel = models.Class || model<IClass>('Class', ClassSchema);

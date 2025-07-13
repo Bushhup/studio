@@ -1,8 +1,79 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { getSubjectsForFaculty, getStudentsForClass } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Edit3 } from "lucide-react";
+import { ClipboardList, Edit3, Loader2, Users, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+
+type SubjectInfo = {
+  id: string;
+  name: string;
+  classId: string;
+  className: string;
+};
+
+type StudentInfo = {
+  id: string;
+  name: string;
+};
 
 export default function FacultyMarksPage() {
+  const { data: session } = useSession();
+  const { toast } = useToast();
+  const facultyId = session?.user?.id;
+
+  const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [students, setStudents] = useState<StudentInfo[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (facultyId) {
+      setIsLoadingSubjects(true);
+      getSubjectsForFaculty(facultyId)
+        .then(setSubjects)
+        .finally(() => setIsLoadingSubjects(false));
+    }
+  }, [facultyId]);
+
+  const handleSubjectChange = async (subjectId: string) => {
+    setSelectedSubjectId(subjectId);
+    setStudents([]);
+    if (!subjectId) return;
+
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      setIsLoadingStudents(true);
+      try {
+        const fetchedStudents = await getStudentsForClass(subject.classId);
+        setStudents(fetchedStudents);
+      } catch (error) {
+        toast({ title: 'Error', description: 'Could not fetch students.', variant: 'destructive' });
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    }
+  };
+  
+  const handleSaveMarks = () => {
+    setIsSaving(true);
+    // Mock saving logic
+    setTimeout(() => {
+      toast({ title: 'Marks Saved', description: 'Student marks have been updated successfully. (Mocked)' });
+      setIsSaving(false);
+    }, 1500);
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
@@ -15,13 +86,73 @@ export default function FacultyMarksPage() {
       <Card>
         <CardHeader>
           <CardTitle>Marks Entry / View</CardTitle>
-          <CardDescription> Select class, subject, and exam type to manage marks.</CardDescription>
+          <CardDescription>Select class and subject to manage marks for an assessment.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Form for selecting class/subject/exam and table for marks entry/view will be here.</p>
-          <Button className="mt-4">
-            <Edit3 className="mr-2 h-4 w-4" /> Start Marks Entry
-          </Button>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+             <Select onValueChange={handleSubjectChange} disabled={isLoadingSubjects}>
+              <SelectTrigger className="w-full sm:w-[300px]">
+                <SelectValue placeholder={isLoadingSubjects ? "Loading subjects..." : "Select subject..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.length > 0 ? (
+                  subjects.map(subject => (
+                    <SelectItem key={subject.id} value={subject.id}>{subject.name} ({subject.className})</SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground">No subjects assigned to you.</div>
+                )}
+              </SelectContent>
+            </Select>
+            <Input className="w-full sm:w-[300px]" placeholder="Enter assessment name (e.g., Unit Test 1)" disabled={!selectedSubjectId} />
+          </div>
+
+          {isLoadingStudents ? (
+             <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedSubjectId && students.length > 0 ? (
+            <div className="space-y-4">
+              <Card>
+                 <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List</CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">Roll No.</TableHead>
+                                <TableHead>Student Name</TableHead>
+                                <TableHead className="w-[150px]">Marks</TableHead>
+                                <TableHead className="w-[150px]">Max Marks</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {students.map((student, index) => (
+                                <TableRow key={student.id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{student.name}</TableCell>
+                                    <TableCell><Input type="number" placeholder="Enter marks" /></TableCell>
+                                    <TableCell><Input type="number" defaultValue={100} /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                 </CardContent>
+              </Card>
+               <div className="flex justify-end">
+                <Button onClick={handleSaveMarks} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                  Save Marks
+                </Button>
+              </div>
+            </div>
+          ) : selectedSubjectId && students.length === 0 ? (
+             <p className="text-center text-muted-foreground py-10">No students found in this class.</p>
+          ) : (
+             <p className="text-center text-muted-foreground py-10">Please select a subject to begin marks entry.</p>
+          )}
+
         </CardContent>
       </Card>
     </div>
