@@ -85,28 +85,25 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         const topPerformers: StudentPerformanceInfo[] = [];
 
         Object.values(studentMarks).forEach(student => {
-            // Check for low scores
-            const lowScore = student.scores.find(s => s.percentage < 50);
-            if (lowScore) {
-                studentsToWatch.push({
-                    name: student.name,
-                    reason: `Scored ${lowScore.percentage.toFixed(1)}% in '${lowScore.assessment}'`,
-                    trend: 'down',
-                });
-            }
-
-            // Check for high scores
-            const highScore = student.scores.find(s => s.percentage > 90);
-             if (highScore) {
-                topPerformers.push({
-                    name: student.name,
-                    reason: `Scored ${highScore.percentage.toFixed(1)}% in '${highScore.assessment}'`,
-                    trend: 'up',
-                });
-            }
+            student.scores.forEach(score => {
+                if (score.percentage < 50) {
+                    studentsToWatch.push({
+                        name: student.name,
+                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        trend: 'down',
+                    });
+                }
+                if (score.percentage > 90) {
+                    topPerformers.push({
+                        name: student.name,
+                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        trend: 'up',
+                    });
+                }
+            });
         });
 
-        // Sort the lists, but do not limit them
+        // Sort the lists to show most critical/highest first
         const sortedStudentsToWatch = studentsToWatch.sort((a,b) => parseFloat(a.reason.split('%')[0].split(' ').pop()!) - parseFloat(b.reason.split('%')[0].split(' ').pop()!));
         const sortedTopPerformers = topPerformers.sort((a,b) => parseFloat(b.reason.split('%')[0].split(' ').pop()!) - parseFloat(a.reason.split('%')[0].split(' ').pop()!));
 
