@@ -4,7 +4,6 @@
 import { connectToDB } from '@/lib/mongoose';
 import mongoose from 'mongoose';
 import MarkModel from '@/models/mark.model';
-import AttendanceModel from '@/models/attendance.model';
 
 export type SubjectPerformance = {
   subjectName: string;
