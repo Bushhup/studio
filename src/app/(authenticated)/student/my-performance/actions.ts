@@ -30,7 +30,7 @@ export async function getStudentPerformance(studentId: string): Promise<Performa
       { $match: { studentId: studentObjectId } },
       {
         $lookup: {
-          from: 'subjects',
+          from: 'subjects', // Corrected collection name
           localField: 'subjectId',
           foreignField: '_id',
           as: 'subjectDetails'
