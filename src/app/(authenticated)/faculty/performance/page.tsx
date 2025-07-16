@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School, Star, UserCheck } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, Tooltip } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty } from '../marks/actions';
@@ -49,7 +49,8 @@ export default function FacultyPerformancePage() {
         .then(data => {
             setSubjects(data);
             if (data.length > 0) {
-                handleSubjectChange(data[0].id);
+                // Automatically select the first subject and fetch its data
+                handleSubjectChange(data[0].id, data);
             } else {
                 setIsLoading(false);
             }
@@ -58,26 +59,35 @@ export default function FacultyPerformancePage() {
     }
   }, [facultyId]);
 
-  const handleSubjectChange = async (subjectId: string) => {
+  const handleSubjectChange = async (subjectId: string, currentSubjects?: SubjectInfo[]) => {
+    const subjectList = currentSubjects || subjects;
     setSelectedSubjectId(subjectId);
-    if (!subjectId) {
-        setIsLoading(false);
-        return;
-    };
 
-    const subject = subjects.find(s => s.id === subjectId) || (await getSubjectsForFaculty(facultyId || ''))[0];
+    if (!subjectId) {
+      setIsLoading(false);
+      setIsLoadingChart(false);
+      return;
+    }
+
+    const subject = subjectList.find(s => s.id === subjectId);
     if (subject) {
         setIsLoadingChart(true);
         setChartData([]);
         setStudentsToWatch([]);
         setTopPerformers([]);
         setAveragePerformers([]);
-        const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
-        setChartData(performanceData.distribution);
-        setStudentsToWatch(performanceData.studentsToWatch);
-        setTopPerformers(performanceData.topPerformers);
-        setAveragePerformers(performanceData.averagePerformers);
-        setIsLoadingChart(false);
+        
+        try {
+            const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
+            setChartData(performanceData.distribution);
+            setStudentsToWatch(performanceData.studentsToWatch);
+            setTopPerformers(performanceData.topPerformers);
+            setAveragePerformers(performanceData.averagePerformers);
+        } catch (error) {
+            console.error("Failed to fetch performance data:", error);
+        } finally {
+            setIsLoadingChart(false);
+        }
     }
     if (isLoading) setIsLoading(false);
   }
@@ -94,7 +104,7 @@ export default function FacultyPerformancePage() {
             <p className="text-muted-foreground">View performance metrics for your classes.</p>
             </div>
         </div>
-        <Select onValueChange={handleSubjectChange} value={selectedSubjectId} disabled={isLoading || subjects.length === 0}>
+        <Select onValueChange={(value) => handleSubjectChange(value)} value={selectedSubjectId} disabled={isLoading || subjects.length === 0}>
             <SelectTrigger className="w-full sm:w-[300px]">
                 <School className="mr-2 h-4 w-4"/>
                 <SelectValue placeholder={isLoading ? "Loading classes..." : "Select a class to view performance"} />
@@ -121,32 +131,34 @@ export default function FacultyPerformancePage() {
                 </div>
             ) : chartData.length > 0 ? (
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="range"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      interval={0}
-                      fontSize={12}
-                    />
-                    <Tooltip
-                        cursor={false}
-                        content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                            return (
-                                <div className="p-2 rounded-lg bg-background/80 backdrop-blur-sm border shadow-sm">
-                                <p className="font-bold">{label}</p>
-                                <p className="text-sm text-primary">{`Students: ${payload[0].value}`}</p>
-                                </div>
-                            );
-                            }
-                            return null;
-                        }}
-                    />
-                    <Bar dataKey="count" fill="var(--color-count)" radius={8} />
-                </BarChart>
+                <ResponsiveContainer>
+                    <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                        dataKey="range"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        interval={0}
+                        fontSize={12}
+                        />
+                        <Tooltip
+                            cursor={false}
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                return (
+                                    <div className="p-2 rounded-lg bg-background/80 backdrop-blur-sm border shadow-sm">
+                                    <p className="font-bold">{label}</p>
+                                    <p className="text-sm text-primary">{`Students: ${payload[0].value}`}</p>
+                                    </div>
+                                );
+                                }
+                                return null;
+                            }}
+                        />
+                        <Bar dataKey="count" fill="var(--color-count)" radius={8} />
+                    </BarChart>
+                </ResponsiveContainer>
                 </ChartContainer>
             ) : (
                 <div className="flex justify-center items-center h-[250px]">
@@ -256,3 +268,5 @@ export default function FacultyPerformancePage() {
     </div>
   );
 }
+
+    
