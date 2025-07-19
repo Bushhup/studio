@@ -22,7 +22,10 @@ export const authOptions: NextAuthOptions = {
         const { username, password, role } = credentials;
 
         if (role === 'admin') {
-            if (username === 'Admin01' && password === 'shaosaid05413') {
+            const adminUsername = process.env.ADMIN_USERNAME || 'Admin01';
+            const adminPassword = process.env.ADMIN_PASSWORD || 'shaosaid05413';
+            
+            if (username === adminUsername && password === adminPassword) {
                return {
                     id: 'admin_user_placeholder',
                     name: 'Admin User',
