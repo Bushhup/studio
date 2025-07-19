@@ -55,25 +55,30 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         const studentMarks: Record<string, { name: string; scores: { assessment: string; percentage: number }[] }> = {};
 
         marks.forEach(mark => {
-            if (mark.studentId && (mark.studentId as any).name && mark.marksObtained != null && mark.maxMarks != null && mark.maxMarks > 0) {
-                const percentage = (mark.marksObtained / mark.maxMarks) * 100;
-                const studentId = (mark.studentId as any)._id.toString();
+            // This is the critical fix: `studentId` is an object after `populate`.
+            // We need to handle it as an object to get the ID and name.
+            if (mark.studentId && typeof mark.studentId === 'object' && 'name' in mark.studentId && '_id' in mark.studentId) {
+                const studentIdStr = (mark.studentId as any)._id.toString();
                 const studentName = (mark.studentId as any).name;
 
-                // Populate distribution chart data
-                if (percentage < 40) distribution['0-39 (Fail)']++;
-                else if (percentage < 50) distribution['40-49']++;
-                else if (percentage < 60) distribution['50-59']++;
-                else if (percentage < 70) distribution['60-69']++;
-                else if (percentage < 80) distribution['70-79']++;
-                else if (percentage < 90) distribution['80-89']++;
-                else distribution['90-100']++;
+                if (mark.marksObtained != null && mark.maxMarks != null && mark.maxMarks > 0) {
+                    const percentage = (mark.marksObtained / mark.maxMarks) * 100;
 
-                // Group all scores by student
-                if (!studentMarks[studentId]) {
-                    studentMarks[studentId] = { name: studentName, scores: [] };
+                    // Populate distribution chart data
+                    if (percentage < 40) distribution['0-39 (Fail)']++;
+                    else if (percentage < 50) distribution['40-49']++;
+                    else if (percentage < 60) distribution['50-59']++;
+                    else if (percentage < 70) distribution['60-69']++;
+                    else if (percentage < 80) distribution['70-79']++;
+                    else if (percentage < 90) distribution['80-89']++;
+                    else distribution['90-100']++;
+
+                    // Group all scores by student
+                    if (!studentMarks[studentIdStr]) {
+                        studentMarks[studentIdStr] = { name: studentName, scores: [] };
+                    }
+                    studentMarks[studentIdStr].scores.push({ assessment: mark.assessmentName, percentage });
                 }
-                studentMarks[studentId].scores.push({ assessment: mark.assessmentName, percentage });
             }
         });
         
@@ -94,15 +99,13 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
                         reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
                         trend: 'down',
                     });
-                }
-                if (score.percentage >= 90) {
+                } else if (score.percentage >= 90) {
                     topPerformers.push({
                         name: student.name,
                         reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
                         trend: 'up',
                     });
-                }
-                if (score.percentage >= 50 && score.percentage < 90) {
+                } else {
                     averagePerformers.push({
                         name: student.name,
                         reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
