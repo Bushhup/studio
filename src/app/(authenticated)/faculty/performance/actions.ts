@@ -55,9 +55,7 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         const studentMarks: Record<string, { name: string; scores: { assessment: string; percentage: number }[] }> = {};
 
         marks.forEach(mark => {
-            // This is the critical fix: `studentId` is an object after `populate`.
-            // We need to handle it as an object to get the ID and name.
-            if (mark.studentId && typeof mark.studentId === 'object' && 'name' in mark.studentId && '_id' in mark.studentId) {
+            if (mark.studentId && typeof mark.studentId === 'object' && '_id' in mark.studentId && 'name' in mark.studentId) {
                 const studentIdStr = (mark.studentId as any)._id.toString();
                 const studentName = (mark.studentId as any).name;
 
@@ -73,12 +71,13 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
                     else if (percentage < 90) distribution['80-89']++;
                     else distribution['90-100']++;
 
-                    // Group all scores by student
                     if (!studentMarks[studentIdStr]) {
                         studentMarks[studentIdStr] = { name: studentName, scores: [] };
                     }
                     studentMarks[studentIdStr].scores.push({ assessment: mark.assessmentName, percentage });
                 }
+            } else {
+                 console.warn("Skipping mark due to invalid studentId structure:", mark);
             }
         });
         
