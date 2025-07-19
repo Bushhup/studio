@@ -218,16 +218,16 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             }
             
             if (user.role === 'faculty') {
-                plainUser.inchargeOfClasses = user.inchargeOfClasses.map((c: any) => ({
+                plainUser.inchargeOfClasses = user.inchargeOfClasses?.map((c: any) => ({
                     id: c._id.toString(),
                     name: c.name
-                }));
-                plainUser.handlingSubjects = user.handlingSubjects.map((s: any) => ({
+                })) || [];
+                plainUser.handlingSubjects = user.handlingSubjects?.map((s: any) => ({
                     id: s._id.toString(),
                     name: s.name,
                     code: s.code,
                     className: s.className
-                }));
+                })) || [];
             }
 
             return plainUser;
