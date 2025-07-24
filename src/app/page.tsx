@@ -1,22 +1,43 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter }from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function RootPage() {
     const router = useRouter();
+    const [isFadingOut, setIsFadingOut] = useState(false);
 
     useEffect(() => {
-        router.replace('/landing');
+        const timer = setTimeout(() => {
+            setIsFadingOut(true);
+        }, 3000); // Wait for 3 seconds
+
+        const redirectTimer = setTimeout(() => {
+            router.replace('/landing');
+        }, 4000); // Redirect after fade out (3s + 1s fade)
+
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(redirectTimer);
+        };
     }, [router]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-16 w-16 text-primary animate-spin" />
-                <p className="text-muted-foreground">Redirecting...</p>
+        <div className={cn(
+            "flex min-h-screen items-center justify-center bg-background p-4 transition-opacity duration-1000 ease-in-out",
+            isFadingOut ? "opacity-0" : "opacity-100"
+        )}>
+            <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                    <GraduationCap className="h-24 w-24 text-primary" />
+                    <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-primary/30 blur-2xl"></div>
+                </div>
+                <h1 className="font-headline text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient">
+                    Welcome
+                </h1>
             </div>
       </div>
     );
