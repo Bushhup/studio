@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: '/', // Redirect users to the root page for login
+    signIn: '/login', // Redirect users to the dedicated login page
   },
   session: {
     strategy: "jwt",

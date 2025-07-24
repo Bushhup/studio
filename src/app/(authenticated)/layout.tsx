@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Header } from '@/components/layout/header';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { 
@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GraduationCap, Settings } from 'lucide-react';
+import { GraduationCap, Settings, LogIn, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthenticatedLayout({
@@ -34,14 +34,14 @@ export default function AuthenticatedLayout({
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.replace('/'); // Redirect to login if not authenticated
+      router.replace('/login'); // Redirect to login if not authenticated
     }
   }, [status, router]);
   
   if (status === 'loading' || !role) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <GraduationCap className="h-12 w-12 animate-pulse text-primary" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
