@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 import { useRouter }from 'next/navigation';
-import { GraduationCap, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function RootPage() {
     const router = useRouter();
