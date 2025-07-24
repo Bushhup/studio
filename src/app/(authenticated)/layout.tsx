@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Header } from '@/components/layout/header';
@@ -29,6 +29,7 @@ export default function AuthenticatedLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const role = session?.user?.role;
 
@@ -36,10 +37,27 @@ export default function AuthenticatedLayout({
     if (status === 'unauthenticated') {
       router.replace('/login'); // Redirect to login if not authenticated
     }
+    
+    if (status === 'authenticated') {
+        const timer = setTimeout(() => setShowWelcome(false), 1200); // Show welcome for 1.2 seconds
+        return () => clearTimeout(timer);
+    }
+
   }, [status, router]);
   
-  if (status === 'loading' || !role) {
+  if (status === 'loading' || (status === 'authenticated' && showWelcome)) {
     return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+            <GraduationCap className="h-32 w-32 text-primary animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  // Final check to prevent rendering children if session is not fully ready
+  if (!role) {
+     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
