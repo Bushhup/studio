@@ -31,13 +31,7 @@ export default function RootPage() {
             isFadingOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                    <GraduationCap className="h-24 w-24 text-primary" />
-                    <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-primary/30 blur-2xl"></div>
-                </div>
-                <h1 className="font-headline text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient">
-                    Welcome
-                </h1>
+                 <GraduationCap className="h-24 w-24 bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient" />
             </div>
       </div>
     );
