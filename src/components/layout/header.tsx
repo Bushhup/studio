@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,6 +21,8 @@ import {
 import { LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor, LogIn as LogInIcon, GraduationCap } from 'lucide-react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useSession, signOut } from 'next-auth/react';
+import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 
 export function Header() {
   const { toggleSidebar } = useSidebar();
@@ -28,6 +31,8 @@ export function Header() {
   const user = session?.user;
   const role = user?.role;
   const isAuthenticated = status === 'authenticated';
+  const pathname = usePathname();
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -43,9 +48,33 @@ export function Header() {
     signOut({ callbackUrl: '/landing' });
   }
 
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only apply scroll effect on the landing page
+      if (pathname === '/landing') {
+        setIsScrolled(window.scrollY > 10);
+      } else {
+        setIsScrolled(true); // Keep header solid on other pages
+      }
+    };
+    
+    // Set initial state based on current path
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [pathname]);
+
+
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-md md:px-6">
-        {isAuthenticated && (
+    <header className={cn(
+        "sticky top-0 z-40 flex h-16 items-center gap-4 px-4 md:px-6 transition-all duration-300",
+        isScrolled || !isAuthenticated ? "border-b bg-background/95 backdrop-blur-md" : "bg-transparent border-b-transparent",
+        !isAuthenticated && "bg-transparent" // Public header specific style
+    )}>
+        {isAuthenticated ? (
           <>
             <div className="md:hidden">
               <SidebarTrigger>
@@ -56,10 +85,8 @@ export function Header() {
                <SidebarTrigger/>
             </div>
           </>
-        )}
-        
-        {!isAuthenticated && (
-            <Link href="/landing" className="flex items-center gap-2" aria-label="MCA Dept Home">
+        ) : (
+             <Link href="/landing" className="flex items-center gap-2" aria-label="MCA Dept Home">
               <GraduationCap className="h-8 w-8 text-primary" />
               <span className="font-headline text-2xl font-bold text-primary">
                 MCA Dept
