@@ -11,23 +11,23 @@ import { cn } from '@/lib/utils';
 
 const features = [
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <Users className="h-8 w-8 text-primary transition-transform duration-300 group-hover:-translate-y-1" />,
     title: 'Role-Based Dashboards',
     description: 'Tailored views for Admins, Faculty, and Students to manage their tasks efficiently.',
   },
   {
-    icon: <BarChart3 className="h-8 w-8 text-primary" />,
+    icon: <BarChart3 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:-translate-y-1" />,
     title: 'Academic Tracking',
     description: 'Monitor attendance, marks, and performance with intuitive charts and real-time data.',
   },
     {
-    icon: <Briefcase className="h-8 w-8 text-primary" />,
+    icon: <Briefcase className="h-8 w-8 text-primary transition-transform duration-300 group-hover:-translate-y-1" />,
     title: 'Placement Hub',
     description: 'Discover and apply for the latest internship and job opportunities posted by the department.',
   },
 ];
 
-function AnimatedSection({ children, className }: { children: React.ReactNode, className?: string }) {
+function AnimatedSection({ children, className, delay = 0 }: { children: React.ReactNode, className?: string, delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -35,8 +35,10 @@ function AnimatedSection({ children, className }: { children: React.ReactNode, c
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setIsVisible(true);
-          if(ref.current) observer.unobserve(ref.current);
+          setTimeout(() => {
+            setIsVisible(true);
+            if(ref.current) observer.unobserve(ref.current);
+          }, delay);
         }
       },
       { threshold: 0.1 }
@@ -51,7 +53,7 @@ function AnimatedSection({ children, className }: { children: React.ReactNode, c
         observer.unobserve(ref.current);
       }
     };
-  }, []);
+  }, [delay]);
 
   return (
     <div
@@ -104,7 +106,7 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-shadow">
+                <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-2 group">
                   <CardHeader>
                       <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
                           {feature.icon}
@@ -123,46 +125,52 @@ export default function LandingPage() {
 
       {/* Vision Section */}
       <section className="py-20">
-        <AnimatedSection>
-          <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                  <Image
-                      src="https://placehold.co/600x400.png"
-                      alt="Department students collaborating"
-                      data-ai-hint="students collaborating"
-                      width={600}
-                      height={400}
-                      className="rounded-lg shadow-2xl"
-                  />
-              </div>
-              <div>
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+            <AnimatedSection>
+                <Image
+                    src="https://placehold.co/600x400.png"
+                    alt="Department students collaborating"
+                    data-ai-hint="students collaborating"
+                    width={600}
+                    height={400}
+                    className="rounded-lg shadow-2xl"
+                />
+            </AnimatedSection>
+            <div>
+                <AnimatedSection>
                   <h2 className="font-headline text-4xl md:text-5xl font-bold">Our Vision for a Connected Campus</h2>
                   <p className="mt-6 text-lg text-muted-foreground">
                       We believe in the power of technology to enhance education. Our goal is to create a seamless digital ecosystem that empowers students to achieve their full potential, enables faculty to focus on teaching, and provides administration with powerful tools for efficient management.
                   </p>
-                  <ul className="mt-6 space-y-4">
+                </AnimatedSection>
+                <ul className="mt-6 space-y-4">
+                    <AnimatedSection delay={200}>
                       <li className="flex items-start">
                           <Check className="h-6 w-6 text-green-500 mr-3 mt-1 flex-shrink-0" />
                           <span>
                               <strong>Empower Students</strong> with instant access to academic data and career opportunities.
                           </span>
                       </li>
+                    </AnimatedSection>
+                    <AnimatedSection delay={400}>
                       <li className="flex items-start">
                           <Check className="h-6 w-6 text-green-500 mr-3 mt-1 flex-shrink-0" />
                           <span>
                              <strong>Support Faculty</strong> by simplifying administrative tasks like attendance and marks entry.
                           </span>
                       </li>
+                    </AnimatedSection>
+                     <AnimatedSection delay={600}>
                        <li className="flex items-start">
                           <Check className="h-6 w-6 text-green-500 mr-3 mt-1 flex-shrink-0" />
                           <span>
                              <strong>Streamline Administration</strong> with centralized control over users, classes, and subjects.
                           </span>
                       </li>
-                  </ul>
-              </div>
-          </div>
-        </AnimatedSection>
+                    </AnimatedSection>
+                </ul>
+            </div>
+        </div>
       </section>
 
        {/* Gallery Section */}
@@ -177,35 +185,35 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-4">
-                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x300.png" alt="Campus event 1" data-ai-hint="campus event" width={500} height={300} />
+                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x300.png" alt="Campus event 1" data-ai-hint="campus event" width={500} height={300} />
                         </Link>
-                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x700.png" alt="Students in a lab" data-ai-hint="students computer lab" width={500} height={700} />
-                        </Link>
-                    </div>
-                    <div className="grid gap-4">
-                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x700.png" alt="Guest lecture" data-ai-hint="classroom lecture" width={500} height={700} />
-                        </Link>
-                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x300.png" alt="Library" data-ai-hint="university library" width={500} height={300} />
+                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x700.png" alt="Students in a lab" data-ai-hint="students computer lab" width={500} height={700} />
                         </Link>
                     </div>
                     <div className="grid gap-4">
-                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer">
-                          <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x300.png" alt="Sports day" data-ai-hint="campus sports" width={500} height={300} />
+                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x700.png" alt="Guest lecture" data-ai-hint="classroom lecture" width={500} height={700} />
                         </Link>
-                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer">
-                          <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x700.png" alt="Group project" data-ai-hint="students group project" width={500} height={700} />
+                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x300.png" alt="Library" data-ai-hint="university library" width={500} height={300} />
+                        </Link>
+                    </div>
+                    <div className="grid gap-4">
+                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                          <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x300.png" alt="Sports day" data-ai-hint="campus sports" width={500} height={300} />
+                        </Link>
+                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                          <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x700.png" alt="Group project" data-ai-hint="students group project" width={500} height={700} />
                         </Link>
                     </div>
                      <div className="grid gap-4">
-                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x700.png" alt="Code-a-thon" data-ai-hint="hackathon event" width={500} height={700} />
+                        <Link href="https://placehold.co/500x700.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x700.png" alt="Code-a-thon" data-ai-hint="hackathon event" width={500} height={700} />
                         </Link>
-                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer">
-                           <Image className="h-auto max-w-full rounded-lg shadow-md transition-transform hover:scale-105" src="https://placehold.co/500x300.png" alt="Graduation" data-ai-hint="graduation ceremony" width={500} height={300} />
+                        <Link href="https://placehold.co/500x300.png" target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-lg shadow-md group">
+                           <Image className="h-auto w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 group-hover:brightness-110" src="https://placehold.co/500x300.png" alt="Graduation" data-ai-hint="graduation ceremony" width={500} height={300} />
                         </Link>
                     </div>
                 </div>
