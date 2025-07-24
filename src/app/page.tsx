@@ -32,6 +32,9 @@ export default function RootPage() {
         )}>
             <div className="flex flex-col items-center gap-6">
                  <GraduationCap className="h-24 w-24 bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient" />
+                 <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient">
+                    Welcome
+                 </h1>
             </div>
       </div>
     );
