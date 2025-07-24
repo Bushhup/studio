@@ -127,20 +127,20 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-4">
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Campus event 1" data-ai-hint="campus event" />
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Students in a lab" data-ai-hint="students computer lab" />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Campus event 1" data-ai-hint="campus event" width={500} height={300} />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Students in a lab" data-ai-hint="students computer lab" width={500} height={700} />
                     </div>
                     <div className="grid gap-4">
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Guest lecture" data-ai-hint="classroom lecture" />
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Library" data-ai-hint="university library" />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Guest lecture" data-ai-hint="classroom lecture" width={500} height={700} />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Library" data-ai-hint="university library" width={500} height={300} />
                     </div>
                     <div className="grid gap-4">
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Sports day" data-ai-hint="campus sports" />
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Group project" data-ai-hint="students group project" />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Sports day" data-ai-hint="campus sports" width={500} height={300} />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Group project" data-ai-hint="students group project" width={500} height={700} />
                     </div>
                      <div className="grid gap-4">
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Code-a-thon" data-ai-hint="hackathon event" />
-                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Graduation" data-ai-hint="graduation ceremony" />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x700.png" alt="Code-a-thon" data-ai-hint="hackathon event" width={500} height={700} />
+                         <Image className="h-auto max-w-full rounded-lg shadow-md" src="https://placehold.co/500x300.png" alt="Graduation" data-ai-hint="graduation ceremony" width={500} height={300} />
                     </div>
                 </div>
             </div>
@@ -149,4 +149,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
