@@ -18,7 +18,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor, LogIn as LogInIcon, GraduationCap } from 'lucide-react';
+import { LogOut, Settings, UserCircle, PanelLeft, Moon, Sun, Monitor, LogIn as LogInIcon, GraduationCap, LayoutDashboard } from 'lucide-react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,16 @@ export function Header() {
   const handleLogout = () => {
     signOut({ callbackUrl: '/landing' });
   }
+
+  const getDashboardPath = () => {
+    if (!role) return '/login';
+    switch (role) {
+        case 'admin': return '/admin/dashboard';
+        case 'faculty': return '/faculty/dashboard';
+        case 'student': return '/student/dashboard';
+        default: return '/home';
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,67 +107,76 @@ export function Header() {
       <div className="flex w-full items-center justify-end">
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10 border-2 border-primary/50">
-                    <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="user avatar" />
-                    <AvatarFallback>{getInitials(userName)}</AvatarFallback>
-                  </Avatar>
+            pathname === '/landing' ? (
+                <Button asChild>
+                    <Link href={getDashboardPath()}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Account
+                    </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {role ? `${role.charAt(0).toUpperCase() + role.slice(1)}` : 'Role'}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/settings/account">
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                   <Link href="/settings/account">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span>Theme</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem onClick={() => setTheme('light')}>
-                        <Sun className="mr-2 h-4 w-4" />
-                        <span>Light</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setTheme('dark')}>
-                        <Moon className="mr-2 h-4 w-4" />
-                        <span>Dark</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setTheme('system')}>
-                        <Monitor className="mr-2 h-4 w-4" />
-                        <span>System</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10 border-2 border-primary/50">
+                        <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="user avatar" />
+                        <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {role ? `${role.charAt(0).toUpperCase() + role.slice(1)}` : 'Role'}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings/account">
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                       <Link href="/settings/account">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                        <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                        <span>Theme</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem onClick={() => setTheme('light')}>
+                            <Sun className="mr-2 h-4 w-4" />
+                            <span>Light</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setTheme('dark')}>
+                            <Moon className="mr-2 h-4 w-4" />
+                            <span>Dark</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setTheme('system')}>
+                            <Monitor className="mr-2 h-4 w-4" />
+                            <span>System</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            )
           ) : (
             <Button asChild>
                 <Link href="/login">
