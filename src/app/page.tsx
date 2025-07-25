@@ -12,30 +12,21 @@ const AnimatedLogo = () => (
       height="96"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="url(#theme-gradient)"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className="h-24 w-24"
     >
       <defs>
-        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" style={{ stopColor: 'hsl(var(--primary))' }} />
           <stop offset="100%" style={{ stopColor: 'hsl(var(--accent))' }} />
-          <animate attributeName="x1" values="0%;100%;0%" dur="5s" repeatCount="indefinite" />
-          <animate attributeName="y1" values="0%;100%;0%" dur="5s" repeatCount="indefinite" />
-          <animate attributeName="x2" values="100%;0%;100%" dur="5s" repeatCount="indefinite" />
-          <animate attributeName="y2" values="100%;0%;100%" dur="5s" repeatCount="indefinite" />
+          <animate attributeName="x1" values="-100%;200%" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="x2" values="0%;300%" dur="2s" repeatCount="indefinite" />
         </linearGradient>
       </defs>
-      <path d="M22 10v6M2 10v6" />
-      <path d="M6 12v-2a3 3 0 0 1 6 0v2" />
-      <path d="m12 12-3.4 5.9a2 2 0 0 1-1.6 1H6" />
-      <path d="m12 12 3.4 5.9a2 2 0 0 0 1.6 1H18" />
-      <path d="M14 22V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v18" />
-      <path d="M18 10a2 2 0 1 0-4 0" />
-      <path d="M6 10a2 2 0 1 1 4 0" />
-      <path d="M6 14.01V16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1.99" />
+      <path d="m22 10-10-4-10 4 10 4 10-4v4" stroke="url(#theme-gradient)" />
+      <path d="M6 12v5c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2v-5" stroke="url(#theme-gradient)" />
     </svg>
 );
 
