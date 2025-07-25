@@ -16,9 +16,9 @@ body {
     --popover-foreground: 240 10% 3.9%;
     --primary: 276 100% 50%; /* Brighter Violet #8F00FF */
     --primary-foreground: 0 0% 98%; /* White/Light for text on Violet */
-    --secondary: 240 4.8% 92.9%; /* Slightly darker for better hover visibility */
+    --secondary: 240 4.8% 90%; /* Darkened for better hover visibility */
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 92.9%; /* Slightly darker for better hover visibility */
+    --muted: 240 4.8% 90%; /* Darkened for better hover visibility */
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 270 90% 96%; /* Lighter, less saturated violet for hover */
     --accent-foreground: 270 90% 30%; /* Darker violet text for on-hover */
