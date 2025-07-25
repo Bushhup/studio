@@ -16,12 +16,12 @@ body {
     --popover-foreground: 240 10% 3.9%;
     --primary: 276 100% 50%; /* Brighter Violet #8F00FF */
     --primary-foreground: 0 0% 98%; /* White/Light for text on Violet */
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 240 4.8% 92.9%; /* Slightly darker for better hover visibility */
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: 240 4.8% 92.9%; /* Slightly darker for better hover visibility */
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 270 100% 40%; /* Indigo for accents now */
-    --accent-foreground: 0 0% 98%; /* White/Light for text on Indigo */
+    --accent: 270 90% 96%; /* Lighter, less saturated violet for hover */
+    --accent-foreground: 270 90% 30%; /* Darker violet text for on-hover */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 80%; 
@@ -39,8 +39,8 @@ body {
     --sidebar-foreground: 240 5.3% 26.1%; /* Dark text */
     --sidebar-primary: 276 100% 50%; /* Brighter Violet for active/primary items */
     --sidebar-primary-foreground: 0 0% 98%; /* Light text on violet */
-    --sidebar-accent: 270 100% 40%; /* Indigo for hover/accent items */
-    --sidebar-accent-foreground: 0 0% 98%; /* Light text on indigo */
+    --sidebar-accent: 270 90% 96%; /* Lighter, less saturated violet for hover */
+    --sidebar-accent-foreground: 270 90% 30%; /* Darker violet text for on-hover */
     --sidebar-border: 240 5.9% 90%; /* Border for sidebar elements */
     --sidebar-ring: 276 100% 50%; /* Violet for focus rings */
   }
@@ -58,8 +58,8 @@ body {
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 270 100% 75%; /* Lighter Indigo for dark mode accents */
-    --accent-foreground: 270 100% 15%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
@@ -76,8 +76,8 @@ body {
     --sidebar-foreground: 0 0% 95%; /* Light text */
     --sidebar-primary: 276 100% 70%; /* Lighter Violet */
     --sidebar-primary-foreground: 276 100% 10%;
-    --sidebar-accent: 270 100% 75%; /* Lighter Indigo */
-    --sidebar-accent-foreground: 270 100% 15%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 276 100% 70%;
   }
