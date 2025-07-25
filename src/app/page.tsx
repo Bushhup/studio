@@ -32,7 +32,16 @@ export default function RootPage() {
             isFadingOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center gap-6">
-                 <GraduationCap className="h-24 w-24 bg-gradient-to-r from-primary via-purple-500 to-accent text-transparent bg-clip-text" />
+                 <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="animated-gradient">
+                    <defs>
+                        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                            <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                        </linearGradient>
+                    </defs>
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="url(#theme-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" stroke="url(#theme-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
             </div>
       </div>
     );
