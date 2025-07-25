@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,10 +30,7 @@ export default function RootPage() {
             isFadingOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center gap-6">
-                 <GraduationCap className="h-24 w-24 text-primary animate-pulse" />
-                 <h1 className="font-cursive text-7xl md:text-8xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient">
-                    Welcome
-                 </h1>
+                 <GraduationCap className="h-24 w-24 bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient" />
             </div>
       </div>
     );
