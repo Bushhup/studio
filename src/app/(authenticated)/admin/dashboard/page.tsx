@@ -111,9 +111,9 @@ export default function AdminDashboardPage() {
   const getModalData = () => {
     switch (modalType) {
         case 'students':
-            return { title: 'Students', items: students };
+            return { title: 'Students', items: students.map(s => ({ id: s.id, name: s.name })) };
         case 'faculty':
-            return { title: 'Faculty', items: faculty };
+            return { title: 'Faculty', items: faculty.map(f => ({ id: f.id, name: f.name })) };
         case 'events':
             return { title: 'Upcoming Events', items: events.map(e => ({ id: e.id, name: e.title, date: e.date })) };
         default:
@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               {renderCardContent(counts.events, isLoading)}
-              <p className="text-xs text-muted-foreground">Next event in 3 days</p>
+              <p className="text-xs text-muted-foreground">Click to view list</p>
             </CardContent>
           </Card>
         </div>
