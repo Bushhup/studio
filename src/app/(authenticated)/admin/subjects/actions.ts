@@ -2,7 +2,7 @@
 'use server';
 
 import { connectToDB } from '@/lib/mongoose';
-import SubjectModel, { ISubject } from '@/models/subject.model';
+import SubjectModel from '@/models/subject.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
@@ -65,7 +65,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
         const subjectsData = await SubjectModel.aggregate([
             {
                 $lookup: {
-                    from: 'classes', // Use explicit collection name
+                    from: 'classes',
                     localField: 'classId',
                     foreignField: '_id',
                     as: 'classDetails'
@@ -74,12 +74,12 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             {
                 $unwind: {
                     path: '$classDetails',
-                    preserveNullAndEmptyArrays: true // Keep subjects even if their class is deleted
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
                 $lookup: {
-                    from: 'users', // Use explicit collection name
+                    from: 'users',
                     localField: 'facultyId',
                     foreignField: '_id',
                     as: 'facultyDetails'
@@ -88,7 +88,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             {
                 $unwind: {
                     path: '$facultyDetails',
-                    preserveNullAndEmptyArrays: true // Keep subjects even if their faculty is deleted
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
@@ -104,7 +104,6 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             }
         ]);
         
-        // Convert the aggregated data to the expected shape
         const results = subjectsData.map(subject => ({
             id: subject._id.toString(),
             name: subject.name,
@@ -119,7 +118,7 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
 
     } catch (error) {
         console.error('Error fetching subjects with aggregate:', error);
-        return []; // Return empty array on error
+        return [];
     }
 }
 

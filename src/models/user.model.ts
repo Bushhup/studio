@@ -6,21 +6,21 @@ export interface IUser extends UserType, Document {
   id: string;
   email: string;
   password?: string;
-  classId?: mongoose.Schema.Types.ObjectId;
+  classId?: mongoose.Types.ObjectId;
 }
 
 const UserSchema = new Schema<IUser>({
-  name: { type: String, required: true, unique: true }, // Username, must be unique
+  name: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   role: {
     type: String,
     enum: ['admin', 'faculty', 'student'],
     required: true,
   },
-  password: { type: String, required: true, select: false }, // Hide by default
-  classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false }, // Link to the Class model for students
+  password: { type: String, required: true },
+  classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false },
 }, {
-  collection: 'users' // Explicitly set collection name
+  collection: 'users'
 });
 
 const UserModel = models.User || model<IUser>('User', UserSchema);

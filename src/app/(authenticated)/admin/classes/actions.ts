@@ -27,7 +27,10 @@ export async function createClass(data: ClassInput): Promise<{ success: boolean;
 
     await connectToDB();
 
-    const newClass = new ClassModel(data);
+    const newClass = new ClassModel({
+        ...data,
+        inchargeFaculty: new mongoose.Types.ObjectId(data.inchargeFaculty)
+    });
     await newClass.save();
 
     revalidatePath('/admin/classes');
@@ -63,7 +66,7 @@ export async function updateClass(classId: string, data: ClassInput): Promise<{ 
 
         classToUpdate.name = data.name;
         classToUpdate.academicYear = data.academicYear;
-        classToUpdate.inchargeFaculty = data.inchargeFaculty;
+        classToUpdate.inchargeFaculty = new mongoose.Types.ObjectId(data.inchargeFaculty);
 
         await classToUpdate.save();
 
@@ -112,8 +115,9 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
 }
 
 
-export interface IClassWithStudentCount extends IClass {
+export interface IClassWithStudentCount extends Omit<IClass, 'inchargeFaculty'> {
     studentCount: number;
+    inchargeFaculty: string;
 }
 
 export async function getClasses(): Promise<IClassWithStudentCount[]> {
@@ -148,14 +152,14 @@ export async function getClasses(): Promise<IClassWithStudentCount[]> {
                 }
             }
         ]);
-
+        
         return classesWithCounts.map(c => ({
             id: c._id.toString(),
             name: c.name,
             academicYear: c.academicYear,
-            inchargeFaculty: c.inchargeFaculty.toString(),
+            inchargeFaculty: c.inchargeFaculty?.toString() || "",
             studentCount: c.studentCount,
-        })) as IClassWithStudentCount[];
+        }));
 
     } catch (error) {
         console.error('Error fetching classes:', error);
@@ -172,7 +176,7 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
 
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
             .sort({ name: 'asc' })
-            .select('id name')
+            .select('_id name')
             .lean();
         
         return students.map(student => ({

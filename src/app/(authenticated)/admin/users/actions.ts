@@ -78,29 +78,26 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       return { success: false, message: 'A user with this username already exists.' };
     }
 
-    // Explicitly create the new user object to ensure all fields are included
     const newUser = new UserModel({
       name: data.name,
       email: data.email,
-      password: data.password, // Ensure password is saved
+      password: data.password,
       role: data.role,
-      classId: data.role === 'student' ? data.classId : undefined,
+      classId: data.role === 'student' ? new mongoose.Types.ObjectId(data.classId) : undefined,
     });
     
     await newUser.save();
     
     if (data.role === 'faculty') {
-        // If it's a faculty member and classes are assigned, update those classes
         if (data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
             await ClassModel.updateMany(
-                { _id: { $in: data.inchargeOfClasses } },
+                { _id: { $in: data.inchargeOfClasses.map(id => new mongoose.Types.ObjectId(id)) } },
                 { $set: { inchargeFaculty: newUser._id } }
             );
         }
-        // If subjects are assigned, update those subjects
         if (data.handlingSubjects && data.handlingSubjects.length > 0) {
             await SubjectModel.updateMany(
-                { _id: { $in: data.handlingSubjects } },
+                { _id: { $in: data.handlingSubjects.map(id => new mongoose.Types.ObjectId(id)) } },
                 { $set: { facultyId: newUser._id } }
             )
         }
@@ -132,7 +129,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
         await connectToDB();
         
         const users = await UserModel.aggregate([
-            { $match: { role: { $ne: 'admin' } } },
+            { $match: { role: { $in: ['student', 'faculty'] } } },
             { $sort: { name: 1 } },
             {
                 $lookup: {
@@ -184,54 +181,43 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                 }
             },
             {
-                $addFields: {
-                   password: '$password' // Make password available
-                }
-            },
-            {
                 $project: {
                     _id: 1,
                     name: 1,
                     email: 1,
-                    password: 1,
+                    password: 1, // Ensure password field is projected if needed on client
                     role: 1,
                     classId: 1,
                     className: '$studentClass.name',
-                    inchargeOfClasses: '$inchargeClasses',
-                    handlingSubjects: '$handlingSubjects',
+                    inchargeOfClasses: {
+                        $map: {
+                            input: "$inchargeClasses",
+                            as: "c",
+                            in: { id: "$$c._id", name: "$$c.name" }
+                        }
+                    },
+                    handlingSubjects: {
+                         $map: {
+                            input: "$handlingSubjects",
+                            as: "s",
+                            in: { id: "$$s._id", name: "$$s.name", code: "$$s.code", className: "$$s.className" }
+                        }
+                    },
                 }
             }
         ]);
         
-        const plainUsers = users.map(user => {
-            const plainUser: any = {
-                id: user._id.toString(),
-                name: user.name,
-                email: user.email,
-                password: user.password,
-                role: user.role,
-                className: user.className || 'N/A'
-            };
-
-            if (user.role === 'student' && user.classId) {
-                plainUser.classId = user.classId.toString();
-            }
-            
-            if (user.role === 'faculty') {
-                plainUser.inchargeOfClasses = user.inchargeOfClasses?.map((c: any) => ({
-                    id: c._id.toString(),
-                    name: c.name
-                })) || [];
-                plainUser.handlingSubjects = user.handlingSubjects?.map((s: any) => ({
-                    id: s._id.toString(),
-                    name: s.name,
-                    code: s.code,
-                    className: s.className
-                })) || [];
-            }
-
-            return plainUser;
-        });
+        const plainUsers = users.map(user => ({
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            password: user.password,
+            role: user.role,
+            className: user.className || 'N/A',
+            classId: user.classId?.toString(),
+            inchargeOfClasses: user.inchargeOfClasses || [],
+            handlingSubjects: user.handlingSubjects || []
+        }));
 
         return plainUsers as ExtendedUser[];
     } catch (error) {
@@ -255,15 +241,12 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
             return { success: false, message: "User not found." };
         }
         
-        // If a faculty is deleted, unassign them from everything
         if (result.role === 'faculty') {
             const facultyObjectId = new mongoose.Types.ObjectId(userId);
-            // Unassign from class in-charge
             await ClassModel.updateMany(
                 { inchargeFaculty: facultyObjectId },
                 { $unset: { inchargeFaculty: "" } }
             );
-            // Unassign from subjects handled
             await SubjectModel.updateMany(
                 { facultyId: facultyObjectId },
                 { $unset: { facultyId: "" } }
@@ -287,7 +270,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
 export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'>[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role }).select('id name').sort({ name: 1 }).lean();
+        const users = await UserModel.find({ role }).select('_id name').sort({ name: 1 }).lean();
         return users.map(user => ({
             id: user._id.toString(),
             name: user.name,
@@ -311,12 +294,11 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
             return { success: false, message: "Invalid user ID." };
         }
 
-        const userToUpdate = await UserModel.findById(userId).select('+password');
+        const userToUpdate = await UserModel.findById(userId);
         if (!userToUpdate) {
             return { success: false, message: "User not found." };
         }
         
-        // Check for uniqueness if email or name are being changed
         if (data.email && data.email !== userToUpdate.email) {
             const existingUser = await UserModel.findOne({ email: data.email, _id: { $ne: userId } });
             if (existingUser) return { success: false, message: "Email already in use." };
@@ -329,12 +311,10 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
             userToUpdate.name = data.name;
         }
 
-        // Update password only if a new one is provided
         if (data.password) {
             userToUpdate.password = data.password;
         }
 
-        // Update classId for students
         if (userToUpdate.role === 'student' && data.classId) {
             userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
         }
@@ -344,14 +324,11 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         if (userToUpdate.role === 'faculty') {
             const facultyId = new mongoose.Types.ObjectId(userId);
             
-            // Atomically update classes:
-            // 1. Unset this faculty from all classes they were previously in charge of
             await ClassModel.updateMany(
                 { inchargeFaculty: facultyId },
                 { $unset: { inchargeFaculty: "" } }
             );
             
-            // 2. Set this faculty to the new set of classes
             if (data.inchargeOfClasses && data.inchargeOfClasses.length > 0) {
                  await ClassModel.updateMany(
                     { _id: { $in: data.inchargeOfClasses.map(id => new mongoose.Types.ObjectId(id)) } },
@@ -359,14 +336,11 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
                 );
             }
 
-            // Atomically update subjects:
-            // 1. Unset this faculty from all subjects they were previously handling
              await SubjectModel.updateMany(
                 { facultyId: facultyId },
                 { $unset: { facultyId: "" } }
             );
 
-            // 2. Set this faculty to the new set of subjects
             if (data.handlingSubjects && data.handlingSubjects.length > 0) {
                  await SubjectModel.updateMany(
                     { _id: { $in: data.handlingSubjects.map(id => new mongoose.Types.ObjectId(id)) } },
