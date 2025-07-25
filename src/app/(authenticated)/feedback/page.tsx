@@ -12,7 +12,31 @@ export default function FeedbackPage() {
   const role = session?.user?.role;
 
   if (!role) {
-    return <p>Loading or unauthorized...</p>; // Or a proper loading/error state
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+            <div className="flex flex-col items-center gap-4">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-16 w-16 animate-pulse theme-gradient-stroke"
+                  fill="none"
+                  stroke="url(#theme-gradient)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                    <defs>
+                        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                            <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                        </linearGradient>
+                    </defs>
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+                <p className="text-muted-foreground">Loading...</p>
+            </div>
+        </div>
+    );
   }
 
   const canViewSummary = role === 'admin' || role === 'faculty';

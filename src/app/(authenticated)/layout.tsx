@@ -49,7 +49,24 @@ export default function AuthenticatedLayout({
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
-          <GraduationCap className="h-32 w-32 text-primary animate-pulse" />
+           <svg
+              viewBox="0 0 24 24"
+              className="h-32 w-32 animate-pulse theme-gradient-stroke"
+              fill="none"
+              stroke="url(#theme-gradient)"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+                <defs>
+                    <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                        <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                    </linearGradient>
+                </defs>
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </svg>
         </div>
       </div>
     );
@@ -59,7 +76,24 @@ export default function AuthenticatedLayout({
   if (!role) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <GraduationCap className="h-12 w-12 animate-pulse text-primary" />
+        <svg
+            viewBox="0 0 24 24"
+            className="h-12 w-12 animate-pulse theme-gradient-stroke"
+            fill="none"
+            stroke="url(#theme-gradient)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+              <defs>
+                  <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                      <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                  </linearGradient>
+              </defs>
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
       </div>
     );
   }
