@@ -83,7 +83,7 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       email: data.email,
       password: data.password,
       role: data.role,
-      classId: data.role === 'student' ? new mongoose.Types.ObjectId(data.classId) : undefined,
+      classId: data.role === 'student' && data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined,
     });
     
     await newUser.save();
@@ -215,8 +215,8 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             role: user.role,
             className: user.className || 'N/A',
             classId: user.classId?.toString(),
-            inchargeOfClasses: user.inchargeOfClasses || [],
-            handlingSubjects: user.handlingSubjects || []
+            inchargeOfClasses: (user.inchargeOfClasses || []).map(c => ({...c, id: c.id.toString()})),
+            handlingSubjects: (user.handlingSubjects || []).map(s => ({...s, id: s.id.toString()}))
         }));
 
         return plainUsers as ExtendedUser[];
