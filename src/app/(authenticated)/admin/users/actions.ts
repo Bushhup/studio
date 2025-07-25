@@ -171,12 +171,12 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     from: 'classes',
                     localField: 'classId',
                     foreignField: '_id',
-                    as: 'studentClass'
+                    as: 'classDetails'
                 }
             },
             {
                 $unwind: {
-                    path: '$studentClass',
+                    path: '$classDetails',
                     preserveNullAndEmptyArrays: true
                 }
             },
@@ -185,10 +185,10 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     _id: 1,
                     name: 1,
                     email: 1,
-                    password: 1, // Ensure password field is projected if needed on client
+                    password: 1,
                     role: 1,
                     classId: 1,
-                    className: '$studentClass.name',
+                    className: '$classDetails.name',
                     inchargeOfClasses: {
                         $map: {
                             input: "$inchargeClasses",

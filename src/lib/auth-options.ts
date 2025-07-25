@@ -21,6 +21,8 @@ export const authOptions: NextAuthOptions = {
 
         const { username, password, role } = credentials;
 
+        await connectToDB();
+
         if (role === 'admin') {
             const adminUsername = process.env.ADMIN_USERNAME || 'Admin01';
             const adminPassword = process.env.ADMIN_PASSWORD || 'shaosaid05413';
@@ -37,11 +39,18 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            await connectToDB();
-            
-            const user = await UserModel.findOne({ name: username, role: role }).select('+password').lean();
+            const user = await UserModel.findOne({ name: username, role: role }).select('+password');
 
-            if (!user || user.password !== password) {
+            if (!user) {
+              console.log('User not found');
+              return null;
+            }
+            
+            // Direct comparison for plain text passwords
+            const isPasswordCorrect = user.password === password;
+
+            if (!isPasswordCorrect) {
+              console.log('Password incorrect');
               return null;
             }
 

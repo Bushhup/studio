@@ -108,8 +108,8 @@ export async function getSubjects(): Promise<ExtendedSubject[]> {
             id: subject._id.toString(),
             name: subject.name,
             code: subject.code,
-            classId: subject.classId.toString(),
-            facultyId: subject.facultyId.toString(),
+            classId: subject.classId ? subject.classId.toString() : '',
+            facultyId: subject.facultyId ? subject.facultyId.toString() : '',
             className: subject.className,
             facultyName: subject.facultyName,
         }));
