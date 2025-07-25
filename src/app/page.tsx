@@ -4,31 +4,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { GraduationCap } from 'lucide-react';
 
-const AnimatedLogo = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="96"
-      height="96"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="url(#theme-gradient)"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <defs>
-        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style={{ stopColor: 'hsl(var(--primary))' }} />
-          <stop offset="100%" style={{ stopColor: 'hsl(var(--accent))' }} />
-          <animate attributeName="x1" values="-100%;200%" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="x2" values="0%;300%" dur="2s" repeatCount="indefinite" />
-        </linearGradient>
-      </defs>
-      <path d="m22 10-10-4-10 4 10 4 10-4v4" />
-      <path d="M6 12v5c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2v-5" />
-    </svg>
-);
 
 export default function RootPage() {
     const router = useRouter();
@@ -55,7 +32,7 @@ export default function RootPage() {
             isFadingOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center gap-6">
-                 <AnimatedLogo />
+                 <GraduationCap className="h-24 w-24 bg-gradient-to-r from-primary via-purple-500 to-accent text-transparent bg-clip-text" />
             </div>
       </div>
     );
