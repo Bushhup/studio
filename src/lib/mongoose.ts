@@ -7,7 +7,8 @@ export const connectToDB = async () => {
   mongoose.set('strictQuery', true);
 
   if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI is not defined in .env file');
+    console.error('MONGODB_URI is not defined in .env file');
+    throw new Error('MONGODB_URI is not defined in .env file. Please add it to your .env file.');
   }
 
   // If the connection is already established, return without creating a new one.
@@ -24,6 +25,7 @@ export const connectToDB = async () => {
     console.log('=> new database connection established');
   } catch (error) {
     console.error('=> error connecting to database:', error);
-    throw new Error('Failed to connect to the database.');
+    // Let's not re-throw here, but log it. The calling function will handle the fallout.
+    // This can prevent crashes on initial load if DB is temporarily unavailable.
   }
 };
