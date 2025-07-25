@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter }from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const AnimatedLogo = () => (
@@ -12,10 +12,10 @@ const AnimatedLogo = () => (
       height="96"
       viewBox="0 0 24 24"
       fill="none"
+      stroke="url(#theme-gradient)"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-24 w-24"
     >
       <defs>
         <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -25,11 +25,10 @@ const AnimatedLogo = () => (
           <animate attributeName="x2" values="0%;300%" dur="2s" repeatCount="indefinite" />
         </linearGradient>
       </defs>
-      <path d="m22 10-10-4-10 4 10 4 10-4v4" stroke="url(#theme-gradient)" />
-      <path d="M6 12v5c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2v-5" stroke="url(#theme-gradient)" />
+      <path d="m22 10-10-4-10 4 10 4 10-4v4" />
+      <path d="M6 12v5c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2v-5" />
     </svg>
 );
-
 
 export default function RootPage() {
     const router = useRouter();
