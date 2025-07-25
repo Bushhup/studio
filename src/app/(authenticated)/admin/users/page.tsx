@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { AddUserForm, EditUserForm } from '@/components/admin/user-forms';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Filter, Search, GraduationCap } from "lucide-react";
+import { Users, UserPlus, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Filter, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -190,10 +190,11 @@ export default function AdminUsersPage() {
       ]);
       setUsers(fetchedUsers);
       const plainClasses = fetchedClasses.map(c => ({
-        ...c,
         id: c.id.toString(),
-        inchargeFaculty: c.inchargeFaculty?.toString() || '',
-      }))
+        name: c.name,
+        academicYear: c.academicYear,
+        inchargeFaculty: c.inchargeFaculty?.id || '',
+      }));
       setClassList(plainClasses as IClass[]);
       setSubjectList(fetchedSubjects);
     } catch {
@@ -335,7 +336,24 @@ export default function AdminUsersPage() {
                  </div>
                  {isLoading ? (
                     <div className="flex justify-center items-center py-10">
-                      <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                        fill="none"
+                        stroke="url(#theme-gradient)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                          <defs>
+                              <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                                  <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                              </linearGradient>
+                          </defs>
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                      </svg>
                     </div>
                   ) : (
                     <UsersTable users={studentUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="student" />
@@ -344,7 +362,24 @@ export default function AdminUsersPage() {
               <TabsContent value="faculty">
                   {isLoading ? (
                     <div className="flex justify-center items-center py-10">
-                      <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                        fill="none"
+                        stroke="url(#theme-gradient)"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                          <defs>
+                              <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                                  <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                              </linearGradient>
+                          </defs>
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                      </svg>
                     </div>
                   ) : (
                     <UsersTable users={facultyUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="faculty" />

@@ -54,7 +54,7 @@ export default function AuthenticatedLayout({
               className="h-32 w-32 animate-pulse theme-gradient-stroke"
               fill="none"
               stroke="url(#theme-gradient)"
-              strokeWidth={1.5}
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -102,7 +102,7 @@ export default function AuthenticatedLayout({
     <SidebarProvider defaultOpen>
         <Sidebar variant="sidebar" collapsible="icon" side="left">
           <SidebarHeader className="items-center justify-center p-4">
-            <Link href="/home" className="flex items-center gap-2" aria-label="MCA Dept Home">
+            <Link href="/landing" className="flex items-center gap-2" aria-label="MCA Dept Home">
               <GraduationCap className="h-8 w-8 text-primary" />
               <span className="font-headline text-2xl font-bold text-primary group-data-[collapsible=icon]:hidden">
                 MCA Dept

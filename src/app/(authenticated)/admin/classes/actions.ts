@@ -115,22 +115,39 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
 }
 
 
-export interface IClassWithStudentCount extends Omit<IClass, 'inchargeFaculty'> {
+export interface IClassWithFacultyAndStudentCount extends Omit<IClass, 'inchargeFaculty'> {
     studentCount: number;
-    inchargeFaculty: string;
+    inchargeFaculty: {
+        id: string;
+        name: string;
+    } | null;
 }
 
-export async function getClasses(): Promise<IClassWithStudentCount[]> {
+export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> {
     try {
         await connectToDB();
         
-        const classesWithCounts = await ClassModel.aggregate([
+        const classesWithDetails = await ClassModel.aggregate([
             {
                 $lookup: {
                     from: 'users',
                     localField: '_id',
                     foreignField: 'classId',
                     as: 'students'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'inchargeFaculty',
+                    foreignField: '_id',
+                    as: 'facultyIncharge'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$facultyIncharge',
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
@@ -148,16 +165,26 @@ export async function getClasses(): Promise<IClassWithStudentCount[]> {
             },
             {
                 $project: {
-                    students: 0 
+                    students: 0,
+                    _id: 1,
+                    name: 1,
+                    academicYear: 1,
+                    studentCount: 1,
+                    inchargeFaculty: {
+                        id: '$facultyIncharge._id',
+                        name: '$facultyIncharge.name'
+                    }
                 }
             }
         ]);
         
-        return classesWithCounts.map(c => ({
+        return classesWithDetails.map(c => ({
             id: c._id.toString(),
             name: c.name,
             academicYear: c.academicYear,
-            inchargeFaculty: c.inchargeFaculty?.toString() || "",
+            inchargeFaculty: c.inchargeFaculty.id 
+              ? { id: c.inchargeFaculty.id.toString(), name: c.inchargeFaculty.name } 
+              : null,
             studentCount: c.studentCount,
         }));
 

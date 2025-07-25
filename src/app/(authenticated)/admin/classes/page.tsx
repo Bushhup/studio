@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { createClass, getClasses, getStudentsByClass, updateClass, deleteClass, type ClassInput, type IClassWithStudentCount } from './actions';
+import { createClass, getClasses, getStudentsByClass, updateClass, deleteClass, type ClassInput, type IClassWithFacultyAndStudentCount } from './actions';
 import { getUsersByRole } from '../users/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,7 +46,7 @@ function ClassForm({
   setIsOpen: (open: boolean) => void; 
   facultyList: Pick<IUser, 'id' | 'name'>[]; 
   onFormSubmit: () => void;
-  initialData?: IClassWithStudentCount;
+  initialData?: IClassWithFacultyAndStudentCount;
 }) {
   const { toast } = useToast();
   const isEditMode = !!initialData;
@@ -56,7 +56,7 @@ function ClassForm({
     defaultValues: {
       name: initialData?.name || "",
       academicYear: initialData?.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-      inchargeFaculty: initialData?.inchargeFaculty || "",
+      inchargeFaculty: initialData?.inchargeFaculty?.id || "",
     },
   });
 
@@ -153,15 +153,12 @@ function ClassForm({
   );
 }
 
-function ClassesTable({ classes, facultyList, onRowClick, onSelectEdit, onSelectDelete }: { 
-    classes: IClassWithStudentCount[], 
-    facultyList: Pick<IUser, 'id' | 'name'>[], 
-    onRowClick: (classInfo: IClassWithStudentCount) => void,
-    onSelectEdit: (classInfo: IClassWithStudentCount) => void,
-    onSelectDelete: (classInfo: IClassWithStudentCount) => void,
+function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete }: { 
+    classes: IClassWithFacultyAndStudentCount[], 
+    onRowClick: (classInfo: IClassWithFacultyAndStudentCount) => void,
+    onSelectEdit: (classInfo: IClassWithFacultyAndStudentCount) => void,
+    onSelectDelete: (classInfo: IClassWithFacultyAndStudentCount) => void,
 }) {
-  const facultyMap = new Map(facultyList.map(f => [f.id, f.name]));
-
   return (
     <Table>
       <TableHeader>
@@ -178,7 +175,7 @@ function ClassesTable({ classes, facultyList, onRowClick, onSelectEdit, onSelect
           <TableRow key={c.id} >
             <TableCell className="font-medium cursor-pointer" onClick={() => onRowClick(c)}>{c.name}</TableCell>
             <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{c.academicYear}</TableCell>
-            <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{facultyMap.get(c.inchargeFaculty) || 'N/A'}</TableCell>
+            <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{c.inchargeFaculty?.name || 'N/A'}</TableCell>
             <TableCell className="text-center cursor-pointer" onClick={() => onRowClick(c)}>{c.studentCount}</TableCell>
             <TableCell className="text-right">
                 <DropdownMenu>
@@ -226,7 +223,7 @@ function StudentListDialog({
 }: {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  classInfo: IClassWithStudentCount | null;
+  classInfo: IClassWithFacultyAndStudentCount | null;
   students: Pick<IUser, 'id' | 'name'>[];
   isLoading: boolean;
 }) {
@@ -246,7 +243,24 @@ function StudentListDialog({
         <div className="py-4">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
-              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
+              <svg
+                viewBox="0 0 24 24"
+                className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                fill="none"
+                stroke="url(#theme-gradient)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                  <defs>
+                      <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                          <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                      </linearGradient>
+                  </defs>
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+              </svg>
             </div>
           ) : students.length > 0 ? (
             <ScrollArea className="h-72 w-full rounded-md border p-4">
@@ -276,11 +290,11 @@ export default function AdminClassesPage() {
     const [isStudentListDialogOpen, setIsStudentListDialogOpen] = useState(false);
     
     const [allFaculty, setAllFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
-    const [classes, setClasses] = useState<IClassWithStudentCount[]>([]);
+    const [classes, setClasses] = useState<IClassWithFacultyAndStudentCount[]>([]);
     
-    const [selectedClass, setSelectedClass] = useState<IClassWithStudentCount | null>(null);
-    const [classToEdit, setClassToEdit] = useState<IClassWithStudentCount | null>(null);
-    const [classToDelete, setClassToDelete] = useState<IClassWithStudentCount | null>(null);
+    const [selectedClass, setSelectedClass] = useState<IClassWithFacultyAndStudentCount | null>(null);
+    const [classToEdit, setClassToEdit] = useState<IClassWithFacultyAndStudentCount | null>(null);
+    const [classToDelete, setClassToDelete] = useState<IClassWithFacultyAndStudentCount | null>(null);
 
     const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
     
@@ -307,9 +321,9 @@ export default function AdminClassesPage() {
     
     useEffect(() => {
         fetchPageData();
-    }, []);
+    }, [toast]);
 
-    const handleClassRowClick = async (classInfo: IClassWithStudentCount) => {
+    const handleClassRowClick = async (classInfo: IClassWithFacultyAndStudentCount) => {
         setSelectedClass(classInfo);
         setIsStudentListDialogOpen(true);
         setIsLoadingStudents(true);
@@ -323,7 +337,7 @@ export default function AdminClassesPage() {
         }
     };
     
-    const handleOpenEditDialog = (classInfo: IClassWithStudentCount) => {
+    const handleOpenEditDialog = (classInfo: IClassWithFacultyAndStudentCount) => {
       setClassToEdit(classInfo);
       setIsFormDialogOpen(true);
     };
@@ -385,12 +399,28 @@ export default function AdminClassesPage() {
         <CardContent>
           {isLoadingData ? (
             <div className="flex justify-center items-center py-10">
-              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
+              <svg
+                viewBox="0 0 24 24"
+                className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                fill="none"
+                stroke="url(#theme-gradient)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                  <defs>
+                      <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                          <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                      </linearGradient>
+                  </defs>
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+              </svg>
             </div>
           ) : (
             <ClassesTable 
                 classes={classes} 
-                facultyList={allFaculty} 
                 onRowClick={handleClassRowClick}
                 onSelectEdit={handleOpenEditDialog}
                 onSelectDelete={setClassToDelete}
