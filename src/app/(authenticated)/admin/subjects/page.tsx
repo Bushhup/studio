@@ -10,7 +10,7 @@ import type { IUser } from '@/models/user.model';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookCopy, PlusCircle, Loader2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { BookCopy, PlusCircle, MoreHorizontal, Edit, Trash2, GraduationCap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -177,7 +177,7 @@ function SubjectForm({
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting || classList.length === 0 || facultyList.length === 0}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
+            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : (isEditMode ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
             {isEditMode ? 'Save Changes' : 'Add Subject'}
           </Button>
         </DialogFooter>
@@ -348,7 +348,7 @@ export default function AdminSubjectsPage() {
         <CardContent>
           {isLoadingData ? (
              <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : (
             <SubjectsTable 

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, Loader2 } from 'lucide-react';
+import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, GraduationCap } from 'lucide-react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getMaterials, addMaterial, type AddMaterialInput } from './actions';
@@ -126,7 +126,7 @@ function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMate
             {errors.fileUrl && <p className="text-sm text-destructive mt-1">{errors.fileUrl.message}</p>}
           </div>
           <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : <FileUp className="mr-2 h-4 w-4" />}
             Upload Material
           </Button>
         </form>
@@ -217,7 +217,7 @@ export default function MaterialsPage() {
             <CardContent>
               {isLoading ? (
                   <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                   </div>
                 ) : filteredMaterials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

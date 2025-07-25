@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { getMyMarks, type StudentMark } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -58,7 +58,7 @@ export default function StudentMarksPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : (
             <Table>

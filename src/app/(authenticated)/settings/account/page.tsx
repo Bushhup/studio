@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCog, KeyRound, BellRing, Camera, Loader2 } from "lucide-react";
+import { UserCog, KeyRound, BellRing, Camera, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -154,7 +154,7 @@ export default function AccountSettingsPage() {
                         </div>
                     </div>
                     <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                      {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {profileForm.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
                       Save Profile Changes
                     </Button>
                  </form>
@@ -185,7 +185,7 @@ export default function AccountSettingsPage() {
                      {passwordForm.formState.errors.confirmPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
                 </div>
                 <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                   {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   {passwordForm.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
                    Update Password
                 </Button>
             </form>

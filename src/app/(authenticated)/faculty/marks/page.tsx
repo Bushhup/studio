@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, type MarkInput } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Loader2, Users, Save } from "lucide-react";
+import { ClipboardList, Users, Save, GraduationCap } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -165,7 +165,7 @@ export default function FacultyMarksPage() {
 
           {isLoadingStudents ? (
              <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : selectedSubjectId && students.length > 0 ? (
             <div className="space-y-4">
@@ -211,7 +211,7 @@ export default function FacultyMarksPage() {
               </Card>
                <div className="flex justify-end">
                 <Button onClick={handleSaveMarks} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                  {isSaving ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse"/> : <Save className="mr-2 h-4 w-4" />}
                   Save Marks
                 </Button>
               </div>

@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GraduationCap, Settings, LogIn, Loader2 } from 'lucide-react';
+import { GraduationCap, Settings, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthenticatedLayout({
@@ -47,9 +47,9 @@ export default function AuthenticatedLayout({
   
   if (status === 'loading' || (status === 'authenticated' && showWelcome)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
-            <GraduationCap className="h-32 w-32 text-primary animate-pulse" />
+          <GraduationCap className="h-32 w-32 text-primary animate-pulse" />
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function AuthenticatedLayout({
   if (!role) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <GraduationCap className="h-12 w-12 animate-pulse text-primary" />
       </div>
     );
   }

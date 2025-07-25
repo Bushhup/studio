@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { IUser } from '@/models/user.model';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { School, PlusCircle, Loader2, Users, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { School, PlusCircle, Users, MoreHorizontal, Edit, Trash2, GraduationCap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -144,7 +144,7 @@ function ClassForm({
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting || facultyList.length === 0}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
+            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : (isEditMode ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
             {isEditMode ? 'Save Changes' : 'Create Class'}
           </Button>
         </DialogFooter>
@@ -246,7 +246,7 @@ function StudentListDialog({
         <div className="py-4">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <GraduationCap className="h-6 w-6 animate-pulse text-primary" />
             </div>
           ) : students.length > 0 ? (
             <ScrollArea className="h-72 w-full rounded-md border p-4">
@@ -385,7 +385,7 @@ export default function AdminClassesPage() {
         <CardContent>
           {isLoadingData ? (
             <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : (
             <ClassesTable 

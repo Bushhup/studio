@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingDown, TrendingUp, Users, Loader2, School, Star, UserCheck } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp, Users, School, Star, UserCheck, GraduationCap } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +127,7 @@ export default function FacultyPerformancePage() {
           <CardContent>
             {isLoadingChart ? (
                  <div className="flex justify-center items-center h-[250px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                 </div>
             ) : chartData.length > 0 ? (
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -176,7 +176,7 @@ export default function FacultyPerformancePage() {
               <CardContent>
                  {isLoadingChart ? (
                       <div className="flex justify-center items-center h-[250px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                     </div>
                  ) : topPerformers.length > 0 ? (
                     <ul className="space-y-4">
@@ -208,7 +208,7 @@ export default function FacultyPerformancePage() {
               <CardContent>
                  {isLoadingChart ? (
                       <div className="flex justify-center items-center h-[250px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                     </div>
                  ) : averagePerformers.length > 0 ? (
                     <ul className="space-y-4 max-h-[300px] overflow-y-auto">
@@ -239,7 +239,7 @@ export default function FacultyPerformancePage() {
               <CardContent>
                  {isLoadingChart ? (
                       <div className="flex justify-center items-center h-[250px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                     </div>
                  ) : studentsToWatch.length > 0 ? (
                     <ul className="space-y-4">

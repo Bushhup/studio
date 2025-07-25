@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, MessageSquarePlus, Loader2 } from 'lucide-react';
+import { Send, MessageSquarePlus, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSubjectsForFeedback, submitFeedback, type SubjectWithFaculty } from '@/app/(authenticated)/feedback/actions';
 import { useSession } from 'next-auth/react';
@@ -88,7 +88,7 @@ export function FeedbackForm() {
       <CardContent>
         {isLoading ? (
             <div className="flex justify-center items-center h-24">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <GraduationCap className="h-6 w-6 animate-pulse text-primary" />
                 <p className="ml-2 text-muted-foreground">Loading subjects...</p>
             </div>
         ) : (
@@ -125,7 +125,7 @@ export function FeedbackForm() {
                 <p className="text-xs text-muted-foreground mt-1">Min. 20 characters. Your identity will remain anonymous.</p>
             </div>
             <Button type="submit" className="w-full sm:w-auto" disabled={!feedbackText.trim() || feedbackText.trim().length < 20 || !selectedSubjectId || isSubmitting}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />}
+                {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse"/> : <Send className="mr-2 h-4 w-4" />}
                  Submit Feedback
             </Button>
             </form>

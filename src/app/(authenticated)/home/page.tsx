@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { EventCard } from '@/components/event-card';
 import type { AppEvent, IClass, IUser } from '@/types';
-import { CalendarClock, List, LayoutGrid, Loader2, Plus, Calendar as CalendarIcon, X, Check, Upload } from 'lucide-react';
+import { CalendarClock, List, LayoutGrid, Plus, Calendar as CalendarIcon, X, Check, Upload, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -253,7 +253,7 @@ function AddEventForm({
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {form.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
                         Add Event
                     </Button>
                 </DialogFooter>
@@ -323,7 +323,7 @@ export default function HomePage() {
       
       {isLoading ? (
         <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <GraduationCap className="h-10 w-10 animate-pulse text-primary" />
         </div>
       ) : events.length === 0 ? (
          <div className="text-center py-10">

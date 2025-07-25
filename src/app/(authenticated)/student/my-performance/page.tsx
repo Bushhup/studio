@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, LineChart, ShieldAlert, TrendingUp, TrendingDown, Star, Loader2 } from "lucide-react";
+import { BarChart3, LineChart, ShieldAlert, TrendingUp, TrendingDown, Star, GraduationCap } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useToast } from '@/hooks/use-toast';
@@ -48,7 +48,7 @@ export default function StudentPerformancePage() {
       </div>
        {isLoading ? (
         <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <GraduationCap className="h-10 w-10 animate-pulse text-primary" />
         </div>
       ) : !performanceData || performanceData.subjectWisePerformance.length === 0 ? (
         <Card>

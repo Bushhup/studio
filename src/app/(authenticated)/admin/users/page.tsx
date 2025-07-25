@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, Loader2, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check, Filter, Search } from "lucide-react";
+import { Users, UserPlus, Edit, Trash2, MoreHorizontal, Eye, EyeOff, Check, Filter, Search, GraduationCap } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -299,7 +299,7 @@ function AddUserForm({ setIsOpen, classList, subjectList, role, onUserAdded }: {
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : <UserPlus className="mr-2 h-4 w-4" />}
             Add User
           </Button>
         </DialogFooter>
@@ -525,7 +525,7 @@ function EditUserForm({ user, setIsOpen, classList, subjectList, onUserUpdated }
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Edit className="mr-2 h-4 w-4" />}
+            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : <Edit className="mr-2 h-4 w-4" />}
             Save Changes
           </Button>
         </DialogFooter>
@@ -826,7 +826,7 @@ export default function AdminUsersPage() {
                  </div>
                  {isLoading ? (
                     <div className="flex justify-center items-center py-10">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                     </div>
                   ) : (
                     <UsersTable users={studentUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="student" />
@@ -835,7 +835,7 @@ export default function AdminUsersPage() {
               <TabsContent value="faculty">
                   {isLoading ? (
                     <div className="flex justify-center items-center py-10">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
                     </div>
                   ) : (
                     <UsersTable users={facultyUsers} onSelectEdit={handleOpenEditDialog} onSelectDelete={setUserToDelete} role="faculty" />

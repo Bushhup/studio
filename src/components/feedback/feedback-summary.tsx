@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Lightbulb, AlertTriangle, Loader2 } from 'lucide-react';
+import { Sparkles, Lightbulb, AlertTriangle, GraduationCap } from 'lucide-react';
 import { handleSummarizeFeedback } from '@/app/(authenticated)/feedback/actions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +100,7 @@ export function FeedbackSummary() {
         </div>
         <Button onClick={handleSubmitForSummarization} disabled={isLoading || !feedbackToSummarize.trim()} className="w-full sm:w-auto">
           {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />
           ) : (
             <Lightbulb className="mr-2 h-4 w-4" />
           )}

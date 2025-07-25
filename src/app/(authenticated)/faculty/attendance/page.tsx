@@ -7,7 +7,7 @@ import { getSubjectsForFaculty, getStudentsForClass } from '../marks/actions'; /
 import { saveAttendance } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ListChecks, CalendarPlus, Loader2, Users, Save, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { ListChecks, CalendarPlus, Users, Save, Calendar as CalendarIcon, Clock, GraduationCap } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -189,7 +189,7 @@ export default function FacultyAttendancePage() {
           
           {isLoadingStudents ? (
              <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : selectedSubjectId && students.length > 0 ? (
              <div className="space-y-4">
@@ -236,7 +236,7 @@ export default function FacultyAttendancePage() {
               </Card>
                <div className="flex justify-end">
                 <Button onClick={handleSaveAttendance} disabled={isSaving || !period}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                  {isSaving ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse"/> : <Save className="mr-2 h-4 w-4" />}
                   Save Attendance
                 </Button>
               </div>

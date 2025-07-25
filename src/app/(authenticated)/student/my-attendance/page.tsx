@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { getStudentAttendance, type SubjectAttendance } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, CalendarDays, Loader2 } from "lucide-react";
+import { ShieldCheck, CalendarDays, GraduationCap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,7 +50,7 @@ export default function StudentAttendancePage() {
         <CardContent className="space-y-6">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
             </div>
           ) : attendance.length > 0 ? (
             attendance.map((att, index) => (
