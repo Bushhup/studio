@@ -1,7 +1,7 @@
 
 import { NextAuthOptions, getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { Role, User } from '@/types';
+import type { Role } from '@/types';
 import { connectToDB } from "./mongoose";
 import UserModel from "@/models/user.model";
 
@@ -21,8 +21,6 @@ export const authOptions: NextAuthOptions = {
 
         const { username, password, role } = credentials;
 
-        await connectToDB();
-
         if (role === 'admin') {
             const adminUsername = process.env.ADMIN_USERNAME || 'Admin01';
             const adminPassword = process.env.ADMIN_PASSWORD || 'shaosaid05413';
@@ -39,18 +37,18 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            const user = await UserModel.findOne({ name: username, role: role }).select('+password');
+            await connectToDB();
+            const user = await UserModel.findOne({ name: username, role: role as Role }).select('+password');
 
             if (!user) {
-              console.log('User not found');
+              console.log(`User not found with username: ${username} and role: ${role}`);
               return null;
             }
             
-            // Direct comparison for plain text passwords
             const isPasswordCorrect = user.password === password;
 
             if (!isPasswordCorrect) {
-              console.log('Password incorrect');
+              console.log('Password incorrect for user:', username);
               return null;
             }
 
@@ -70,7 +68,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: '/login', // Redirect users to the dedicated login page
+    signIn: '/login',
   },
   session: {
     strategy: "jwt",

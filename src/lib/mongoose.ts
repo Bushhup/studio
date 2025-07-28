@@ -7,13 +7,13 @@ export const connectToDB = async () => {
   mongoose.set('strictQuery', true);
 
   if (!process.env.MONGODB_URI) {
-    console.error('MONGODB_URI is not defined in .env file');
-    throw new Error('MONGODB_URI is not defined in .env file. Please add it to your .env file.');
+    console.error('FATAL_ERROR: MONGODB_URI is not defined in the environment variables.');
+    throw new Error('MONGODB_URI is not defined. Please add it to your .env file.');
   }
 
   // If the connection is already established, return without creating a new one.
   if (isConnected) {
-    console.log('=> using existing database connection');
+    // console.log('=> using existing database connection');
     return;
   }
 
@@ -22,10 +22,10 @@ export const connectToDB = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
 
     isConnected = true;
-    console.log('=> new database connection established');
+    console.log('=> New database connection established');
   } catch (error) {
-    console.error('=> error connecting to database:', error);
-    // Let's not re-throw here, but log it. The calling function will handle the fallout.
-    // This can prevent crashes on initial load if DB is temporarily unavailable.
+    console.error('=> Error connecting to database:', error);
+    // Re-throwing the error is important to let the calling function know about the failure.
+    throw new Error('Failed to connect to the database.');
   }
 };
