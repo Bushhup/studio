@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { EventCard } from '@/components/event-card';
 import type { AppEvent, IClass, IUser } from '@/types';
-import { CalendarClock, List, LayoutGrid, Plus, Calendar as CalendarIcon, X, Check, Upload, GraduationCap } from 'lucide-react';
+import { CalendarClock, List, LayoutGrid, Plus, Calendar as CalendarIcon, X, Check, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -253,7 +253,18 @@ function AddEventForm({
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
+                        {form.formState.isSubmitting && <svg
+                            viewBox="0 0 24 24"
+                            className="mr-2 h-4 w-4 animate-pulse"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                        </svg>}
                         Add Event
                     </Button>
                 </DialogFooter>

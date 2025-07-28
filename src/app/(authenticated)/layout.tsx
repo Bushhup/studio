@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GraduationCap, Settings, LogIn } from 'lucide-react';
+import { GraduationCap, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AuthenticatedLayout({
@@ -48,10 +48,10 @@ export default function AuthenticatedLayout({
   if (status === 'loading' || (status === 'authenticated' && showWelcome)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 animate-pulse shadow-lg shadow-primary/30 p-8 rounded-full">
            <svg
               viewBox="0 0 24 24"
-              className="h-32 w-32 animate-pulse theme-gradient-stroke"
+              className="h-32 w-32 theme-gradient-stroke"
               fill="none"
               stroke="url(#theme-gradient)"
               strokeWidth="1.5"

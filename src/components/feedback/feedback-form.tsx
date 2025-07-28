@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, MessageSquarePlus, GraduationCap } from 'lucide-react';
+import { Send, MessageSquarePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSubjectsForFeedback, submitFeedback, type SubjectWithFaculty } from '@/app/(authenticated)/feedback/actions';
 import { useSession } from 'next-auth/react';
@@ -142,7 +142,18 @@ export function FeedbackForm() {
                 <p className="text-xs text-muted-foreground mt-1">Min. 20 characters. Your identity will remain anonymous.</p>
             </div>
             <Button type="submit" className="w-full sm:w-auto" disabled={!feedbackText.trim() || feedbackText.trim().length < 20 || !selectedSubjectId || isSubmitting}>
-                {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse"/> : <Send className="mr-2 h-4 w-4" />}
+                {isSubmitting ? <svg
+                    viewBox="0 0 24 24"
+                    className="mr-2 h-4 w-4 animate-pulse"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg> : <Send className="mr-2 h-4 w-4" />}
                  Submit Feedback
             </Button>
             </form>

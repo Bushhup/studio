@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, type MarkInput } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Users, Save, GraduationCap } from "lucide-react";
+import { ClipboardList, Users, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -228,7 +228,18 @@ export default function FacultyMarksPage() {
               </Card>
                <div className="flex justify-end">
                 <Button onClick={handleSaveMarks} disabled={isSaving}>
-                  {isSaving ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse"/> : <Save className="mr-2 h-4 w-4" />}
+                  {isSaving ? <svg
+                    viewBox="0 0 24 24"
+                    className="mr-2 h-4 w-4 animate-pulse"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg> : <Save className="mr-2 h-4 w-4" />}
                   Save Marks
                 </Button>
               </div>

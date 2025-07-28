@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { StudyMaterial, Role } from '@/types';
+import type { StudyMaterial } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpenText, DownloadCloud, FileText, Filter, Search, UploadCloud, FileUp, FileType2, GraduationCap } from 'lucide-react';
+import { BookOpenText, DownloadCloud, FileText, Filter, Search, FileUp, FileType2 } from 'lucide-react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getMaterials, addMaterial, type AddMaterialInput } from './actions';
@@ -21,7 +21,7 @@ const FileTypeIcon = ({ type }: { type: StudyMaterial['fileType'] }) => {
     case 'pdf': return <FileText className="h-5 w-5 text-red-500" />;
     case 'ppt': return <FileType2 className="h-5 w-5 text-orange-500" />;
     case 'doc': return <FileType2 className="h-5 w-5 text-blue-500" />;
-    case 'link': return <UploadCloud className="h-5 w-5 text-green-500" />;
+    case 'link': return <FileText className="h-5 w-5 text-green-500" />;
     default: return <FileText className="h-5 w-5 text-gray-500" />;
   }
 };
@@ -54,7 +54,7 @@ function MaterialCard({ material }: { material: StudyMaterial }) {
 }
 
 function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMaterial) => void }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, control } = useForm<AddMaterialInput>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AddMaterialInput>();
   const { toast } = useToast();
   const { data: session } = useSession();
 
@@ -105,17 +105,24 @@ function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMate
             </div>
             <div>
               <Label htmlFor="fileType">File Type</Label>
-              <Select onValueChange={(value) => (register("fileType").onChange({ target: { name: "fileType", value } }))} >
-                 <SelectTrigger id="fileType">
-                    <SelectValue placeholder="Select file type" />
-                 </SelectTrigger>
-                 <SelectContent>
-                    <SelectItem value="pdf">PDF</SelectItem>
-                    <SelectItem value="ppt">PPT</SelectItem>
-                    <SelectItem value="doc">DOC</SelectItem>
-                    <SelectItem value="link">Link</SelectItem>
-                 </SelectContent>
-              </Select>
+              <Controller
+                name="fileType"
+                control={control}
+                rules={{ required: 'File type is required' }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger id="fileType">
+                        <SelectValue placeholder="Select file type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="pdf">PDF</SelectItem>
+                        <SelectItem value="ppt">PPT</SelectItem>
+                        <SelectItem value="doc">DOC</SelectItem>
+                        <SelectItem value="link">Link</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.fileType && <p className="text-sm text-destructive mt-1">{errors.fileType.message}</p>}
             </div>
           </div>
@@ -126,7 +133,18 @@ function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMate
             {errors.fileUrl && <p className="text-sm text-destructive mt-1">{errors.fileUrl.message}</p>}
           </div>
           <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-            {isSubmitting ? <GraduationCap className="mr-2 h-4 w-4 animate-pulse" /> : <FileUp className="mr-2 h-4 w-4" />}
+            {isSubmitting ? <svg
+                viewBox="0 0 24 24"
+                className="mr-2 h-4 w-4 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg> : <FileUp className="mr-2 h-4 w-4" />}
             Upload Material
           </Button>
         </form>
@@ -143,6 +161,7 @@ export default function MaterialsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchMaterials = async () => {
@@ -151,13 +170,17 @@ export default function MaterialsPage() {
         const fetchedMaterials = await getMaterials();
         setMaterials(fetchedMaterials);
       } catch (error) {
-        console.error("Failed to fetch materials:", error);
+        toast({
+            title: "Error",
+            description: "Failed to fetch materials.",
+            variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     fetchMaterials();
-  }, []);
+  }, [toast]);
 
   const handleNewMaterial = (newMaterial: StudyMaterial) => {
     setMaterials(prev => [newMaterial, ...prev]);

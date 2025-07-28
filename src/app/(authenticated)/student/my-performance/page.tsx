@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, LineChart, ShieldAlert, TrendingUp, TrendingDown, Star, GraduationCap } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, Star } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useToast } from '@/hooks/use-toast';

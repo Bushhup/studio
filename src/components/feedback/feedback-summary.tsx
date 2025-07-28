@@ -3,10 +3,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Lightbulb, AlertTriangle, GraduationCap } from 'lucide-react';
+import { Sparkles, Lightbulb, AlertTriangle } from 'lucide-react';
 import { handleSummarizeFeedback } from '@/app/(authenticated)/feedback/actions';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +101,18 @@ export function FeedbackSummary() {
         </div>
         <Button onClick={handleSubmitForSummarization} disabled={isLoading || !feedbackToSummarize.trim()} className="w-full sm:w-auto">
           {isLoading ? (
-            <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />
+            <svg
+                viewBox="0 0 24 24"
+                className="mr-2 h-4 w-4 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
           ) : (
             <Lightbulb className="mr-2 h-4 w-4" />
           )}

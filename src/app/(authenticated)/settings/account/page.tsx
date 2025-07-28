@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCog, KeyRound, BellRing, Camera, GraduationCap } from "lucide-react";
+import { UserCog, KeyRound, BellRing, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -154,7 +154,18 @@ export default function AccountSettingsPage() {
                         </div>
                     </div>
                     <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                      {profileForm.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
+                      {profileForm.formState.isSubmitting && <svg
+                        viewBox="0 0 24 24"
+                        className="mr-2 h-4 w-4 animate-pulse"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                    </svg>}
                       Save Profile Changes
                     </Button>
                  </form>
@@ -185,7 +196,18 @@ export default function AccountSettingsPage() {
                      {passwordForm.formState.errors.confirmPassword && <p className="text-sm text-destructive mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>}
                 </div>
                 <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                   {passwordForm.formState.isSubmitting && <GraduationCap className="mr-2 h-4 w-4 animate-pulse" />}
+                   {passwordForm.formState.isSubmitting && <svg
+                        viewBox="0 0 24 24"
+                        className="mr-2 h-4 w-4 animate-pulse"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                    </svg>}
                    Update Password
                 </Button>
             </form>

@@ -40,7 +40,24 @@ function ListDialog({
         <ScrollArea className="h-72 w-full rounded-md border p-4">
           {isLoading ? (
              <div className="flex justify-center items-center h-full">
-                <GraduationCap className="h-8 w-8 animate-pulse text-primary" />
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                  fill="none"
+                  stroke="url(#theme-gradient)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                    <defs>
+                        <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                            <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                        </linearGradient>
+                    </defs>
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
              </div>
           ) : items.length > 0 ? (
             <ul className="space-y-2">
@@ -125,7 +142,26 @@ export default function AdminDashboardPage() {
 
   const renderCardContent = (count: number, isLoading: boolean) => {
     if (isLoading) {
-      return <GraduationCap className="h-8 w-8 animate-pulse text-primary" />;
+      return (
+        <svg
+            viewBox="0 0 24 24"
+            className="h-8 w-8 animate-pulse theme-gradient-stroke"
+            fill="none"
+            stroke="url(#theme-gradient)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <defs>
+                <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
+                    <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
+                </linearGradient>
+            </defs>
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      )
     }
     return <div className="text-2xl font-bold">{count}</div>;
   }

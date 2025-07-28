@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { getStudentAttendance, type SubjectAttendance } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, CalendarDays, GraduationCap } from "lucide-react";
+import { ShieldCheck, CalendarDays } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 
