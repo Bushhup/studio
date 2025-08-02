@@ -29,9 +29,14 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === 'authenticated' && session) {
-        const redirectPath = (session as any).redirectPath || '/home';
-        router.replace(redirectPath);
+    if (status === 'authenticated' && session?.user) {
+        const role = session.user.role;
+        const redirectPath = 
+            role === 'admin' ? '/admin/dashboard' :
+            role === 'faculty' ? '/faculty/dashboard' :
+            role === 'student' ? '/student/dashboard' :
+            '/home';
+      router.replace(redirectPath);
     }
   }, [status, session, router]);
 
@@ -53,7 +58,7 @@ export default function LoginPage() {
       username: username,
       password: password,
       role: selectedRole,
-      redirect: false, // We handle redirect manually after checking result
+      redirect: false,
     });
     
     setIsLoggingIn(false);
@@ -63,8 +68,6 @@ export default function LoginPage() {
             title: "Login Successful",
             description: "Redirecting to your dashboard...",
         });
-        // The useEffect will handle the redirection, but we can try to force a reload of the session
-        router.push('/login'); // Re-trigger the page to run useEffect with new session
     } else {
       toast({
         title: "Login Failed",
@@ -83,7 +86,6 @@ export default function LoginPage() {
     setUsername('');
     setPassword('');
   };
-
 
   if (status === 'loading' || status === 'authenticated') {
     return (

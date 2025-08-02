@@ -16,9 +16,9 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.role || !credentials.username || !credentials.password) {
-          return null;
+          throw new Error("Missing credentials");
         }
-
+        
         await connectToDB();
 
         const { username, password, role } = credentials;
@@ -35,36 +35,28 @@ export const authOptions: NextAuthOptions = {
                     role: 'admin'
                 };
             }
-            return null;
+            throw new Error("Invalid admin credentials");
         }
 
-        try {
-            const user = await UserModel.findOne({ name: username, role: role as Role }).select('+password');
+        const user = await UserModel.findOne({ name: username, role: role }).select('+password');
 
-            if (!user) {
-              console.log(`User not found with username: ${username} and role: ${role}`);
-              return null;
-            }
-            
-            const isPasswordCorrect = user.password === password;
+        if (!user) {
+          throw new Error("No user found with the given username and role.");
+        }
+        
+        const isPasswordCorrect = user.password === password;
 
-            if (!isPasswordCorrect) {
-              console.log('Password incorrect for user:', username);
-              return null;
-            }
+        if (!isPasswordCorrect) {
+          throw new Error("Incorrect password.");
+        }
 
-            return {
-                id: user._id.toString(),
-                name: user.name,
-                email: user.email,
-                role: user.role as Role,
-                classId: user.classId ? user.classId.toString() : undefined,
-            };
-
-          } catch (error) {
-            console.error('Login error in authorize:', error);
-            return null;
-          }
+        return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role as Role,
+            classId: user.classId ? user.classId.toString() : undefined,
+        };
       },
     }),
   ],
@@ -88,13 +80,6 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.classId = token.classId as string | undefined;
-
-        // Redirect based on role
-        let redirectPath = '/home';
-        if (token.role === 'admin') redirectPath = '/admin/dashboard';
-        else if (token.role === 'faculty') redirectPath = '/faculty/dashboard';
-        else if (token.role === 'student') redirectPath = '/student/dashboard';
-        (session as any).redirectPath = redirectPath;
       }
       return session;
     },

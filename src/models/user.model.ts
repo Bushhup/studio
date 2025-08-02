@@ -17,7 +17,7 @@ const UserSchema = new Schema<IUser>({
     enum: ['admin', 'faculty', 'student'],
     required: true,
   },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false },
 }, {
   collection: 'users'
