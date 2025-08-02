@@ -70,7 +70,7 @@ export default function LoginPage() {
         if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
         else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
         else if (selectedRole === 'student') redirectPath = '/student/dashboard';
-        router.push(redirectPath);
+        window.location.href = redirectPath;
     } else {
       toast({
         title: "Login Failed",
@@ -97,7 +97,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-4 animate-pulse shadow-lg shadow-primary/30 p-8 rounded-full">
           <svg
             viewBox="0 0 24 24"
-            className="h-16 w-16 theme-gradient-stroke"
+            className="h-32 w-32 theme-gradient-stroke"
             fill="none"
             stroke="url(#theme-gradient)"
             strokeWidth="1.5"
