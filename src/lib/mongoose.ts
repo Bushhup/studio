@@ -1,31 +1,51 @@
 import mongoose from 'mongoose';
 
-let isConnected = false; // Variable to track the connection status
+const MONGODB_URI = process.env.MONGODB_URI;
 
-export const connectToDB = async () => {
-  // Set strict query mode for Mongoose to prevent unknown field queries.
-  mongoose.set('strictQuery', true);
+if (!MONGODB_URI) {
+  throw new Error(
+    'Please define the MONGODB_URI environment variable inside .env'
+  );
+}
 
-  if (!process.env.MONGODB_URI) {
-    console.error('FATAL_ERROR: MONGODB_URI is not defined in the environment variables.');
-    throw new Error('MONGODB_URI is not defined. Please add it to your .env file.');
-  }
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development. This prevents connections from growing exponentially
+ * during API Route usage.
+ */
+let cached = (global as any).mongoose;
 
-  // If the connection is already established, return without creating a new one.
-  if (isConnected) {
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
+
+export async function connectToDB() {
+  if (cached.conn) {
     // console.log('=> using existing database connection');
-    return;
+    return cached.conn;
   }
 
+  if (!cached.promise) {
+    mongoose.set('strictQuery', true);
+    
+    // console.log('=> creating new database connection');
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongooseInstance) => {
+      // console.log('=> New database connection established');
+      return mongooseInstance;
+    }).catch(error => {
+        console.error('=> Error connecting to database:', error);
+        // Making sure the promise is rejected on error, and cache is cleared
+        cached.promise = null; 
+        throw error;
+    });
+  }
+  
   try {
-    // Attempt to connect to the database
-    await mongoose.connect(process.env.MONGODB_URI);
-
-    isConnected = true;
-    console.log('=> New database connection established');
-  } catch (error) {
-    console.error('=> Error connecting to database:', error);
-    // Re-throwing the error is important to let the calling function know about the failure.
-    throw new Error('Failed to connect to the database.');
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null; // Clear promise on error to allow retry
+    throw e;
   }
-};
+  
+  return cached.conn;
+}

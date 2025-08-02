@@ -21,6 +21,9 @@ export const authOptions: NextAuthOptions = {
 
         const { username, password, role } = credentials;
 
+        // Ensure DB is connected before any operation
+        await connectToDB();
+
         if (role === 'admin') {
             const adminUsername = process.env.ADMIN_USERNAME || 'Admin01';
             const adminPassword = process.env.ADMIN_PASSWORD || 'shaosaid05413';
@@ -37,7 +40,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            await connectToDB();
             const user = await UserModel.findOne({ name: username, role: role as Role }).select('+password');
 
             if (!user) {
