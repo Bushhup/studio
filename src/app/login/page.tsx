@@ -29,11 +29,8 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === 'authenticated') {
-        let redirectPath = '/home';
-        if (session.user.role === 'admin') redirectPath = '/admin/dashboard';
-        else if (session.user.role === 'faculty') redirectPath = '/faculty/dashboard';
-        else if (session.user.role === 'student') redirectPath = '/student/dashboard';
+    if (status === 'authenticated' && session) {
+        const redirectPath = (session as any).redirectPath || '/home';
         router.replace(redirectPath);
     }
   }, [status, session, router]);
@@ -53,28 +50,25 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     const result = await signIn('credentials', {
-      redirect: false,
       username: username,
       password: password,
       role: selectedRole,
+      redirect: false, // We handle redirect manually after checking result
     });
     
     setIsLoggingIn(false);
 
-    if (result?.ok && !result.error) {
+    if (result?.ok) {
         toast({
             title: "Login Successful",
             description: "Redirecting to your dashboard...",
         });
-        let redirectPath = '/home';
-        if (selectedRole === 'admin') redirectPath = '/admin/dashboard';
-        else if (selectedRole === 'faculty') redirectPath = '/faculty/dashboard';
-        else if (selectedRole === 'student') redirectPath = '/student/dashboard';
-        window.location.href = redirectPath;
+        // The useEffect will handle the redirection, but we can try to force a reload of the session
+        router.push('/login'); // Re-trigger the page to run useEffect with new session
     } else {
       toast({
         title: "Login Failed",
-        description: "Invalid credentials or role. Please try again.",
+        description: result?.error || "Invalid credentials or role. Please try again.",
         variant: "destructive",
       });
     }

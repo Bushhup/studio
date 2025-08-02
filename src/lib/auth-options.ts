@@ -19,10 +19,9 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const { username, password, role } = credentials;
-
-        // Ensure DB is connected before any operation
         await connectToDB();
+
+        const { username, password, role } = credentials;
 
         if (role === 'admin') {
             const adminUsername = process.env.ADMIN_USERNAME || 'Admin01';
@@ -89,6 +88,13 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
         session.user.classId = token.classId as string | undefined;
+
+        // Redirect based on role
+        let redirectPath = '/home';
+        if (token.role === 'admin') redirectPath = '/admin/dashboard';
+        else if (token.role === 'faculty') redirectPath = '/faculty/dashboard';
+        else if (token.role === 'student') redirectPath = '/student/dashboard';
+        (session as any).redirectPath = redirectPath;
       }
       return session;
     },
