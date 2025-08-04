@@ -171,8 +171,10 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
                     academicYear: 1,
                     studentCount: 1,
                     inchargeFaculty: {
-                        id: '$facultyIncharge._id',
-                        name: '$facultyIncharge.name'
+                        $ifNull: [{
+                            id: '$facultyIncharge._id',
+                            name: '$facultyIncharge.name'
+                        }, null]
                     }
                 }
             }
@@ -182,7 +184,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
             id: c._id.toString(),
             name: c.name,
             academicYear: c.academicYear,
-            inchargeFaculty: c.inchargeFaculty.id 
+            inchargeFaculty: c.inchargeFaculty && c.inchargeFaculty.id
               ? { id: c.inchargeFaculty.id.toString(), name: c.inchargeFaculty.name } 
               : null,
             studentCount: c.studentCount,
