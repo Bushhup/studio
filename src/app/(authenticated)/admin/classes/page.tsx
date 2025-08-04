@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { IUser } from '@/models/user.model';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { School, PlusCircle, Users, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { School, PlusCircle, Users, MoreHorizontal, Edit, Trash2, CalendarClock, Save, Clock, Coffee, NotebookText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { createClass, getClasses, getStudentsByClass, updateClass, deleteClass, type ClassInput, type IClassWithFacultyAndStudentCount } from './actions';
+import { createClass, getClasses, getStudentsByClass, updateClass, deleteClass, type ClassInput, type IClassWithFacultyAndStudentCount, saveTimetable, getSubjectsByClass, getTimetable, TimetableData, SubjectForTimetable } from './actions';
 import { getUsersByRole } from '../users/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -164,11 +164,12 @@ function ClassForm({
   );
 }
 
-function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete }: { 
+function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete, onSelectTimetable }: { 
     classes: IClassWithFacultyAndStudentCount[], 
     onRowClick: (classInfo: IClassWithFacultyAndStudentCount) => void,
     onSelectEdit: (classInfo: IClassWithFacultyAndStudentCount) => void,
     onSelectDelete: (classInfo: IClassWithFacultyAndStudentCount) => void,
+    onSelectTimetable: (classInfo: IClassWithFacultyAndStudentCount) => void,
 }) {
   return (
     <Table>
@@ -178,6 +179,7 @@ function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete }: {
           <TableHead>Academic Year</TableHead>
           <TableHead>In-charge Faculty</TableHead>
           <TableHead className="text-center">Student Count</TableHead>
+          <TableHead className="text-center">Timetable</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -188,6 +190,11 @@ function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete }: {
             <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{c.academicYear}</TableCell>
             <TableCell className="cursor-pointer" onClick={() => onRowClick(c)}>{c.inchargeFaculty?.name || 'N/A'}</TableCell>
             <TableCell className="text-center cursor-pointer" onClick={() => onRowClick(c)}>{c.studentCount}</TableCell>
+            <TableCell className="text-center">
+                <Button variant="outline" size="sm" onClick={() => onSelectTimetable(c)}>
+                    <CalendarClock className="mr-2 h-4 w-4" /> View
+                </Button>
+            </TableCell>
             <TableCell className="text-right">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -215,7 +222,7 @@ function ClassesTable({ classes, onRowClick, onSelectEdit, onSelectDelete }: {
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={5} className="h-24 text-center">
+            <TableCell colSpan={6} className="h-24 text-center">
               No classes found. Create one to get started.
             </TableCell>
           </TableRow>
@@ -242,7 +249,7 @@ function StudentListDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-headline flex items-center gap-2">
             <Users className="h-5 w-5" /> Student List - {classInfo.name}
@@ -295,15 +302,172 @@ function StudentListDialog({
   );
 }
 
+const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const periods = [
+    { name: 'Period 1', time: '09:00 - 09:50' },
+    { name: 'Period 2', time: '09:50 - 10:40' },
+    { name: 'Break', time: '10:40 - 11:00' },
+    { name: 'Period 3', time: '11:00 - 11:50' },
+    { name: 'Period 4', time: '11:50 - 12:40' },
+    { name: 'Lunch', time: '12:40 - 01:30' },
+    { name: 'Period 5', time: '01:30 - 02:15' },
+    { name: 'Period 6', time: '02:15 - 03:00' },
+    { name: 'Period 7', time: '03:00 - 03:45' },
+    { name: 'Period 8', time: '03:45 - 04:30' },
+];
+
+function TimetableDialog({
+    isOpen,
+    setIsOpen,
+    classInfo
+}: {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    classInfo: IClassWithFacultyAndStudentCount | null;
+}) {
+    const { toast } = useToast();
+    const [timetable, setTimetable] = useState<TimetableData>({});
+    const [subjects, setSubjects] = useState<SubjectForTimetable[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && classInfo) {
+            setIsLoading(true);
+            Promise.all([
+                getTimetable(classInfo.id),
+                getSubjectsByClass(classInfo.id)
+            ]).then(([timetableData, subjectData]) => {
+                setTimetable(timetableData || {});
+                setSubjects(subjectData);
+            }).catch(() => {
+                toast({ title: "Error", description: "Failed to load timetable data.", variant: "destructive" });
+            }).finally(() => {
+                setIsLoading(false);
+            });
+        }
+    }, [isOpen, classInfo, toast]);
+
+    if (!classInfo) return null;
+
+    const handleTimetableChange = (day: string, periodIndex: number, subjectId: string) => {
+        setTimetable(prev => {
+            const newDaySchedule = [...(prev[day.toLowerCase()] || Array(8).fill(null))];
+            newDaySchedule[periodIndex] = subjectId === 'none' ? null : subjectId;
+            return {
+                ...prev,
+                [day.toLowerCase()]: newDaySchedule
+            };
+        });
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        const result = await saveTimetable(classInfo.id, timetable);
+        if (result.success) {
+            toast({ title: "Success", description: "Timetable saved successfully." });
+            setIsOpen(false);
+        } else {
+            toast({ title: "Error", description: result.message, variant: "destructive" });
+        }
+        setIsSaving(false);
+    };
+    
+    const getSubjectName = (subjectId: string | null) => {
+        if (!subjectId) return 'Free Period';
+        return subjects.find(s => s.id === subjectId)?.name || 'Unknown';
+    }
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="max-w-6xl">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl">Timetable for {classInfo.name}</DialogTitle>
+                    <DialogDescription>Assign subjects to periods for each day of the week.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-[70vh]">
+                <div className="p-1">
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-96">
+                        <svg viewBox="0 0 24 24" className="h-10 w-10 animate-pulse theme-gradient-stroke" fill="none" stroke="url(#theme-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                    </div>
+                ) : (
+                    <Table className="border">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-40 border-r">Time / Period</TableHead>
+                                {days.map(day => <TableHead key={day} className="text-center">{day}</TableHead>)}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {periods.map((period, periodIndex) => (
+                                <TableRow key={period.name}>
+                                    <TableCell className="border-r font-medium text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            {period.name === 'Break' ? <Coffee/> : period.name === 'Lunch' ? <NotebookText/> : <Clock/>}
+                                            <div>
+                                                <p>{period.name}</p>
+                                                <p className="text-xs text-muted-foreground">{period.time}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    {days.map(day => {
+                                        if (period.name === 'Break' || period.name === 'Lunch') {
+                                            return <TableCell key={day} className="text-center bg-muted italic text-muted-foreground">{period.name} Time</TableCell>
+                                        }
+                                        const actualPeriodIndex = periodIndex < 2 ? periodIndex : periodIndex < 5 ? periodIndex - 1 : periodIndex - 2;
+                                        const currentSubjectId = timetable[day.toLowerCase()]?.[actualPeriodIndex] || 'none';
+
+                                        return (
+                                            <TableCell key={day} className="p-1">
+                                                <Select
+                                                    value={currentSubjectId}
+                                                    onValueChange={(value) => handleTimetableChange(day, actualPeriodIndex, value)}
+                                                >
+                                                    <SelectTrigger className="w-full h-full text-xs truncate">
+                                                        <SelectValue>
+                                                            {getSubjectName(currentSubjectId)}
+                                                        </SelectValue>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">Free Period</SelectItem>
+                                                        {subjects.map(sub => (
+                                                            <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                        )
+                                    })}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+                </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg> : <Save className="mr-2 h-4 w-4" />}
+                        Save Timetable
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function AdminClassesPage() {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [isStudentListDialogOpen, setIsStudentListDialogOpen] = useState(false);
+    const [isTimetableDialogOpen, setIsTimetableDialogOpen] = useState(false);
     
     const [allFaculty, setAllFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
     const [classes, setClasses] = useState<IClassWithFacultyAndStudentCount[]>([]);
     
-    const [selectedClass, setSelectedClass] = useState<IClassWithFacultyAndStudentCount | null>(null);
+    const [selectedClassForStudents, setSelectedClassForStudents] = useState<IClassWithFacultyAndStudentCount | null>(null);
+    const [selectedClassForTimetable, setSelectedClassForTimetable] = useState<IClassWithFacultyAndStudentCount | null>(null);
     const [classToEdit, setClassToEdit] = useState<IClassWithFacultyAndStudentCount | null>(null);
     const [classToDelete, setClassToDelete] = useState<IClassWithFacultyAndStudentCount | null>(null);
 
@@ -335,7 +499,7 @@ export default function AdminClassesPage() {
     }, []);
 
     const handleClassRowClick = async (classInfo: IClassWithFacultyAndStudentCount) => {
-        setSelectedClass(classInfo);
+        setSelectedClassForStudents(classInfo);
         setIsStudentListDialogOpen(true);
         setIsLoadingStudents(true);
         try {
@@ -356,6 +520,11 @@ export default function AdminClassesPage() {
     const handleOpenCreateDialog = () => {
       setClassToEdit(null); // Ensure we are in "create" mode
       setIsFormDialogOpen(true);
+    };
+
+    const handleOpenTimetableDialog = (classInfo: IClassWithFacultyAndStudentCount) => {
+        setSelectedClassForTimetable(classInfo);
+        setIsTimetableDialogOpen(true);
     };
 
     const handleDeleteClass = async () => {
@@ -386,7 +555,7 @@ export default function AdminClassesPage() {
       </div>
 
       <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle className="font-headline">{classToEdit ? 'Edit Class' : 'Create New Class'}</DialogTitle>
                 <DialogDescription>{classToEdit ? 'Update the details for this class.' : 'Fill in the details for the new class.'}</DialogDescription>
@@ -405,7 +574,7 @@ export default function AdminClassesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Class List</CardTitle>
-          <CardDescription>A list of all created classes. Click a row to see the student list.</CardDescription>
+          <CardDescription>A list of all created classes. Click a row to see the student list or manage the timetable.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoadingData ? (
@@ -435,6 +604,7 @@ export default function AdminClassesPage() {
                 onRowClick={handleClassRowClick}
                 onSelectEdit={handleOpenEditDialog}
                 onSelectDelete={setClassToDelete}
+                onSelectTimetable={handleOpenTimetableDialog}
             />
           )}
         </CardContent>
@@ -443,9 +613,15 @@ export default function AdminClassesPage() {
       <StudentListDialog
         isOpen={isStudentListDialogOpen}
         setIsOpen={setIsStudentListDialogOpen}
-        classInfo={selectedClass}
+        classInfo={selectedClassForStudents}
         students={studentsInClass}
         isLoading={isLoadingStudents}
+      />
+      
+      <TimetableDialog 
+        isOpen={isTimetableDialogOpen}
+        setIsOpen={setIsTimetableDialogOpen}
+        classInfo={selectedClassForTimetable}
       />
       
       <AlertDialog open={!!classToDelete} onOpenChange={() => setClassToDelete(null)}>
@@ -454,7 +630,7 @@ export default function AdminClassesPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the class for{' '}
-              <span className="font-semibold">{classToDelete?.name}</span>. 
+              <span className="font-semibold">{classToDelete?.name}</span> and its associated timetable.
               You can only delete classes with no students assigned.
             </AlertDialogDescription>
           </AlertDialogHeader>

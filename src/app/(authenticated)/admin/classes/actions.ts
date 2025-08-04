@@ -4,6 +4,8 @@
 import { connectToDB } from '@/lib/mongoose';
 import ClassModel, { IClass } from '@/models/class.model';
 import UserModel, { IUser } from '@/models/user.model';
+import SubjectModel from '@/models/subject.model';
+import TimetableModel, { ITimetable } from '@/models/timetable.model';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
@@ -108,7 +110,10 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
         if (studentCount > 0) {
             return { success: false, message: `Cannot delete class. There are ${studentCount} student(s) assigned to it.` };
         }
-
+        
+        // Also delete associated timetable
+        await TimetableModel.deleteOne({ classId: new mongoose.Types.ObjectId(classId) });
+        
         const result = await ClassModel.findByIdAndDelete(classId);
 
         if (!result) {
@@ -189,5 +194,64 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
     } catch (error) {
         console.error(`Error fetching students for class ${classId}:`, error);
         return [];
+    }
+}
+
+// ---- Timetable Actions ----
+export type TimetableData = ITimetable['schedule'];
+export type SubjectForTimetable = { id: string; name: string };
+
+export async function getSubjectsByClass(classId: string): Promise<SubjectForTimetable[]> {
+    if (!mongoose.Types.ObjectId.isValid(classId)) {
+        return [];
+    }
+    try {
+        await connectToDB();
+        const subjects = await SubjectModel.find({ classId: new mongoose.Types.ObjectId(classId) }).select('name').lean();
+        return subjects.map(s => ({
+            id: s._id.toString(),
+            name: s.name,
+        }));
+    } catch (error) {
+        console.error('Error fetching subjects for class:', error);
+        return [];
+    }
+}
+
+export async function getTimetable(classId: string): Promise<TimetableData | null> {
+    if (!mongoose.Types.ObjectId.isValid(classId)) {
+        return null;
+    }
+    try {
+        await connectToDB();
+        const timetable = await TimetableModel.findOne({ classId: new mongoose.Types.ObjectId(classId) }).lean();
+        return timetable ? timetable.schedule : null;
+    } catch (error) {
+        console.error('Error fetching timetable:', error);
+        return null;
+    }
+}
+
+export async function saveTimetable(classId: string, schedule: TimetableData): Promise<{ success: boolean; message: string }> {
+    if (!mongoose.Types.ObjectId.isValid(classId)) {
+        return { success: false, message: 'Invalid Class ID' };
+    }
+    try {
+        await connectToDB();
+        
+        await TimetableModel.findOneAndUpdate(
+            { classId: new mongoose.Types.ObjectId(classId) },
+            { schedule },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        revalidatePath('/admin/classes');
+        return { success: true, message: 'Timetable saved successfully.' };
+    } catch (error) {
+        console.error('Error saving timetable:', error);
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
+        }
+        return { success: false, message: 'An unknown error occurred.' };
     }
 }
