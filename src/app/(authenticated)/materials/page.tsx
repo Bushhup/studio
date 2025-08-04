@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpenText, DownloadCloud, FileText, Filter, Search, FileUp, FileType2 } from 'lucide-react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getMaterials, addMaterial, type AddMaterialInput } from './actions';
 import { useSession } from 'next-auth/react';
@@ -54,7 +54,7 @@ function MaterialCard({ material }: { material: StudyMaterial }) {
 }
 
 function UploadForm({ onMaterialAdded }: { onMaterialAdded: (material: StudyMaterial) => void }) {
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AddMaterialInput>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, control } = useForm<AddMaterialInput>();
   const { toast } = useToast();
   const { data: session } = useSession();
 
