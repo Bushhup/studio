@@ -16,7 +16,7 @@ import {
 import { 
   LayoutDashboard, CalendarDays, BookOpenText, MessageSquareText, Briefcase, 
   Users, ClipboardList, GraduationCap, 
-  ListChecks, BarChart3, ShieldCheck, BookCopy, School
+  ListChecks, BarChart3, ShieldCheck, BookCopy, School, Calendar
 } from 'lucide-react';
 
 interface NavItem {
@@ -65,6 +65,7 @@ const navItems: NavItem[] = [
   { href: '/student/my-marks', label: 'My Marks', icon: GraduationCap, roles: ['student'] },
   { href: '/student/my-attendance', label: 'My Attendance', icon: ShieldCheck, roles: ['student'] },
   { href: '/student/my-performance', label: 'My Performance', icon: BarChart3, roles: ['student'] },
+  { href: '/student/my-timetable', label: 'My Timetable', icon: Calendar, roles: ['student'] },
 ];
 
 
