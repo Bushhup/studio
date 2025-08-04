@@ -27,6 +27,11 @@ export async function createClass(data: ClassInput): Promise<{ success: boolean;
 
     await connectToDB();
 
+    const facultyExists = await UserModel.findById(data.inchargeFaculty);
+    if (!facultyExists) {
+        return { success: false, message: "Selected in-charge faculty does not exist." };
+    }
+
     const newClass = new ClassModel({
         ...data,
         inchargeFaculty: new mongoose.Types.ObjectId(data.inchargeFaculty)
@@ -40,6 +45,9 @@ export async function createClass(data: ClassInput): Promise<{ success: boolean;
   } catch (error) {
     console.error('Error creating class:', error);
     if (error instanceof Error) {
+        if ((error as any).code === 11000) { // Handle duplicate key error
+            return { success: false, message: "A class with this name already exists." };
+        }
         return { success: false, message: error.message };
     }
     return { success: false, message: 'An unknown error occurred.' };
@@ -57,6 +65,11 @@ export async function updateClass(classId: string, data: ClassInput): Promise<{ 
 
         if (!mongoose.Types.ObjectId.isValid(classId)) {
             return { success: false, message: "Invalid class ID." };
+        }
+        
+        const facultyExists = await UserModel.findById(data.inchargeFaculty);
+        if (!facultyExists) {
+            return { success: false, message: "Selected in-charge faculty does not exist." };
         }
 
         const classToUpdate = await ClassModel.findById(classId);
@@ -91,7 +104,6 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
             return { success: false, message: "Invalid class ID." };
         }
         
-        // Check if there are any students assigned to this class
         const studentCount = await UserModel.countDocuments({ classId: new mongoose.Types.ObjectId(classId) });
         if (studentCount > 0) {
             return { success: false, message: `Cannot delete class. There are ${studentCount} student(s) assigned to it.` };
@@ -165,16 +177,20 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
             },
             {
                 $project: {
-                    students: 0,
+                    students: 0, 
                     _id: 1,
                     name: 1,
                     academicYear: 1,
                     studentCount: 1,
                     inchargeFaculty: {
-                        $ifNull: [{
-                            id: '$facultyIncharge._id',
-                            name: '$facultyIncharge.name'
-                        }, null]
+                       $cond: {
+                           if: { $ifNull: ["$facultyIncharge", false] },
+                           then: {
+                               id: '$facultyIncharge._id',
+                               name: '$facultyIncharge.name'
+                           },
+                           else: null
+                       }
                     }
                 }
             }
