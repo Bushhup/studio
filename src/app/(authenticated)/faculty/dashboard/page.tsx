@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpenText, ClipboardList, ListChecks, MessageSquareText, Users, BookCopy } from "lucide-react";
-import { getFacultyDashboardStats, getClassesInCharge, getSubjectsHandled, getRecentFeedback } from "./actions";
+import { BookOpenText, ClipboardList, ListChecks, MessageSquareText, Users, BookCopy, Calendar, Clock } from "lucide-react";
+import { getFacultyDashboardStats, getClassesInCharge, getSubjectsHandled, getRecentFeedback, getFacultySchedule } from "./actions";
 import Link from "next/link";
 import { useToast } from '@/hooks/use-toast';
-import type { ClassInfo, SubjectInfo, FeedbackInfo } from './actions';
+import type { ClassInfo, SubjectInfo, FeedbackInfo, FacultySchedule } from './actions';
 
 
 type ModalDataType = 'classes' | 'subjects' | 'feedback';
@@ -95,19 +95,27 @@ export default function FacultyDashboardPage() {
     const [classes, setClasses] = useState<ClassInfo[]>([]);
     const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
     const [feedback, setFeedback] = useState<FeedbackInfo[]>([]);
+    const [schedule, setSchedule] = useState<FacultySchedule>({});
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<ModalDataType | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingModal, setIsLoadingModal] = useState(false);
+    
+    const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+    const todaySchedule = schedule[dayOfWeek] || [];
 
     useEffect(() => {
         async function fetchData() {
             if (!userId) return;
             setIsLoadingData(true);
             try {
-                const dashboardStats = await getFacultyDashboardStats(userId);
+                const [dashboardStats, facultySchedule] = await Promise.all([
+                    getFacultyDashboardStats(userId),
+                    getFacultySchedule(userId),
+                ]);
                 setStats(dashboardStats);
+                setSchedule(facultySchedule);
             } catch (error) {
                 toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
             } finally {
@@ -236,39 +244,66 @@ export default function FacultyDashboardPage() {
             </Card>
         </div>
 
-        <Card className="shadow-lg">
-            <CardHeader>
-            <CardTitle className="font-headline">Quick Actions</CardTitle>
-            <CardDescription>Access your common tasks quickly.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
-            </Button>
-            </CardContent>
-        </Card>
-        <Card className="shadow-lg">
-            <CardHeader>
-            <CardTitle className="font-headline">My Schedule</CardTitle>
-            <CardDescription>Your upcoming classes and events.</CardDescription>
-            </CardHeader>
-            <CardContent>
-            <ul className="space-y-2 text-sm">
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>MCA II (A) - Operating Systems</span> <span>10:00 AM - 11:00 AM</span></li>
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>MCA I - DSA</span> <span>11:00 AM - 12:00 PM</span></li>
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>Department Meeting</span> <span className="text-primary">02:00 PM</span></li>
-            </ul>
-            </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="shadow-lg">
+                <CardHeader>
+                <CardTitle className="font-headline">Quick Actions</CardTitle>
+                <CardDescription>Access your common tasks quickly.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button asChild variant="outline" className="justify-start text-left">
+                    <Link href="/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-start text-left">
+                    <Link href="/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-start text-left">
+                    <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-start text-left">
+                    <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
+                </Button>
+                </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+                <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><Calendar className="h-5 w-5"/> Today's Schedule</CardTitle>
+                <CardDescription>Your upcoming classes for today, <span className="capitalize font-medium">{dayOfWeek}</span>.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                {isLoadingData ? (
+                     <div className="flex justify-center items-center h-full">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-8 w-8 animate-pulse theme-gradient-stroke"
+                          fill="none"
+                          stroke="url(#theme-gradient)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                     </div>
+                ) : todaySchedule.length > 0 ? (
+                    <ul className="space-y-2 text-sm">
+                        {todaySchedule.map((item, index) => (
+                             <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-primary"/>
+                                    <div>
+                                        <p className="font-semibold">{item.className}</p>
+                                        <p className="text-muted-foreground">{item.subjectName}</p>
+                                    </div>
+                                </div>
+                                <span className="font-mono text-xs bg-muted px-2 py-1 rounded-md">{item.time}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-center text-muted-foreground py-10">You have no classes scheduled for today.</p>
+                )}
+                </CardContent>
+            </Card>
+        </div>
         </div>
 
         <ListDialog

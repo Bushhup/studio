@@ -5,6 +5,7 @@ import { connectToDB } from '@/lib/mongoose';
 import ClassModel from '@/models/class.model';
 import FeedbackModel from '@/models/feedback.model';
 import SubjectModel from '@/models/subject.model';
+import TimetableModel from '@/models/timetable.model';
 import mongoose from 'mongoose';
 
 interface FacultyDashboardStats {
@@ -111,5 +112,79 @@ export async function getRecentFeedback(facultyId: string): Promise<FeedbackInfo
     } catch (error) {
         console.error('Error fetching recent feedback:', error);
         return [];
+    }
+}
+
+export type FacultyScheduleItem = {
+    day: string;
+    periodIndex: number;
+    time: string;
+    className: string;
+    subjectName: string;
+};
+
+export type FacultySchedule = Record<string, FacultyScheduleItem[]>;
+
+const periods = [
+    { name: 'Period 1', time: '09:00 - 09:50' }, { name: 'Period 2', time: '09:50 - 10:40' },
+    { name: 'Break', time: '10:40 - 11:00' },
+    { name: 'Period 3', time: '11:00 - 11:50' }, { name: 'Period 4', time: '11:50 - 12:40' },
+    { name: 'Lunch', time: '12:40 - 01:30' },
+    { name: 'Period 5', time: '01:30 - 02:15' }, { name: 'Period 6', time: '02:15 - 03:00' },
+    { name: 'Period 7', time: '03:00 - 03:45' }, { name: 'Period 8', time: '03:45 - 04:30' },
+];
+
+export async function getFacultySchedule(facultyId: string): Promise<FacultySchedule> {
+    if (!mongoose.Types.ObjectId.isValid(facultyId)) return {};
+    try {
+        await connectToDB();
+        const facultyObjectId = new mongoose.Types.ObjectId(facultyId);
+
+        const facultySubjects = await SubjectModel.find({ facultyId: facultyObjectId }).lean();
+        const facultySubjectIds = facultySubjects.map(s => s._id.toString());
+        const subjectMap = new Map(facultySubjects.map(s => [s._id.toString(), s.name]));
+
+        const allTimetables = await TimetableModel.find().populate('classId', 'name').lean();
+
+        const schedule: FacultySchedule = {};
+
+        for (const tt of allTimetables) {
+            const className = (tt.classId as any)?.name || 'Unknown Class';
+            
+            for (const [day, daySchedule] of Object.entries(tt.schedule)) {
+                if (!Array.isArray(daySchedule)) continue;
+
+                if (!schedule[day]) {
+                    schedule[day] = [];
+                }
+
+                daySchedule.forEach((subjectId, periodIndex) => {
+                    const subIdString = subjectId?.toString();
+                    if (subIdString && facultySubjectIds.includes(subIdString)) {
+                        let periodInfoIndex = periodIndex;
+                        if (periodIndex >= 2) periodInfoIndex++; // Adjust for break
+                        if (periodIndex >= 4) periodInfoIndex++; // Adjust for lunch
+
+                        schedule[day].push({
+                            day,
+                            periodIndex: periodIndex,
+                            time: periods[periodInfoIndex]?.time || 'N/A',
+                            className: className,
+                            subjectName: subjectMap.get(subIdString) || 'Unknown Subject',
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Sort periods within each day
+        for (const day in schedule) {
+            schedule[day].sort((a, b) => a.periodIndex - b.periodIndex);
+        }
+
+        return schedule;
+    } catch (error) {
+        console.error('Error fetching faculty schedule:', error);
+        return {};
     }
 }
