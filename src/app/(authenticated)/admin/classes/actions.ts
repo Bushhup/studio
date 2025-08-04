@@ -139,72 +139,29 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
     try {
         await connectToDB();
         
-        const classesWithDetails = await ClassModel.aggregate([
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: 'classId',
-                    as: 'students'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'inchargeFaculty',
-                    foreignField: '_id',
-                    as: 'facultyIncharge'
-                }
-            },
-            {
-                $unwind: {
-                    path: '$facultyIncharge',
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $addFields: {
-                    studentCount: { 
-                        $size: {
-                            $filter: {
-                                input: "$students",
-                                as: "student",
-                                cond: { $eq: [ "$$student.role", "student" ] }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    students: 0, 
-                    _id: 1,
-                    name: 1,
-                    academicYear: 1,
-                    studentCount: 1,
-                    inchargeFaculty: {
-                       $cond: {
-                           if: { $ifNull: ["$facultyIncharge", false] },
-                           then: {
-                               id: '$facultyIncharge._id',
-                               name: '$facultyIncharge.name'
-                           },
-                           else: null
-                       }
-                    }
-                }
-            }
-        ]);
+        // Simpler, more direct approach
+        const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean();
         
-        return classesWithDetails.map(c => ({
-            id: c._id.toString(),
-            name: c.name,
-            academicYear: c.academicYear,
-            inchargeFaculty: c.inchargeFaculty && c.inchargeFaculty.id
-              ? { id: c.inchargeFaculty.id.toString(), name: c.inchargeFaculty.name } 
-              : null,
-            studentCount: c.studentCount,
-        }));
+        const classesWithDetails = await Promise.all(
+            classes.map(async (c) => {
+                const studentCount = await UserModel.countDocuments({ classId: c._id, role: 'student' });
+                
+                const faculty = c.inchargeFaculty as any;
+
+                return {
+                    id: c._id.toString(),
+                    name: c.name,
+                    academicYear: c.academicYear,
+                    studentCount: studentCount,
+                    inchargeFaculty: faculty ? {
+                        id: faculty._id.toString(),
+                        name: faculty.name
+                    } : null
+                };
+            })
+        );
+        
+        return classesWithDetails;
 
     } catch (error) {
         console.error('Error fetching classes:', error);
