@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Save, Users, Edit, Calendar as CalendarIcon } from "lucide-react";
+import { FileText, Save, Users, Edit, Calendar as CalendarIcon, Search } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import mongoose from 'mongoose';
 import { getStudentBio, saveStudentBio, getStudentsForBioData } from './actions';
@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
@@ -65,6 +67,7 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
             studentId: student.id,
             mobileNumber: '',
             email: student.email,
+            dob: undefined,
             fatherName: '',
             fatherOccupation: '',
             fatherMobileNumber: '',
@@ -86,6 +89,23 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                         aadharNumber: formatAadhar(bioData.aadharNumber),
                         dob: new Date(bioData.dob),
                     });
+                } else {
+                    form.reset({
+                        studentId: student.id,
+                        email: student.email,
+                        mobileNumber: '',
+                        fatherName: '',
+                        fatherOccupation: '',
+                        fatherMobileNumber: '',
+                        address: '',
+                        religion: '',
+                        caste: '',
+                        aadharNumber: '',
+                        dob: undefined,
+                        gender: undefined,
+                        community: undefined,
+                        quota: undefined
+                    });
                 }
             }).catch(() => {
                 toast({ title: 'Error', description: 'Failed to fetch existing bio-data.', variant: 'destructive' });
@@ -93,7 +113,7 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                 setIsLoading(false);
             });
         }
-    }, [student.id, form, toast]);
+    }, [student.id, student.email, form, toast]);
 
     const onSubmit = async (data: StudentBioInput) => {
         const result = await saveStudentBio({ ...data, studentId: student.id });
@@ -170,19 +190,29 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
     );
 }
 
+const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
+};
 
 export default function AdminBioDataPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [students, setStudents] = useState<{id: string, name: string, email: string}[]>([]);
+    const [filteredStudents, setFilteredStudents] = useState<{id: string, name: string, email: string}[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string, email: string} | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     
     const fetchStudents = async () => {
         setIsLoading(true);
         try {
             const studentList = await getStudentsForBioData();
             setStudents(studentList as any);
+            setFilteredStudents(studentList as any);
         } catch {
             toast({ title: 'Error', description: 'Failed to fetch student list.', variant: 'destructive'});
         } finally {
@@ -193,6 +223,13 @@ export default function AdminBioDataPage() {
     useEffect(() => {
         fetchStudents();
     }, []);
+
+    useEffect(() => {
+        const results = students.filter(student =>
+            student.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredStudents(results);
+    }, [searchTerm, students]);
     
     const handleEditClick = (student: {id: string, name: string, email: string}) => {
         setSelectedStudent(student);
@@ -210,8 +247,22 @@ export default function AdminBioDataPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Student List</CardTitle>
-                    <CardDescription>Select a student to view or edit their bio-data.</CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5"/> Student List</CardTitle>
+                            <CardDescription>Select a student to view or edit their bio-data.</CardDescription>
+                        </div>
+                        <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Search by student name..."
+                                className="pl-10"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                      {isLoading ? (
@@ -222,21 +273,37 @@ export default function AdminBioDataPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Roll No.</TableHead>
                                     <TableHead>Student Name</TableHead>
+                                    <TableHead>Email</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {students.map(student => (
+                                {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
                                     <TableRow key={student.id}>
-                                        <TableCell className="font-medium">{student.name}</TableCell>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <Avatar className="h-8 w-8 border">
+                                                <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
+                                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                            </Avatar>
+                                            {student.name}
+                                        </TableCell>
+                                        <TableCell>{student.email}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="outline" size="sm" onClick={() => handleEditClick(student)}>
                                                 <Edit className="mr-2 h-4 w-4" /> View / Edit Bio-data
                                             </Button>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )) : (
+                                     <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                          No students found.
+                                        </TableCell>
+                                      </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                       )}
@@ -263,3 +330,5 @@ export default function AdminBioDataPage() {
         </div>
     );
 }
+
+    
