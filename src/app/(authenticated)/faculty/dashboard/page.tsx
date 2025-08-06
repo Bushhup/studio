@@ -27,6 +27,7 @@ type ModalDataType = 'classes' | 'subjects' | 'feedback';
 type ListItem = { id: string; name: string; description?: string; date?: string };
 
 const getInitials = (name: string) => {
+    if (!name) return '';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -147,18 +148,18 @@ function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }
                 ) : bioData ? (
                     <div className="space-y-4 text-sm p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                            <div><Label>Date of Birth</Label><p className="text-muted-foreground">{format(new Date(bioData.dob), "PPP")}</p></div>
-                            <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber}</p></div>
-                            <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender}</p></div>
-                            <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{formatAadhar(bioData.aadharNumber)}</p></div>
-                            <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address}</p></div>
-                            <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName}</p></div>
-                            <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation}</p></div>
-                            <div><Label>Father's Mobile</Label><p className="text-muted-foreground">{bioData.fatherMobileNumber}</p></div>
-                            <div><Label>Religion</Label><p className="text-muted-foreground">{bioData.religion}</p></div>
-                            <div><Label>Community</Label><p className="text-muted-foreground">{bioData.community}</p></div>
-                            <div><Label>Caste</Label><p className="text-muted-foreground">{bioData.caste}</p></div>
-                            <div><Label>Admission Quota</Label><p className="text-muted-foreground capitalize">{bioData.quota}</p></div>
+                            <div><Label>Date of Birth</Label><p className="text-muted-foreground">{bioData.dob ? format(new Date(bioData.dob), "PPP") : 'N/A'}</p></div>
+                            <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber || 'N/A'}</p></div>
+                            <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender || 'N/A'}</p></div>
+                            <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{formatAadhar(bioData.aadharNumber) || 'N/A'}</p></div>
+                            <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address || 'N/A'}</p></div>
+                            <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName || 'N/A'}</p></div>
+                            <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation || 'N/A'}</p></div>
+                            <div><Label>Father's Mobile</Label><p className="text-muted-foreground">{bioData.fatherMobileNumber || 'N/A'}</p></div>
+                            <div><Label>Religion</Label><p className="text-muted-foreground">{bioData.religion || 'N/A'}</p></div>
+                            <div><Label>Community</Label><p className="text-muted-foreground">{bioData.community || 'N/A'}</p></div>
+                            <div><Label>Caste</Label><p className="text-muted-foreground">{bioData.caste || 'N/A'}</p></div>
+                            <div><Label>Admission Quota</Label><p className="text-muted-foreground capitalize">{bioData.quota || 'N/A'}</p></div>
                         </div>
                     </div>
                 ) : (
@@ -532,3 +533,5 @@ export default function FacultyDashboardPage() {
     </>
   );
 }
+
+    
