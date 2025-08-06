@@ -15,7 +15,7 @@ import type { IUser } from '@/models/user.model';
 import type { AppEvent } from '@/types';
 
 type ModalDataType = 'students' | 'faculty' | 'events';
-type ListItem = { id: string; name: string; date?: string };
+type ListItem = { id: string; name: string; date?: string; rollNo?: string; };
 
 function ListDialog({
   isOpen,
@@ -61,9 +61,10 @@ function ListDialog({
              </div>
           ) : items.length > 0 ? (
             <ul className="space-y-2">
-              {items.map((item, index) => (
+              {items.map((item) => (
                 <li key={item.id} className="text-sm">
-                  {index + 1}. {item.name}
+                  {item.rollNo && <span className="font-semibold w-12 inline-block">{item.rollNo}.</span>}
+                  {item.name}
                   {item.date && (
                     <span className="text-muted-foreground ml-2 text-xs">
                       ({new Date(item.date).toLocaleDateString()})
@@ -87,8 +88,8 @@ function ListDialog({
 
 export default function AdminDashboardPage() {
   const [counts, setCounts] = useState({ students: 0, faculty: 0, events: 0 });
-  const [students, setStudents] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
-  const [faculty, setFaculty] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
+  const [students, setStudents] = useState<Pick<IUser, 'id' | 'name' | 'rollNo'>[]>([]);
+  const [faculty, setFaculty] = useState<Pick<IUser, 'id' | 'name' | 'rollNo'>[]>([]);
   const [events, setEvents] = useState<Pick<AppEvent, 'id' | 'title' | 'date'>[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,7 +129,7 @@ export default function AdminDashboardPage() {
   const getModalData = () => {
     switch (modalType) {
         case 'students':
-            return { title: 'Students', items: students.map(s => ({ id: s.id, name: s.name })) };
+            return { title: 'Students', items: students.map(s => ({ id: s.id, name: s.name, rollNo: s.rollNo })) };
         case 'faculty':
             return { title: 'Faculty', items: faculty.map(f => ({ id: f.id, name: f.name })) };
         case 'events':

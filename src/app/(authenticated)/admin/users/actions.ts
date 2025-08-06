@@ -15,6 +15,7 @@ const addUserSchema = z.object({
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty']),
+  rollNo: z.string().optional(),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
   handlingSubjects: z.array(z.string()).optional(), // For faculty
@@ -34,6 +35,7 @@ const updateUserSchema = z.object({
   name: z.string().min(2, "Username must be at least 2 characters.").optional(),
   email: z.string().email("Invalid email address.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
+  rollNo: z.string().optional(),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
   handlingSubjects: z.array(z.string()).optional(), // For faculty
@@ -83,6 +85,7 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
       email: data.email,
       password: data.password,
       role: data.role,
+      rollNo: data.role === 'student' ? data.rollNo : undefined,
       classId: data.role === 'student' && data.classId ? new mongoose.Types.ObjectId(data.classId) : undefined,
     });
     
@@ -130,7 +133,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
         
         const users = await UserModel.aggregate([
             { $match: { role: { $in: ['student', 'faculty'] } } },
-            { $sort: { name: 1 } },
+            { $sort: { rollNo: 1, name: 1 } },
             {
                 $lookup: {
                     from: 'classes',
@@ -187,6 +190,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     email: 1,
                     password: 1,
                     role: 1,
+                    rollNo: 1,
                     classId: 1,
                     className: '$classDetails.name',
                     inchargeOfClasses: {
@@ -213,6 +217,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             email: user.email,
             password: user.password,
             role: user.role,
+            rollNo: user.rollNo,
             className: user.className || 'N/A',
             classId: user.classId?.toString(),
             inchargeOfClasses: (user.inchargeOfClasses || []).map(c => ({...c, id: c.id.toString()})),
@@ -267,13 +272,14 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
 }
 
 
-export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'>[]> {
+export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'| 'rollNo'>[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role }).select('_id name').sort({ name: 1 }).lean();
+        const users = await UserModel.find({ role }).select('_id name rollNo').sort({ rollNo: 1, name: 1 }).lean();
         return users.map(user => ({
             id: user._id.toString(),
             name: user.name,
+            rollNo: user.rollNo,
         }));
     } catch (error) {
         console.error(`Error fetching ${role}s:`, error);
@@ -314,9 +320,12 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         if (data.password) {
             userToUpdate.password = data.password;
         }
-
-        if (userToUpdate.role === 'student' && data.classId) {
-            userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
+        
+        if (userToUpdate.role === 'student') {
+            userToUpdate.rollNo = data.rollNo;
+            if (data.classId) {
+                userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
+            }
         }
         
         await userToUpdate.save();

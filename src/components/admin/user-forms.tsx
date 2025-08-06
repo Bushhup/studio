@@ -23,6 +23,7 @@ const addUserSchema = z.object({
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
   role: z.enum(['student', 'faculty']),
+  rollNo: z.string().optional(),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(),
   handlingSubjects: z.array(z.string()).optional(),
@@ -40,6 +41,7 @@ const updateUserSchema = z.object({
   name: z.string().min(2, "Username must be at least 2 characters.").optional(),
   email: z.string().email("Invalid email address.").optional(),
   password: z.string().min(6, "Password must be at least 6 characters.").optional().or(z.literal('')),
+  rollNo: z.string().optional(),
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(),
   handlingSubjects: z.array(z.string()).optional(),
@@ -61,6 +63,7 @@ export function AddUserForm({ setIsOpen, classList, subjectList, role, onUserAdd
       email: "",
       password: "",
       role: role,
+      rollNo: "",
       classId: "",
       inchargeOfClasses: [],
       handlingSubjects: [],
@@ -137,32 +140,47 @@ export function AddUserForm({ setIsOpen, classList, subjectList, role, onUserAdd
           )}
         />
         {role === 'student' && (
-          <FormField
-            control={form.control}
-            name="classId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assign to Class</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <>
+            <FormField
+              control={form.control}
+              name="rollNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Roll No.</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a class" />
-                    </SelectTrigger>
+                    <Input placeholder="e.g., 21MCA001" {...field} />
                   </FormControl>
-                  <SelectContent>
-                    {classList.length > 0 ? (
-                      classList.map(cls => (
-                        <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-4 text-sm text-muted-foreground">No classes found. Create a class first.</div>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assign to Class</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a class" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classList.length > 0 ? (
+                        classList.map(cls => (
+                          <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-sm text-muted-foreground">No classes found. Create a class first.</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
         
         {role === 'faculty' && (
@@ -292,6 +310,7 @@ export function EditUserForm({ user, setIsOpen, classList, subjectList, onUserUp
       name: user.name,
       email: user.email,
       password: "",
+      rollNo: user.rollNo,
       classId: user.role === 'student' ? user.classId : "",
       inchargeOfClasses: initialInchargeClasses,
       handlingSubjects: initialHandlingSubjects,
@@ -367,28 +386,43 @@ export function EditUserForm({ user, setIsOpen, classList, subjectList, onUserUp
           )}
         />
         {user.role === 'student' && (
-          <FormField
-            control={form.control}
-            name="classId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assign to Class</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <>
+            <FormField
+              control={form.control}
+              name="rollNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Roll No.</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a class" />
-                    </SelectTrigger>
+                    <Input placeholder="e.g., 21MCA001" {...field} value={field.value || ''}/>
                   </FormControl>
-                  <SelectContent>
-                    {classList.map(cls => (
-                      <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="classId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assign to Class</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a class" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classList.map(cls => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name} ({cls.academicYear})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
 
         {user.role === 'faculty' && (

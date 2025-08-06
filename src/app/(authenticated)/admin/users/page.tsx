@@ -75,6 +75,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
      <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>{isFacultyRole ? 'Username' : 'Roll No.'}</TableHead>
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Password</TableHead>
@@ -90,11 +91,12 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.length > 0 ? users.sort((a,b) => a.name.localeCompare(b.name)).map((user, index) => (
+        {users.length > 0 ? users.map((user) => (
           <TableRow key={user.id}>
             <TableCell className="font-medium">
-                {role === 'student' ? `${index + 1}. ` : ''}{user.name}
+              {isFacultyRole ? user.name : user.rollNo || 'N/A'}
             </TableCell>
+            {!isFacultyRole && <TableCell>{user.name}</TableCell>}
             <TableCell>{user.email}</TableCell>
             <TableCell>
               <PasswordCell password={user.password} />

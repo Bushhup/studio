@@ -242,7 +242,7 @@ function StudentListDialog({
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   classInfo: IClassWithFacultyAndStudentCount | null;
-  students: Pick<IUser, 'id' | 'name'>[];
+  students: Pick<IUser, 'id' | 'name' | 'rollNo'>[];
   isLoading: boolean;
 }) {
   if (!classInfo) return null;
@@ -283,9 +283,9 @@ function StudentListDialog({
           ) : students.length > 0 ? (
             <ScrollArea className="h-72 w-full rounded-md border p-4">
               <ul className="space-y-2">
-                {students.map((student, index) => (
+                {students.map((student) => (
                   <li key={student.id} className="text-sm">
-                    {index + 1}. {student.name}
+                    <span className="font-semibold w-12 inline-block">{student.rollNo || 'N/A'}.</span> {student.name}
                   </li>
                 ))}
               </ul>
@@ -471,7 +471,7 @@ export default function AdminClassesPage() {
     const [classToEdit, setClassToEdit] = useState<IClassWithFacultyAndStudentCount | null>(null);
     const [classToDelete, setClassToDelete] = useState<IClassWithFacultyAndStudentCount | null>(null);
 
-    const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name'>[]>([]);
+    const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name' | 'rollNo'>[]>([]);
     
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);

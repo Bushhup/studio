@@ -187,7 +187,7 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
     onStudentClick: (student: Pick<IUser, 'id' | 'name'>) => void;
 }) {
     const { toast } = useToast();
-    const [studentsByClass, setStudentsByClass] = useState<Record<string, Pick<IUser, 'id'|'name'>[]>>({});
+    const [studentsByClass, setStudentsByClass] = useState<Record<string, Pick<IUser, 'id'|'name'|'rollNo'>[]>>({});
     const [loadingClass, setLoadingClass] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -245,9 +245,9 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
                                             </div>
                                         ) : (filteredStudents(c.id) && filteredStudents(c.id).length > 0) ? (
                                             <ul className="space-y-2 pl-4">
-                                                {filteredStudents(c.id).sort((a,b) => a.name.localeCompare(b.name)).map((student, index) => (
+                                                {filteredStudents(c.id).map((student) => (
                                                     <li key={student.id} className="text-sm flex justify-between items-center">
-                                                        <span>{index + 1}. {student.name}</span>
+                                                        <span><span className="font-semibold w-12 inline-block">{student.rollNo || 'N/A'}.</span> {student.name}</span>
                                                         <Button variant="ghost" size="sm" onClick={() => onStudentClick(student)}>
                                                             <User className="mr-2 h-4 w-4"/> View Profile
                                                         </Button>

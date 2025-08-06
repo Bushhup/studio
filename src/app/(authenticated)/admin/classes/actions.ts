@@ -174,7 +174,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
     }
 }
 
-export async function getStudentsByClass(classId: string): Promise<Pick<IUser, 'id' | 'name'>[]> {
+export async function getStudentsByClass(classId: string): Promise<Pick<IUser, 'id' | 'name' | 'rollNo'>[]> {
     try {
         await connectToDB();
         if (!mongoose.Types.ObjectId.isValid(classId)) {
@@ -182,13 +182,14 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
         }
 
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
-            .sort({ name: 'asc' })
-            .select('_id name')
+            .sort({ rollNo: 1, name: 1 })
+            .select('_id name rollNo')
             .lean();
         
         return students.map(student => ({
             id: student._id.toString(),
             name: student.name,
+            rollNo: student.rollNo,
         }));
 
     } catch (error) {

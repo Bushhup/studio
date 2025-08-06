@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  rollNo?: string;
   classId?: string;
 }
 
