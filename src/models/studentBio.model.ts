@@ -4,6 +4,8 @@ import mongoose, { Schema, Document, models, model } from 'mongoose';
 export interface IStudentBio extends Document {
   studentId: mongoose.Schema.Types.ObjectId;
   mobileNumber: string;
+  email: string;
+  dob: Date;
   fatherName: string;
   fatherOccupation: string;
   fatherMobileNumber: string;
@@ -19,6 +21,8 @@ export interface IStudentBio extends Document {
 const StudentBioSchema = new Schema<IStudentBio>({
   studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   mobileNumber: { type: String, required: true },
+  email: { type: String, required: true },
+  dob: { type: Date, required: true },
   fatherName: { type: String, required: true },
   fatherOccupation: { type: String, required: true },
   fatherMobileNumber: { type: String, required: true },

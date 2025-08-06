@@ -90,9 +90,11 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.length > 0 ? users.map((user) => (
+        {users.length > 0 ? users.sort((a,b) => a.name.localeCompare(b.name)).map((user, index) => (
           <TableRow key={user.id}>
-            <TableCell className="font-medium">{user.name}</TableCell>
+            <TableCell className="font-medium">
+                {role === 'student' ? `${index + 1}. ` : ''}{user.name}
+            </TableCell>
             <TableCell>{user.email}</TableCell>
             <TableCell>
               <PasswordCell password={user.password} />

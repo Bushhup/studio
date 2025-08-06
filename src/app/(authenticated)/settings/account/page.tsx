@@ -18,6 +18,7 @@ import { useSession } from 'next-auth/react';
 import type { IStudentBio } from '@/models/studentBio.model';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -46,9 +47,11 @@ function BioDataDisplay({ bioData }: { bioData: IStudentBio }) {
                 </AlertDescription>
             </Alert>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                <div><Label>Email</Label><p className="text-muted-foreground">{bioData.email}</p></div>
+                <div><Label>Date of Birth</Label><p className="text-muted-foreground">{format(new Date(bioData.dob), "PPP")}</p></div>
                 <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber}</p></div>
                 <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender}</p></div>
-                <div><Label>Aadhar Number</Label><p className="text-muted-foreground">{bioData.aadharNumber}</p></div>
+                <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{bioData.aadharNumber}</p></div>
                 <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address}</p></div>
                 <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName}</p></div>
                 <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation}</p></div>

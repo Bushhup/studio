@@ -11,6 +11,8 @@ import mongoose from 'mongoose';
 const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
+  email: z.string().email("Invalid email address."),
+  dob: z.date({ required_error: "Date of birth is required." }),
   fatherName: z.string().min(2, "Father's name is required."),
   fatherOccupation: z.string().min(2, "Father's occupation is required."),
   fatherMobileNumber: z.string().min(10, "Father's mobile number must be at least 10 digits."),
@@ -23,6 +25,7 @@ const studentBioSchema = z.object({
   aadharNumber: z.string().regex(/^\d{4} \d{4} \d{4}$/, "Aadhar number must be in the format XXXX XXXX XXXX."),
 });
 
+// We are adjusting the input type to accept a string for the date from the form
 export type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 export async function saveStudentBio(data: StudentBioInput): Promise<{ success: boolean, message: string }> {
@@ -42,6 +45,7 @@ export async function saveStudentBio(data: StudentBioInput): Promise<{ success: 
 
     revalidatePath('/admin/bio-data');
     revalidatePath(`/settings/account`); // Revalidate student's profile page
+    revalidatePath(`/faculty/dashboard`); // Revalidate faculty dashboard view
 
     return { success: true, message: "Bio-data saved successfully." };
 

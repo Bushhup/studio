@@ -13,16 +13,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Save, Users, Edit } from "lucide-react";
+import { FileText, Save, Users, Edit, Calendar as CalendarIcon } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import mongoose from 'mongoose';
 import { getStudentBio, saveStudentBio, getStudentsForBioData } from './actions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
+  email: z.string().email("Invalid email address."),
+  dob: z.date({ required_error: "Date of birth is required." }),
   fatherName: z.string().min(2, "Father's name is required."),
   fatherOccupation: z.string().min(2, "Father's occupation is required."),
   fatherMobileNumber: z.string().min(10, "Father's mobile number must be at least 10 digits."),
@@ -49,15 +55,16 @@ const formatAadhar = (value: string) => {
     return result;
 };
 
-function BioDataForm({ studentId, onFormSubmit, setIsOpen }: { studentId: string; onFormSubmit: () => void, setIsOpen: (open: boolean) => void; }) {
+function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: string; email: string }; onFormSubmit: () => void, setIsOpen: (open: boolean) => void; }) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
 
     const form = useForm<StudentBioInput>({
         resolver: zodResolver(studentBioSchema),
         defaultValues: {
-            studentId,
+            studentId: student.id,
             mobileNumber: '',
+            email: student.email,
             fatherName: '',
             fatherOccupation: '',
             fatherMobileNumber: '',
@@ -69,17 +76,16 @@ function BioDataForm({ studentId, onFormSubmit, setIsOpen }: { studentId: string
     });
 
     useEffect(() => {
-        if (studentId) {
+        if (student.id) {
             setIsLoading(true);
-            getStudentBio(studentId).then(bioData => {
+            getStudentBio(student.id).then(bioData => {
                 if (bioData) {
                     form.reset({
                         ...bioData,
                         studentId: bioData.studentId.toString(),
-                        aadharNumber: formatAadhar(bioData.aadharNumber)
+                        aadharNumber: formatAadhar(bioData.aadharNumber),
+                        dob: new Date(bioData.dob),
                     });
-                } else {
-                    form.setValue('studentId', studentId);
                 }
             }).catch(() => {
                 toast({ title: 'Error', description: 'Failed to fetch existing bio-data.', variant: 'destructive' });
@@ -87,10 +93,10 @@ function BioDataForm({ studentId, onFormSubmit, setIsOpen }: { studentId: string
                 setIsLoading(false);
             });
         }
-    }, [studentId, form, toast]);
+    }, [student.id, form, toast]);
 
     const onSubmit = async (data: StudentBioInput) => {
-        const result = await saveStudentBio({ ...data, studentId });
+        const result = await saveStudentBio({ ...data, studentId: student.id });
 
         if (result.success) {
             toast({ title: 'Success', description: result.message });
@@ -114,10 +120,28 @@ function BioDataForm({ studentId, onFormSubmit, setIsOpen }: { studentId: string
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
                 <h3 className="text-md font-semibold border-b pb-2">Student Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="student@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="mobileNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="dob" render={({ field }) => (
+                        <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-buttons" fromYear={1990} toYear={new Date().getFullYear()} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        <FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="aadharNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Number</FormLabel><FormControl><Input placeholder="XXXX XXXX XXXX" {...field} onChange={(e) => field.onChange(formatAadhar(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
+                <FormField control={form.control} name="aadharNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Number</FormLabel><FormControl><Input placeholder="XXXX XXXX XXXX" {...field} onChange={(e) => field.onChange(formatAadhar(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Full Address</FormLabel><FormControl><Textarea placeholder="Complete address" {...field} /></FormControl><FormMessage /></FormItem>)} />
 
                 <h3 className="text-md font-semibold border-b pt-3 pb-2">Family & Community</h3>
@@ -150,15 +174,15 @@ function BioDataForm({ studentId, onFormSubmit, setIsOpen }: { studentId: string
 export default function AdminBioDataPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
-    const [students, setStudents] = useState<{id: string, name: string}[]>([]);
-    const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string} | null>(null);
+    const [students, setStudents] = useState<{id: string, name: string, email: string}[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string, email: string} | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     
     const fetchStudents = async () => {
         setIsLoading(true);
         try {
             const studentList = await getStudentsForBioData();
-            setStudents(studentList);
+            setStudents(studentList as any);
         } catch {
             toast({ title: 'Error', description: 'Failed to fetch student list.', variant: 'destructive'});
         } finally {
@@ -170,7 +194,7 @@ export default function AdminBioDataPage() {
         fetchStudents();
     }, []);
     
-    const handleEditClick = (student: {id: string, name: string}) => {
+    const handleEditClick = (student: {id: string, name: string, email: string}) => {
         setSelectedStudent(student);
         setIsDialogOpen(true);
     }
@@ -229,7 +253,7 @@ export default function AdminBioDataPage() {
                     </DialogHeader>
                     {selectedStudent && (
                         <BioDataForm 
-                            studentId={selectedStudent.id} 
+                            student={selectedStudent} 
                             onFormSubmit={fetchStudents} 
                             setIsOpen={setIsDialogOpen}
                         />
