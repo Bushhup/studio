@@ -12,9 +12,9 @@ import { getFacultyDashboardStats, getClassesInCharge, getSubjectsHandled, getRe
 import Link from "next/link";
 import { useToast } from '@/hooks/use-toast';
 import type { ClassInfo, SubjectInfo, FeedbackInfo, FacultySchedule } from './actions';
-import { getStudentsByClass } from '../admin/classes/actions';
+import { getStudentsByClass } from '@/app/(authenticated)/admin/classes/actions';
 import type { IUser } from '@/models/user.model';
-import { IStudentBio } from '@/models/studentBio.model';
+import type { IStudentBio } from '@/models/studentBio.model';
 import { getStudentBioForProfile } from '../../settings/account/actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
