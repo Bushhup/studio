@@ -39,6 +39,7 @@ const studentBioSchema = z.object({
   quota: z.enum(['management', 'government']).optional(),
   aadharNumber: z.string().optional(),
 }).refine(data => {
+    // If one part of DOB is filled, all should be.
     if (data.dob_day || data.dob_month || data.dob_year) {
         return !!data.dob_day && !!data.dob_month && !!data.dob_year;
     }
@@ -196,6 +197,7 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
 }
 
 const getInitials = (name: string) => {
+    if (!name) return '';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -203,12 +205,14 @@ const getInitials = (name: string) => {
       .toUpperCase();
 };
 
+type StudentForBio = {id: string, name: string, email: string, rollNo?: string};
+
 export default function AdminBioDataPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
-    const [students, setStudents] = useState<{id: string, name: string, email: string}[]>([]);
-    const [filteredStudents, setFilteredStudents] = useState<{id: string, name: string, email: string}[]>([]);
-    const [selectedStudent, setSelectedStudent] = useState<{id: string, name: string, email: string} | null>(null);
+    const [students, setStudents] = useState<StudentForBio[]>([]);
+    const [filteredStudents, setFilteredStudents] = useState<StudentForBio[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<StudentForBio | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     
@@ -216,8 +220,8 @@ export default function AdminBioDataPage() {
         setIsLoading(true);
         try {
             const studentList = await getStudentsForBioData();
-            setStudents(studentList as any);
-            setFilteredStudents(studentList as any);
+            setStudents(studentList);
+            setFilteredStudents(studentList);
         } catch {
             toast({ title: 'Error', description: 'Failed to fetch student list.', variant: 'destructive'});
         } finally {
@@ -231,12 +235,13 @@ export default function AdminBioDataPage() {
 
     useEffect(() => {
         const results = students.filter(student =>
-            student.name.toLowerCase().includes(searchTerm.toLowerCase())
+            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.rollNo?.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setFilteredStudents(results);
     }, [searchTerm, students]);
     
-    const handleEditClick = (student: {id: string, name: string, email: string}) => {
+    const handleEditClick = (student: StudentForBio) => {
         setSelectedStudent(student);
         setIsDialogOpen(true);
     }
@@ -261,7 +266,7 @@ export default function AdminBioDataPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="Search by student name..."
+                                placeholder="Search by name or roll no..."
                                 className="pl-10"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -285,9 +290,9 @@ export default function AdminBioDataPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
+                                {filteredStudents.length > 0 ? filteredStudents.map((student) => (
                                     <TableRow key={student.id}>
-                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>{student.rollNo || 'N/A'}</TableCell>
                                         <TableCell className="font-medium flex items-center gap-2">
                                             <Avatar className="h-8 w-8 border">
                                                 <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />

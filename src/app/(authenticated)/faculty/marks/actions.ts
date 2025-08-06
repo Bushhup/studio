@@ -41,13 +41,14 @@ export async function getStudentsForClass(classId: string) {
     const classObjectId = new mongoose.Types.ObjectId(classId);
 
     const students = await UserModel.find({ classId: classObjectId, role: 'student' })
-        .select('name')
-        .sort({ name: 1 })
+        .select('name rollNo')
+        .sort({ rollNo: 1, name: 1 })
         .lean();
 
     return students.map(student => ({
         id: student._id.toString(),
         name: student.name,
+        rollNo: student.rollNo,
     }));
 
   } catch (error) {

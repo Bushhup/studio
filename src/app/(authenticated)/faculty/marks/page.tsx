@@ -22,6 +22,7 @@ type SubjectInfo = {
 type StudentInfo = {
   id: string;
   name: string;
+  rollNo?: string;
 };
 
 type MarksRecord = Record<string, { marksObtained: number | null, maxMarks: number | null }>;
@@ -201,9 +202,9 @@ export default function FacultyMarksPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {students.map((student, index) => (
+                            {students.map((student) => (
                                 <TableRow key={student.id}>
-                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{student.rollNo || 'N/A'}</TableCell>
                                     <TableCell>{student.name}</TableCell>
                                     <TableCell>
                                       <Input 
