@@ -3,11 +3,11 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import StudentBioModel, { IStudentBio } from '@/models/studentBio.model';
+import UserModel from '@/models/user.model';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
-// The schema is defined here for server-side validation and is not exported.
 const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
@@ -23,8 +23,7 @@ const studentBioSchema = z.object({
   aadharNumber: z.string().regex(/^\d{4} \d{4} \d{4}$/, "Aadhar number must be in the format XXXX XXXX XXXX."),
 });
 
-// The input type is inferred here for use within this file.
-type StudentBioInput = z.infer<typeof studentBioSchema>;
+export type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 export async function saveStudentBio(data: StudentBioInput): Promise<{ success: boolean, message: string }> {
   const validation = studentBioSchema.safeParse(data);
@@ -35,13 +34,14 @@ export async function saveStudentBio(data: StudentBioInput): Promise<{ success: 
   try {
     await connectToDB();
 
-    const studentBio = await StudentBioModel.findOneAndUpdate(
+    await StudentBioModel.findOneAndUpdate(
       { studentId: new mongoose.Types.ObjectId(data.studentId) },
       { ...data, aadharNumber: data.aadharNumber.replace(/\s/g, '') },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    revalidatePath('/student/bio-data');
+    revalidatePath('/admin/bio-data');
+    revalidatePath(`/settings/account`); // Revalidate student's profile page
 
     return { success: true, message: "Bio-data saved successfully." };
 
@@ -61,7 +61,6 @@ export async function getStudentBio(studentId: string): Promise<IStudentBio | nu
     try {
         await connectToDB();
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
-        // Convert ObjectId to string for client-side usage if needed, though here we return the raw lean object
         if (bio) {
           return {
             ...bio,
@@ -73,5 +72,19 @@ export async function getStudentBio(studentId: string): Promise<IStudentBio | nu
     } catch (error) {
         console.error('Error fetching student bio-data:', error);
         return null;
+    }
+}
+
+export async function getStudentsForBioData(): Promise<{id: string, name: string}[]> {
+    try {
+        await connectToDB();
+        const students = await UserModel.find({ role: 'student' }).select('_id name').sort({ name: 1 }).lean();
+        return students.map(s => ({
+            id: s._id.toString(),
+            name: s.name,
+        }));
+    } catch (error) {
+        console.error('Error fetching students for bio-data:', error);
+        return [];
     }
 }

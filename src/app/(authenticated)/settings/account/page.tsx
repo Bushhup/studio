@@ -1,27 +1,30 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserCog, KeyRound, BellRing, Camera } from "lucide-react";
+import { UserCog, KeyRound, BellRing, Camera, FileText, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { updateProfile, changePassword } from './actions';
+import { updateProfile, changePassword, getStudentBioForProfile } from './actions';
 import { useSession } from 'next-auth/react';
+import type { IStudentBio } from '@/models/studentBio.model';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required."), // Allow any length for checking
+  currentPassword: z.string().min(1, "Current password is required."),
   newPassword: z.string().min(6, "New password must be at least 6 characters."),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -32,6 +35,33 @@ const passwordSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
+function BioDataDisplay({ bioData }: { bioData: IStudentBio }) {
+    return (
+        <div className="space-y-4 text-sm">
+            <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Read-Only Information</AlertTitle>
+                <AlertDescription>
+                    Your bio-data is displayed below. To make any corrections, please contact your class in-charge or the department office.
+                </AlertDescription>
+            </Alert>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber}</p></div>
+                <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender}</p></div>
+                <div><Label>Aadhar Number</Label><p className="text-muted-foreground">{bioData.aadharNumber}</p></div>
+                <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address}</p></div>
+                <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName}</p></div>
+                <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation}</p></div>
+                <div><Label>Father's Mobile</Label><p className="text-muted-foreground">{bioData.fatherMobileNumber}</p></div>
+                <div><Label>Religion</Label><p className="text-muted-foreground">{bioData.religion}</p></div>
+                <div><Label>Community</Label><p className="text-muted-foreground">{bioData.community}</p></div>
+                <div><Label>Caste</Label><p className="text-muted-foreground">{bioData.caste}</p></div>
+                <div><Label>Admission Quota</Label><p className="text-muted-foreground capitalize">{bioData.quota}</p></div>
+            </div>
+        </div>
+    );
+}
+
 export default function AccountSettingsPage() {
   const { data: session, update: updateSession } = useSession();
   const user = session?.user;
@@ -40,6 +70,21 @@ export default function AccountSettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [bioData, setBioData] = useState<IStudentBio | null>(null);
+  const [isLoadingBio, setIsLoadingBio] = useState(true);
+
+  useEffect(() => {
+    if (user?.role === 'student' && user?.id) {
+        setIsLoadingBio(true);
+        getStudentBioForProfile(user.id)
+            .then(setBioData)
+            .catch(() => toast({ title: "Error", description: "Could not fetch your bio-data.", variant: "destructive" }))
+            .finally(() => setIsLoadingBio(false));
+    } else {
+        setIsLoadingBio(false);
+    }
+  }, [user?.id, user?.role, toast]);
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -80,7 +125,6 @@ export default function AccountSettingsPage() {
       
       if (result.success) {
         toast({ title: "Profile Updated", description: result.message });
-        // Trigger a session update to reflect the new name
         await updateSession({ name: data.name });
       } else {
         toast({ title: "Error", description: result.message, variant: "destructive" });
@@ -172,6 +216,31 @@ export default function AccountSettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {user?.role === 'student' && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5"/> My Bio-data</CardTitle>
+                    <CardDescription>Your personal information on record.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingBio ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <div className="grid grid-cols-3 gap-4">
+                                <Skeleton className="h-8 w-full" />
+                                <Skeleton className="h-8 w-full" />
+                                <Skeleton className="h-8 w-full" />
+                            </div>
+                        </div>
+                    ) : bioData ? (
+                        <BioDataDisplay bioData={bioData} />
+                    ) : (
+                        <p className="text-muted-foreground text-center py-4">Your bio-data has not been filled out yet. Please contact the department office to add your information.</p>
+                    )}
+                </CardContent>
+            </Card>
+        )}
 
         <Card>
           <CardHeader>

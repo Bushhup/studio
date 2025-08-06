@@ -3,6 +3,8 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import UserModel from '@/models/user.model';
+import StudentBioModel from '@/models/studentBio.model';
+import type { IStudentBio } from '@/models/studentBio.model';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
@@ -88,4 +90,25 @@ export async function changePassword(userId: string, data: { currentPassword, ne
     console.error('Error changing password:', error);
     return { success: false, message: "An unknown server error occurred." };
   }
+}
+
+export async function getStudentBioForProfile(studentId: string): Promise<IStudentBio | null> {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+        return null;
+    }
+    try {
+        await connectToDB();
+        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
+        if (bio) {
+          return {
+            ...bio,
+            _id: bio._id.toString(),
+            studentId: bio.studentId.toString(),
+          } as IStudentBio;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching student bio-data for profile:', error);
+        return null;
+    }
 }

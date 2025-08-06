@@ -3,15 +3,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import type { Role } from '@/types';
 import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { 
   LayoutDashboard, CalendarDays, BookOpenText, MessageSquareText, Briefcase, 
@@ -24,7 +20,6 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   roles: Role[];
-  subItems?: NavItem[];
   isDashboardLink?: boolean;
 }
 
@@ -35,7 +30,7 @@ const navItems: NavItem[] = [
     label: 'Dashboard', 
     icon: LayoutDashboard, 
     roles: ['admin', 'faculty', 'student'],
-    isDashboardLink: true, // Special flag to construct role-specific dashboard URL
+    isDashboardLink: true,
   },
   { 
     href: '/materials', 
@@ -55,6 +50,7 @@ const navItems: NavItem[] = [
   { href: '/admin/users', label: 'User Management', icon: Users, roles: ['admin'] },
   { href: '/admin/classes', label: 'Class Management', icon: School, roles: ['admin'] },
   { href: '/admin/subjects', label: 'Subject Management', icon: BookCopy, roles: ['admin'] },
+  { href: '/admin/bio-data', label: 'Student Bio-data', icon: FileText, roles: ['admin'] },
   
   // Faculty Specific
   { href: '/faculty/marks', label: 'Marks Entry', icon: ClipboardList, roles: ['faculty'] },
@@ -66,7 +62,6 @@ const navItems: NavItem[] = [
   { href: '/student/my-attendance', label: 'My Attendance', icon: ShieldCheck, roles: ['student'] },
   { href: '/student/my-performance', label: 'My Performance', icon: BarChart3, roles: ['student'] },
   { href: '/student/my-timetable', label: 'My Timetable', icon: Calendar, roles: ['student'] },
-  { href: '/student/bio-data', label: 'My Bio-data', icon: FileText, roles: ['student'] },
 ];
 
 
@@ -83,7 +78,7 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
     <SidebarMenu>
       {filteredNavItems.map((item) => {
         const href = item.isDashboardLink ? getDashboardPath(userRole) : item.href;
-        const isActive = pathname.startsWith(href) && (href !== '/' || pathname === '/');
+        const isActive = pathname.startsWith(href) && (href !== '/home' || pathname === href);
         
         return (
           <SidebarMenuItem key={item.href}>
@@ -97,20 +92,6 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
                 <span className="truncate capitalize">{item.label}</span>
               </Link>
             </SidebarMenuButton>
-            {item.subItems && item.subItems.length > 0 && (
-              <SidebarMenuSub>
-                {item.subItems.filter(subItem => subItem.roles.includes(userRole)).map(subItem => (
-                  <SidebarMenuSubItem key={subItem.href}>
-                    <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                      <Link href={subItem.href}>
-                        <subItem.icon className="h-4 w-4" />
-                        <span className="truncate capitalize">{subItem.label}</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
-              </SidebarMenuSub>
-            )}
           </SidebarMenuItem>
         );
       })}
