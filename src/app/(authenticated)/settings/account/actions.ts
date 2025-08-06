@@ -98,17 +98,37 @@ export async function getStudentBioForProfile(studentId: string): Promise<IStude
     }
     try {
         await connectToDB();
-        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
-        if (bio) {
-          const plainBio = JSON.parse(JSON.stringify(bio));
-          return {
+        const studentObjectId = new mongoose.Types.ObjectId(studentId);
+
+        // Fetch both user and bio data
+        const userPromise = UserModel.findById(studentObjectId).lean();
+        const bioPromise = StudentBioModel.findOne({ studentId: studentObjectId }).lean();
+        
+        const [user, bio] = await Promise.all([userPromise, bioPromise]);
+
+        // If bio doesn't exist, we can still return some basic info from the user model
+        if (!bio) {
+             if (user) {
+                return {
+                    _id: user._id.toString(),
+                    studentId: user._id.toString(),
+                    email: user.email,
+                } as IStudentBio;
+             }
+             return null;
+        }
+
+        const plainBio = JSON.parse(JSON.stringify(bio));
+
+        return {
             ...plainBio,
             _id: plainBio._id.toString(),
             studentId: plainBio.studentId.toString(),
             dob: plainBio.dob ? new Date(plainBio.dob) : undefined,
-          } as IStudentBio;
-        }
-        return null;
+            // Ensure email from user model is prioritized if bio email is empty
+            email: plainBio.email || user?.email,
+        } as IStudentBio;
+
     } catch (error) {
         console.error('Error fetching student bio-data for profile:', error);
         return null;
