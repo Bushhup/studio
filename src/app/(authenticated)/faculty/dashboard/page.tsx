@@ -34,6 +34,20 @@ const getInitials = (name: string) => {
       .toUpperCase();
 };
 
+const formatAadhar = (value: string) => {
+    if (!value) return '';
+    const cleaned = value.replace(/\D/g, '').substring(0, 12);
+    let result = '';
+    for (let i = 0; i < cleaned.length; i++) {
+        if (i > 0 && i % 4 === 0) {
+            result += ' ';
+        }
+        result += cleaned[i];
+    }
+    return result;
+};
+
+
 function ListDialog({
   isOpen,
   setIsOpen,
@@ -136,7 +150,7 @@ function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }
                             <div><Label>Date of Birth</Label><p className="text-muted-foreground">{format(new Date(bioData.dob), "PPP")}</p></div>
                             <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber}</p></div>
                             <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender}</p></div>
-                            <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{bioData.aadharNumber}</p></div>
+                            <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{formatAadhar(bioData.aadharNumber)}</p></div>
                             <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address}</p></div>
                             <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName}</p></div>
                             <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation}</p></div>
