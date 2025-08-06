@@ -12,7 +12,9 @@ const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
-  dob: z.date().optional(),
+  dob_day: z.string().optional(),
+  dob_month: z.string().optional(),
+  dob_year: z.string().optional(),
   fatherName: z.string().optional(),
   fatherOccupation: z.string().optional(),
   fatherMobileNumber: z.string().optional(),
@@ -23,9 +25,17 @@ const studentBioSchema = z.object({
   caste: z.string().optional(),
   quota: z.enum(['management', 'government']).optional(),
   aadharNumber: z.string().optional(),
+}).refine(data => {
+    // If one part of DOB is filled, all should be.
+    if (data.dob_day || data.dob_month || data.dob_year) {
+        return !!data.dob_day && !!data.dob_month && !!data.dob_year;
+    }
+    return true;
+}, {
+    message: "All parts of the date of birth must be selected.",
+    path: ["dob_day"],
 });
 
-// We are adjusting the input type to accept a string for the date from the form
 export type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ success: boolean, message: string }> {
@@ -33,7 +43,17 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
       return { success: false, message: 'Student ID is required.' };
   }
   
-  const updateData = { ...data };
+  const { dob_day, dob_month, dob_year, ...restOfData } = data;
+  
+  const updateData: Partial<IStudentBio> = { ...restOfData };
+  
+  if (dob_day && dob_month && dob_year) {
+    const monthIndex = parseInt(dob_month, 10) - 1;
+    updateData.dob = new Date(parseInt(dob_year, 10), monthIndex, parseInt(dob_day, 10));
+  } else {
+    updateData.dob = undefined;
+  }
+  
   if (updateData.aadharNumber) {
     updateData.aadharNumber = updateData.aadharNumber.replace(/\s/g, '');
   }
@@ -62,20 +82,29 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
   }
 }
 
-export async function getStudentBio(studentId: string): Promise<IStudentBio | null> {
+export async function getStudentBio(studentId: string): Promise<Partial<StudentBioInput> | null> {
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
         return null;
     }
     try {
         await connectToDB();
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
+        
         if (bio) {
+          const dob = bio.dob ? new Date(bio.dob) : null;
+          const plainBio: any = { ...bio };
+          
+          delete plainBio.dob;
+          delete plainBio._id;
+          delete plainBio.__v;
+          
           return {
-            ...bio,
-            _id: bio._id.toString(),
+            ...plainBio,
             studentId: bio.studentId.toString(),
-            dob: bio.dob ? new Date(bio.dob) : undefined
-          } as IStudentBio;
+            dob_day: dob ? String(dob.getDate()) : undefined,
+            dob_month: dob ? String(dob.getMonth() + 1) : undefined,
+            dob_year: dob ? String(dob.getFullYear()) : undefined,
+          };
         }
         return null;
     } catch (error) {

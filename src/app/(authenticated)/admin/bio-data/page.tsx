@@ -12,16 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Save, Users, Edit, Calendar as CalendarIcon, Search } from "lucide-react";
+import { FileText, Save, Users, Edit, Search } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import mongoose from 'mongoose';
-import { getStudentBio, saveStudentBio, getStudentsForBioData } from './actions';
+import { getStudentBio, saveStudentBio, getStudentsForBioData, type StudentBioInput } from './actions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
@@ -29,7 +25,9 @@ const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal('')),
-  dob: z.date().optional(),
+  dob_day: z.string().optional(),
+  dob_month: z.string().optional(),
+  dob_year: z.string().optional(),
   fatherName: z.string().optional(),
   fatherOccupation: z.string().optional(),
   fatherMobileNumber: z.string().optional(),
@@ -40,9 +38,15 @@ const studentBioSchema = z.object({
   caste: z.string().optional(),
   quota: z.enum(['management', 'government']).optional(),
   aadharNumber: z.string().optional(),
+}).refine(data => {
+    if (data.dob_day || data.dob_month || data.dob_year) {
+        return !!data.dob_day && !!data.dob_month && !!data.dob_year;
+    }
+    return true;
+}, {
+    message: "All parts of the date of birth must be selected.",
+    path: ["dob_day"],
 });
-
-type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 const formatAadhar = (value: string) => {
     if (!value) return '';
@@ -57,6 +61,11 @@ const formatAadhar = (value: string) => {
     return result;
 };
 
+const months = Array.from({length: 12}, (_, i) => ({ value: String(i + 1), label: new Date(0, i).toLocaleString('default', { month: 'long' }) }));
+const currentYear = new Date().getFullYear();
+const years = Array.from({length: 30}, (_, i) => String(currentYear - 30 + i)).reverse();
+const days = Array.from({length: 31}, (_, i) => String(i + 1));
+
 function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: string; email: string }; onFormSubmit: () => void, setIsOpen: (open: boolean) => void; }) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +76,9 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
             studentId: student.id,
             mobileNumber: '',
             email: student.email,
-            dob: undefined,
+            dob_day: undefined,
+            dob_month: undefined,
+            dob_year: undefined,
             fatherName: '',
             fatherOccupation: '',
             fatherMobileNumber: '',
@@ -85,9 +96,8 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                 if (bioData) {
                     form.reset({
                         ...bioData,
-                        studentId: bioData.studentId.toString(),
+                        studentId: bioData.studentId!.toString(),
                         aadharNumber: bioData.aadharNumber ? formatAadhar(bioData.aadharNumber) : '',
-                        dob: bioData.dob ? new Date(bioData.dob) : undefined,
                         email: bioData.email || student.email,
                     });
                 } else {
@@ -102,10 +112,12 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                         religion: '',
                         caste: '',
                         aadharNumber: '',
-                        dob: undefined,
                         gender: undefined,
                         community: undefined,
-                        quota: undefined
+                        quota: undefined,
+                        dob_day: undefined,
+                        dob_month: undefined,
+                        dob_year: undefined,
                     });
                 }
             }).catch(() => {
@@ -143,23 +155,15 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="student@example.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="mobileNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input placeholder="10-digit number" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name="dob" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-buttons" fromYear={1990} toYear={new Date().getFullYear()} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        <FormMessage /></FormItem>
-                    )} />
+                     <FormItem>
+                        <FormLabel>Date of Birth</FormLabel>
+                        <div className="grid grid-cols-3 gap-2">
+                             <FormField control={form.control} name="dob_day" render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl><SelectContent>{days.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                             <FormField control={form.control} name="dob_month" render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl><SelectContent>{months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                             <FormField control={form.control} name="dob_year" render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl><SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        </div>
+                         <FormMessage>{form.formState.errors.dob_day?.message}</FormMessage>
+                    </FormItem>
                     <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
                 <FormField control={form.control} name="aadharNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Number</FormLabel><FormControl><Input placeholder="XXXX XXXX XXXX" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(formatAadhar(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
