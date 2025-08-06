@@ -43,17 +43,26 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
       return { success: false, message: 'Student ID is required.' };
   }
   
-  const { dob_day, dob_month, dob_year, ...restOfData } = data;
+  // Directly create the update object from the provided data
+  const updateData: { [key: string]: any } = { ...data };
   
-  const updateData: Partial<IStudentBio> = { ...restOfData };
-  
-  if (dob_day && dob_month && dob_year) {
-    const monthIndex = parseInt(dob_month, 10) - 1;
-    updateData.dob = new Date(parseInt(dob_year, 10), monthIndex, parseInt(dob_day, 10));
+  // Handle Date of Birth separately
+  if (data.dob_day && data.dob_month && data.dob_year) {
+    const monthIndex = parseInt(data.dob_month, 10) - 1;
+    const year = parseInt(data.dob_year, 10);
+    const day = parseInt(data.dob_day, 10);
+    // Construct a new Date. Note: This creates the date in UTC.
+    updateData.dob = new Date(Date.UTC(year, monthIndex, day));
   } else {
+    // If date parts are not provided, ensure dob is unset
     updateData.dob = undefined;
   }
   
+  // Remove the separate date parts as they are not in the schema
+  delete updateData.dob_day;
+  delete updateData.dob_month;
+  delete updateData.dob_year;
+
   if (updateData.aadharNumber) {
     updateData.aadharNumber = updateData.aadharNumber.replace(/\s/g, '');
   }
@@ -63,7 +72,7 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
 
     await StudentBioModel.findOneAndUpdate(
       { studentId: new mongoose.Types.ObjectId(data.studentId) },
-      updateData,
+      { $set: updateData },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -91,6 +100,7 @@ export async function getStudentBio(studentId: string): Promise<Partial<StudentB
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
         
         if (bio) {
+          // When retrieving, use UTC methods to avoid timezone shifts
           const dob = bio.dob ? new Date(bio.dob) : null;
           const plainBio: any = { ...bio };
           
@@ -101,9 +111,9 @@ export async function getStudentBio(studentId: string): Promise<Partial<StudentB
           return {
             ...plainBio,
             studentId: bio.studentId.toString(),
-            dob_day: dob ? String(dob.getDate()) : undefined,
-            dob_month: dob ? String(dob.getMonth() + 1) : undefined,
-            dob_year: dob ? String(dob.getFullYear()) : undefined,
+            dob_day: dob ? String(dob.getUTCDate()) : undefined,
+            dob_month: dob ? String(dob.getUTCMonth() + 1) : undefined,
+            dob_year: dob ? String(dob.getUTCFullYear()) : undefined,
           };
         }
         return null;
