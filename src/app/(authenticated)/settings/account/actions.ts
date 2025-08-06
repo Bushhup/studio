@@ -100,10 +100,12 @@ export async function getStudentBioForProfile(studentId: string): Promise<IStude
         await connectToDB();
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
         if (bio) {
+          const plainBio = JSON.parse(JSON.stringify(bio));
           return {
-            ...bio,
-            _id: bio._id.toString(),
-            studentId: bio.studentId.toString(),
+            ...plainBio,
+            _id: plainBio._id.toString(),
+            studentId: plainBio.studentId.toString(),
+            dob: plainBio.dob ? new Date(plainBio.dob) : undefined,
           } as IStudentBio;
         }
         return null;
