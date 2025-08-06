@@ -35,7 +35,7 @@ const getInitials = (name: string) => {
       .toUpperCase();
 };
 
-const formatAadhar = (value: string) => {
+const formatAadhar = (value?: string) => {
     if (!value) return '';
     const cleaned = value.replace(/\D/g, '').substring(0, 12);
     let result = '';
@@ -148,6 +148,7 @@ function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }
                 ) : bioData ? (
                     <div className="space-y-4 text-sm p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                            <div><Label>Email</Label><p className="text-muted-foreground">{bioData.email || 'N/A'}</p></div>
                             <div><Label>Date of Birth</Label><p className="text-muted-foreground">{bioData.dob ? format(new Date(bioData.dob), "PPP") : 'N/A'}</p></div>
                             <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber || 'N/A'}</p></div>
                             <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender || 'N/A'}</p></div>
@@ -533,5 +534,3 @@ export default function FacultyDashboardPage() {
     </>
   );
 }
-
-    

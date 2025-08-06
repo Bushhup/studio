@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
@@ -28,24 +27,25 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
-  mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
-  email: z.string().email("Invalid email address."),
-  dob: z.date({ required_error: "Date of birth is required." }),
-  fatherName: z.string().min(2, "Father's name is required."),
-  fatherOccupation: z.string().min(2, "Father's occupation is required."),
-  fatherMobileNumber: z.string().min(10, "Father's mobile number must be at least 10 digits."),
-  gender: z.enum(['male', 'female', 'other'], { required_error: "Gender is required." }),
-  address: z.string().min(10, "Address is required."),
-  religion: z.string().min(2, "Religion is required."),
-  community: z.enum(['BC(MUSLIM)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST'], { required_error: "Community is required." }),
-  caste: z.string().min(2, "Caste is required."),
-  quota: z.enum(['management', 'government'], { required_error: "Quota is required." }),
-  aadharNumber: z.string().regex(/^\d{4} \d{4} \d{4}$/, "Aadhar number must be in the format XXXX XXXX XXXX."),
+  mobileNumber: z.string().optional(),
+  email: z.string().email("Invalid email address.").optional().or(z.literal('')),
+  dob: z.date().optional(),
+  fatherName: z.string().optional(),
+  fatherOccupation: z.string().optional(),
+  fatherMobileNumber: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  address: z.string().optional(),
+  religion: z.string().optional(),
+  community: z.enum(['BC(MUSLIM)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST']).optional(),
+  caste: z.string().optional(),
+  quota: z.enum(['management', 'government']).optional(),
+  aadharNumber: z.string().optional(),
 });
 
 type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 const formatAadhar = (value: string) => {
+    if (!value) return '';
     const cleaned = value.replace(/\D/g, '').substring(0, 12);
     let result = '';
     for (let i = 0; i < cleaned.length; i++) {
@@ -86,8 +86,9 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                     form.reset({
                         ...bioData,
                         studentId: bioData.studentId.toString(),
-                        aadharNumber: formatAadhar(bioData.aadharNumber),
-                        dob: new Date(bioData.dob),
+                        aadharNumber: bioData.aadharNumber ? formatAadhar(bioData.aadharNumber) : '',
+                        dob: bioData.dob ? new Date(bioData.dob) : undefined,
+                        email: bioData.email || student.email,
                     });
                 } else {
                     form.reset({
@@ -140,8 +141,8 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
                 <h3 className="text-md font-semibold border-b pb-2">Student Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="student@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="mobileNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="student@example.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="mobileNumber" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input placeholder="10-digit number" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
                      <FormField control={form.control} name="dob" render={({ field }) => (
                         <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel>
                             <Popover>
@@ -159,24 +160,24 @@ function BioDataForm({ student, onFormSubmit, setIsOpen }: { student: { id: stri
                             </Popover>
                         <FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
-                <FormField control={form.control} name="aadharNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Number</FormLabel><FormControl><Input placeholder="XXXX XXXX XXXX" {...field} onChange={(e) => field.onChange(formatAadhar(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Full Address</FormLabel><FormControl><Textarea placeholder="Complete address" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="aadharNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Number</FormLabel><FormControl><Input placeholder="XXXX XXXX XXXX" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(formatAadhar(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Full Address</FormLabel><FormControl><Textarea placeholder="Complete address" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
 
                 <h3 className="text-md font-semibold border-b pt-3 pb-2">Family & Community</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="fatherName" render={({ field }) => (<FormItem><FormLabel>Father's Name</FormLabel><FormControl><Input placeholder="Full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="fatherOccupation" render={({ field }) => (<FormItem><FormLabel>Father's Occupation</FormLabel><FormControl><Input placeholder="Job" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="fatherMobileNumber" render={({ field }) => (<FormItem><FormLabel>Father's Mobile</FormLabel><FormControl><Input placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="fatherName" render={({ field }) => (<FormItem><FormLabel>Father's Name</FormLabel><FormControl><Input placeholder="Full name" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="fatherOccupation" render={({ field }) => (<FormItem><FormLabel>Father's Occupation</FormLabel><FormControl><Input placeholder="Job" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="fatherMobileNumber" render={({ field }) => (<FormItem><FormLabel>Father's Mobile</FormLabel><FormControl><Input placeholder="10-digit number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="religion" render={({ field }) => (<FormItem><FormLabel>Religion</FormLabel><FormControl><Input placeholder="e.g., Hinduism" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="community" render={({ field }) => (<FormItem><FormLabel>Community</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select community" /></SelectTrigger></FormControl><SelectContent>{['BC(MUSLIM)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="caste" render={({ field }) => (<FormItem><FormLabel>Name of Caste</FormLabel><FormControl><Input placeholder="Caste name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="religion" render={({ field }) => (<FormItem><FormLabel>Religion</FormLabel><FormControl><Input placeholder="e.g., Hinduism" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="community" render={({ field }) => (<FormItem><FormLabel>Community</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select community" /></SelectTrigger></FormControl><SelectContent>{['BC(MUSLIM)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="caste" render={({ field }) => (<FormItem><FormLabel>Name of Caste</FormLabel><FormControl><Input placeholder="Caste name" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
 
-                <FormField control={form.control} name="quota" render={({ field }) => (<FormItem className="space-y-2"><FormLabel>Admission Quota</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="government" /></FormControl><FormLabel className="font-normal">Government</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="management" /></FormControl><FormLabel className="font-normal">Management</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="quota" render={({ field }) => (<FormItem className="space-y-2"><FormLabel>Admission Quota</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4"><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="government" /></FormControl><FormLabel className="font-normal">Government</FormLabel></FormItem><FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="management" /></FormControl><FormLabel className="font-normal">Management</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
                 
                 <DialogFooter className="pt-4">
                     <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
@@ -330,5 +331,3 @@ export default function AdminBioDataPage() {
         </div>
     );
 }
-
-    
