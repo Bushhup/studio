@@ -3,7 +3,6 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import StudentBioModel, { IStudentBio } from '@/models/studentBio.model';
-import UserModel from '@/models/user.model';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';
@@ -25,7 +24,6 @@ const studentBioSchema = z.object({
   aadharNumber: z.string().optional(),
 });
 
-// We are adjusting the input type to accept a string for the date from the form
 export type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ success: boolean, message: string }> {
@@ -47,8 +45,8 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    revalidatePath('/admin/bio-data');
-    revalidatePath(`/student/profile`); 
+    revalidatePath('/student/profile');
+    revalidatePath(`/admin/bio-data`); 
     revalidatePath(`/faculty/dashboard`); 
 
     return { success: true, message: "Bio-data saved successfully." };
@@ -70,31 +68,17 @@ export async function getStudentBio(studentId: string): Promise<IStudentBio | nu
         await connectToDB();
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
         if (bio) {
+          const plainBio = JSON.parse(JSON.stringify(bio));
           return {
-            ...bio,
-            _id: bio._id.toString(),
-            studentId: bio.studentId.toString(),
-            dob: bio.dob ? new Date(bio.dob) : undefined
+            ...plainBio,
+            _id: plainBio._id.toString(),
+            studentId: plainBio.studentId.toString(),
+            dob: plainBio.dob ? new Date(plainBio.dob) : undefined,
           } as IStudentBio;
         }
         return null;
     } catch (error) {
         console.error('Error fetching student bio-data:', error);
         return null;
-    }
-}
-
-export async function getStudentsForBioData(): Promise<{id: string, name: string, email: string}[]> {
-    try {
-        await connectToDB();
-        const students = await UserModel.find({ role: 'student' }).select('_id name email').sort({ name: 1 }).lean();
-        return students.map(s => ({
-            id: s._id.toString(),
-            name: s.name,
-            email: s.email,
-        }));
-    } catch (error) {
-        console.error('Error fetching students for bio-data:', error);
-        return [];
     }
 }

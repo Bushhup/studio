@@ -12,7 +12,7 @@ import {
 import { 
   LayoutDashboard, CalendarDays, BookOpenText, MessageSquareText, Briefcase, 
   Users, ClipboardList, GraduationCap, 
-  ListChecks, BarChart3, ShieldCheck, BookCopy, School, Calendar, FileText
+  ListChecks, BarChart3, ShieldCheck, BookCopy, School, Calendar, FileText, User
 } from 'lucide-react';
 
 interface NavItem {
@@ -58,6 +58,7 @@ const navItems: NavItem[] = [
   { href: '/faculty/performance', label: 'Class Performance', icon: BarChart3, roles: ['faculty'] },
 
   // Student Specific
+  { href: '/student/profile', label: 'My Profile', icon: User, roles: ['student'] },
   { href: '/student/my-marks', label: 'My Marks', icon: GraduationCap, roles: ['student'] },
   { href: '/student/my-attendance', label: 'My Attendance', icon: ShieldCheck, roles: ['student'] },
   { href: '/student/my-performance', label: 'My Performance', icon: BarChart3, roles: ['student'] },
