@@ -7,11 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpenText, ClipboardList, ListChecks, MessageSquareText, Users, BookCopy, Calendar, Clock } from "lucide-react";
+import { BookOpenText, ClipboardList, ListChecks, MessageSquareText, Users, BookCopy, Calendar, Clock, Info, User } from "lucide-react";
 import { getFacultyDashboardStats, getClassesInCharge, getSubjectsHandled, getRecentFeedback, getFacultySchedule } from "./actions";
 import Link from "next/link";
 import { useToast } from '@/hooks/use-toast';
 import type { ClassInfo, SubjectInfo, FeedbackInfo, FacultySchedule } from './actions';
+import { getStudentsByClass } from '../admin/classes/actions';
+import type { IUser } from '@/models/user.model';
+import { IStudentBio } from '@/models/studentBio.model';
+import { getStudentBioForProfile } from '../../settings/account/actions';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 
 
 type ModalDataType = 'classes' | 'subjects' | 'feedback';
@@ -85,6 +92,134 @@ function ListDialog({
   );
 }
 
+function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }: {
+    student: Pick<IUser, 'id' | 'name'> | null,
+    bioData: IStudentBio | null,
+    isLoading: boolean,
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void,
+}) {
+    if (!student) return null;
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl">Student Profile: {student.name}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] p-1">
+                {isLoading ? (
+                     <div className="flex justify-center items-center h-48">
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse theme-gradient-stroke" fill="none" stroke="url(#theme-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                     </div>
+                ) : bioData ? (
+                    <div className="space-y-4 text-sm p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                            <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber}</p></div>
+                            <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender}</p></div>
+                            <div><Label>Aadhar Number</Label><p className="text-muted-foreground">{bioData.aadharNumber}</p></div>
+                            <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address}</p></div>
+                            <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName}</p></div>
+                            <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation}</p></div>
+                            <div><Label>Father's Mobile</Label><p className="text-muted-foreground">{bioData.fatherMobileNumber}</p></div>
+                            <div><Label>Religion</Label><p className="text-muted-foreground">{bioData.religion}</p></div>
+                            <div><Label>Community</Label><p className="text-muted-foreground">{bioData.community}</p></div>
+                            <div><Label>Caste</Label><p className="text-muted-foreground">{bioData.caste}</p></div>
+                            <div><Label>Admission Quota</Label><p className="text-muted-foreground capitalize">{bioData.quota}</p></div>
+                        </div>
+                    </div>
+                ) : (
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>No Bio-data Found</AlertTitle>
+                        <AlertDescription>This student has not yet filled out their bio-data information.</AlertDescription>
+                    </Alert>
+                )}
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentClick }: {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    classes: ClassInfo[];
+    isLoading: boolean;
+    onStudentClick: (student: Pick<IUser, 'id' | 'name'>) => void;
+}) {
+    const { toast } = useToast();
+    const [studentsByClass, setStudentsByClass] = useState<Record<string, Pick<IUser, 'id'|'name'>[]>>({});
+    const [loadingClass, setLoadingClass] = useState<string | null>(null);
+
+    const handleClassToggle = async (classId: string) => {
+        if (!studentsByClass[classId]) {
+            setLoadingClass(classId);
+            try {
+                const fetchedStudents = await getStudentsByClass(classId);
+                setStudentsByClass(prev => ({...prev, [classId]: fetchedStudents }));
+            } catch {
+                toast({ title: "Error", description: "Could not fetch student list.", variant: "destructive"});
+            } finally {
+                setLoadingClass(null);
+            }
+        }
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Classes In-Charge</DialogTitle>
+                    <DialogDescription>Select a class to view the list of students.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-96 w-full rounded-md border p-4">
+                    {isLoading ? (
+                         <div className="flex justify-center items-center h-full">
+                            <svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                         </div>
+                    ) : classes.length > 0 ? (
+                        <Accordion type="single" collapsible className="w-full">
+                            {classes.map(c => (
+                                <AccordionItem key={c.id} value={c.id}>
+                                    <AccordionTrigger onClick={() => handleClassToggle(c.id)}>{c.name}</AccordionTrigger>
+                                    <AccordionContent>
+                                        {loadingClass === c.id ? (
+                                            <div className="flex justify-center items-center py-4">
+                                                <svg viewBox="0 0 24 24" className="h-6 w-6 animate-pulse" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                                            </div>
+                                        ) : (studentsByClass[c.id] && studentsByClass[c.id].length > 0) ? (
+                                            <ul className="space-y-2 pl-4">
+                                                {studentsByClass[c.id].map((student, index) => (
+                                                    <li key={student.id} className="text-sm flex justify-between items-center">
+                                                        <span>{index + 1}. {student.name}</span>
+                                                        <Button variant="ghost" size="sm" onClick={() => onStudentClick(student)}>
+                                                            <User className="mr-2 h-4 w-4"/> View Profile
+                                                        </Button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-center text-muted-foreground py-4">No students found in this class.</p>
+                                        )}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    ) : (
+                        <p className="text-center text-muted-foreground py-10">You are not in-charge of any classes.</p>
+                    )}
+                </ScrollArea>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function FacultyDashboardPage() {
     const { data: session } = useSession();
@@ -97,10 +232,13 @@ export default function FacultyDashboardPage() {
     const [feedback, setFeedback] = useState<FeedbackInfo[]>([]);
     const [schedule, setSchedule] = useState<FacultySchedule>({});
     
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState<ModalDataType | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingModal, setIsLoadingModal] = useState(false);
+    
+    const [selectedStudent, setSelectedStudent] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
+    const [studentBio, setStudentBio] = useState<IStudentBio | null>(null);
+    const [isBioLoading, setIsBioLoading] = useState(false);
     
     const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
     const todaySchedule = schedule[dayOfWeek] || [];
@@ -128,7 +266,6 @@ export default function FacultyDashboardPage() {
     const handleCardClick = async (type: ModalDataType) => {
         if (!userId) return;
         setModalType(type);
-        setIsModalOpen(true);
         setIsLoadingModal(true);
 
         try {
@@ -149,13 +286,21 @@ export default function FacultyDashboardPage() {
         }
     };
     
+    const handleStudentClick = async (student: Pick<IUser, 'id' | 'name'>) => {
+        setSelectedStudent(student);
+        setIsBioLoading(true);
+        try {
+            const bio = await getStudentBioForProfile(student.id);
+            setStudentBio(bio);
+        } catch {
+            toast({ title: "Error", description: "Failed to fetch student profile.", variant: "destructive"});
+        } finally {
+            setIsBioLoading(false);
+        }
+    };
+
     const getModalData = () => {
         switch (modalType) {
-            case 'classes':
-                return { 
-                    title: 'Classes In-Charge', 
-                    items: classes.map(c => ({ id: c.id, name: c.name, description: `Academic Year: ${c.academicYear}` }))
-                };
             case 'subjects':
                 return { 
                     title: 'Subjects Handled', 
@@ -306,12 +451,30 @@ export default function FacultyDashboardPage() {
         </div>
         </div>
 
-        <ListDialog
-            isOpen={isModalOpen}
-            setIsOpen={setIsModalOpen}
-            title={modalTitle}
-            items={modalItems}
+        {modalType !== 'classes' && (
+             <ListDialog
+                isOpen={!!modalType}
+                setIsOpen={() => setModalType(null)}
+                title={modalTitle}
+                items={modalItems}
+                isLoading={isLoadingModal}
+            />
+        )}
+
+        <ClassStudentDialog
+            isOpen={modalType === 'classes'}
+            setIsOpen={() => setModalType(null)}
+            classes={classes}
             isLoading={isLoadingModal}
+            onStudentClick={handleStudentClick}
+        />
+        
+        <StudentProfileDialog
+            student={selectedStudent}
+            bioData={studentBio}
+            isLoading={isBioLoading}
+            isOpen={!!selectedStudent}
+            setIsOpen={() => setSelectedStudent(null)}
         />
     </>
   );
