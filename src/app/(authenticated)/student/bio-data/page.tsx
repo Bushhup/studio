@@ -4,8 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useSession } from 'next-auth/react';
-import { getStudentBio, saveStudentBio, studentBioSchema, type StudentBioInput } from './actions';
+import { getStudentBio, saveStudentBio } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Save } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import mongoose from 'mongoose';
+
+// Schema is defined here in the client component
+const studentBioSchema = z.object({
+  studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
+  mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
+  fatherName: z.string().min(2, "Father's name is required."),
+  fatherOccupation: z.string().min(2, "Father's occupation is required."),
+  fatherMobileNumber: z.string().min(10, "Father's mobile number must be at least 10 digits."),
+  gender: z.enum(['male', 'female', 'other'], { required_error: "Gender is required." }),
+  address: z.string().min(10, "Address is required."),
+  religion: z.string().min(2, "Religion is required."),
+  community: z.enum(['BC(MUSLIM)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST'], { required_error: "Community is required." }),
+  caste: z.string().min(2, "Caste is required."),
+  quota: z.enum(['management', 'government'], { required_error: "Quota is required." }),
+  aadharNumber: z.string().regex(/^\d{4} \d{4} \d{4}$/, "Aadhar number must be in the format XXXX XXXX XXXX."),
+});
+
+type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 const formatAadhar = (value: string) => {
     const cleaned = value.replace(/\D/g, '').substring(0, 12);
@@ -59,6 +79,9 @@ export default function StudentBioDataPage() {
                         studentId: bioData.studentId.toString(),
                         aadharNumber: formatAadhar(bioData.aadharNumber)
                     });
+                } else {
+                    // Set studentId even if no bio data is found yet
+                    form.setValue('studentId', studentId);
                 }
                 setIsLoading(false);
             }).catch(() => {

@@ -7,7 +7,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
-export const studentBioSchema = z.object({
+// The schema is defined here for server-side validation and is not exported.
+const studentBioSchema = z.object({
   studentId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val)),
   mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits."),
   fatherName: z.string().min(2, "Father's name is required."),
@@ -22,7 +23,8 @@ export const studentBioSchema = z.object({
   aadharNumber: z.string().regex(/^\d{4} \d{4} \d{4}$/, "Aadhar number must be in the format XXXX XXXX XXXX."),
 });
 
-export type StudentBioInput = z.infer<typeof studentBioSchema>;
+// The input type is inferred here for use within this file.
+type StudentBioInput = z.infer<typeof studentBioSchema>;
 
 export async function saveStudentBio(data: StudentBioInput): Promise<{ success: boolean, message: string }> {
   const validation = studentBioSchema.safeParse(data);
@@ -59,7 +61,15 @@ export async function getStudentBio(studentId: string): Promise<IStudentBio | nu
     try {
         await connectToDB();
         const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
-        return bio as IStudentBio;
+        // Convert ObjectId to string for client-side usage if needed, though here we return the raw lean object
+        if (bio) {
+          return {
+            ...bio,
+            _id: bio._id.toString(),
+            studentId: bio.studentId.toString(),
+          } as IStudentBio;
+        }
+        return null;
     } catch (error) {
         console.error('Error fetching student bio-data:', error);
         return null;
