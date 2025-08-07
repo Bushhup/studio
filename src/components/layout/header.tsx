@@ -31,7 +31,7 @@ import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
-import { getStudentBioForProfile } from '@/app/(authenticated)/settings/account/actions';
+import { getStudentBioForProfile } from '@/app/authenticated/settings/account/actions';
 import { IStudentBio } from '@/models/studentBio.model';
 import { Label } from '../ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -154,10 +154,10 @@ export function Header() {
   const getDashboardPath = () => {
     if (!role) return '/login';
     switch (role) {
-        case 'admin': return '/admin/dashboard';
-        case 'faculty': return '/faculty/dashboard';
-        case 'student': return '/student/dashboard';
-        default: return '/home';
+        case 'admin': return '/authenticated/admin/dashboard';
+        case 'faculty': return '/authenticated/faculty/dashboard';
+        case 'student': return '/authenticated/student/dashboard';
+        default: return '/authenticated/home';
     }
   };
   
@@ -247,13 +247,13 @@ export function Header() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={role === 'student' ? '#' : '/settings/account'} onClick={handleProfileClick}>
+                      <Link href={role === 'student' ? '#' : '/authenticated/settings/account'} onClick={handleProfileClick}>
                         <UserCircle className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                       <Link href="/settings/account">
+                       <Link href="/authenticated/settings/account">
                           <Settings className="mr-2 h-4 w-4" />
                           Settings
                       </Link>
