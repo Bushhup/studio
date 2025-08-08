@@ -24,7 +24,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/authenticated/home', label: 'Home (Events)', icon: CalendarDays, roles: ['admin', 'faculty', 'student'] },
+  { href: '/home', label: 'Home (Events)', icon: CalendarDays, roles: ['admin', 'faculty', 'student'] },
   { 
     href: '/dashboard', 
     label: 'Dashboard', 
@@ -33,35 +33,35 @@ const navItems: NavItem[] = [
     isDashboardLink: true,
   },
   { 
-    href: '/authenticated/materials', 
+    href: '/materials', 
     label: 'Study Materials', 
     icon: BookOpenText, 
     roles: ['admin', 'faculty', 'student'],
   },
   { 
-    href: '/authenticated/feedback', 
+    href: '/feedback', 
     label: 'Feedback', 
     icon: MessageSquareText, 
     roles: ['admin', 'faculty', 'student'],
   },
-  { href: '/authenticated/placements', label: 'Placements Hub', icon: Briefcase, roles: ['admin', 'student'] },
+  { href: '/placements', label: 'Placements Hub', icon: Briefcase, roles: ['admin', 'student'] },
 
   // Admin Specific
-  { href: '/authenticated/admin/users', label: 'User Management', icon: Users, roles: ['admin'] },
-  { href: '/authenticated/admin/classes', label: 'Class Management', icon: School, roles: ['admin'] },
-  { href: '/authenticated/admin/subjects', label: 'Subject Management', icon: BookCopy, roles: ['admin'] },
-  { href: '/authenticated/admin/bio-data', label: 'Student Bio-data', icon: FileText, roles: ['admin'] },
+  { href: '/admin/users', label: 'User Management', icon: Users, roles: ['admin'] },
+  { href: '/admin/classes', label: 'Class Management', icon: School, roles: ['admin'] },
+  { href: '/admin/subjects', label: 'Subject Management', icon: BookCopy, roles: ['admin'] },
+  { href: '/admin/bio-data', label: 'Student Bio-data', icon: FileText, roles: ['admin'] },
   
   // Faculty Specific
-  { href: '/authenticated/faculty/marks', label: 'Marks Entry', icon: ClipboardList, roles: ['faculty'] },
-  { href: '/authenticated/faculty/attendance', label: 'Attendance', icon: ListChecks, roles: ['faculty'] },
-  { href: '/authenticated/faculty/performance', label: 'Class Performance', icon: BarChart3, roles: ['faculty'] },
+  { href: '/faculty/marks', label: 'Marks Entry', icon: ClipboardList, roles: ['faculty'] },
+  { href: '/faculty/attendance', label: 'Attendance', icon: ListChecks, roles: ['faculty'] },
+  { href: '/faculty/performance', label: 'Class Performance', icon: BarChart3, roles: ['faculty'] },
 
   // Student Specific
-  { href: '/authenticated/student/my-marks', label: 'My Marks', icon: GraduationCap, roles: ['student'] },
-  { href: '/authenticated/student/my-attendance', label: 'My Attendance', icon: ShieldCheck, roles: ['student'] },
-  { href: '/authenticated/student/my-performance', label: 'My Performance', icon: BarChart3, roles: ['student'] },
-  { href: '/authenticated/student/my-timetable', label: 'My Timetable', icon: Calendar, roles: ['student'] },
+  { href: '/student/my-marks', label: 'My Marks', icon: GraduationCap, roles: ['student'] },
+  { href: '/student/my-attendance', label: 'My Attendance', icon: ShieldCheck, roles: ['student'] },
+  { href: '/student/my-performance', label: 'My Performance', icon: BarChart3, roles: ['student'] },
+  { href: '/student/my-timetable', label: 'My Timetable', icon: Calendar, roles: ['student'] },
 ];
 
 
@@ -70,14 +70,31 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
 
   if (!userRole) return null;
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredNavItems = navItems.map(item => {
+    let finalHref = item.href;
+    if (item.isDashboardLink) {
+        finalHref = `/${userRole}/dashboard`;
+    } else if (!item.href.startsWith(`/${userRole}`) && !['/home', '/materials', '/feedback', '/placements', '/settings/account'].includes(item.href)) {
+        // This logic is a bit complex, let's simplify by assuming all non-dashboard links are correct unless they need the role prefix
+    }
+    return { ...item, href: finalHref };
+}).filter(item => item.roles.includes(userRole));
   
-  const getDashboardPath = (role: Role) => `/authenticated/${role}/dashboard`;
+  const getDashboardPath = (role: Role) => `/${role}/dashboard`;
 
   return (
     <SidebarMenu>
       {filteredNavItems.map((item) => {
-        const href = item.isDashboardLink ? getDashboardPath(userRole) : item.href;
+        let href = item.href;
+        if(item.isDashboardLink) {
+          href = getDashboardPath(userRole);
+        } else if (!href.startsWith('/')) {
+            href = `/${href}`;
+        }
+        if (!href.startsWith('/authenticated')) {
+            href = `/authenticated${href}`;
+        }
+        
         const isActive = pathname.startsWith(href) && (href !== '/authenticated/home' || pathname === href);
         
         return (
