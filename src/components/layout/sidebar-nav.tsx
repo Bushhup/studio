@@ -74,27 +74,14 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
     let finalHref = item.href;
     if (item.isDashboardLink) {
         finalHref = `/${userRole}/dashboard`;
-    } else if (!item.href.startsWith(`/${userRole}`) && !['/home', '/materials', '/feedback', '/placements', '/settings/account'].includes(item.href)) {
-        // This logic is a bit complex, let's simplify by assuming all non-dashboard links are correct unless they need the role prefix
     }
     return { ...item, href: finalHref };
-}).filter(item => item.roles.includes(userRole));
+  }).filter(item => item.roles.includes(userRole));
   
-  const getDashboardPath = (role: Role) => `/${role}/dashboard`;
-
   return (
     <SidebarMenu>
       {filteredNavItems.map((item) => {
-        let href = item.href;
-        if(item.isDashboardLink) {
-          href = getDashboardPath(userRole);
-        } else if (!href.startsWith('/')) {
-            href = `/${href}`;
-        }
-        if (!href.startsWith('/authenticated')) {
-            href = `/authenticated${href}`;
-        }
-        
+        let href = `/authenticated${item.href}`;
         const isActive = pathname.startsWith(href) && (href !== '/authenticated/home' || pathname === href);
         
         return (
