@@ -82,7 +82,11 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
     <SidebarMenu>
       {filteredNavItems.map((item) => {
         let href = `/authenticated${item.href}`;
-        const isActive = pathname.startsWith(href) && (href !== '/authenticated/home' || pathname === href);
+        // Adjust the check for dashboard links
+        if (item.isDashboardLink) {
+            href = `/authenticated${item.href}`
+        }
+        const isActive = pathname === href;
         
         return (
           <SidebarMenuItem key={item.href}>

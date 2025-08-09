@@ -220,22 +220,22 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/authenticated/admin/users">
+                <Link href="/admin/users">
                   <Users className="mr-2 h-4 w-4"/> Manage Users
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/authenticated/settings/account">
+                <Link href="/settings/account">
                   <Settings className="mr-2 h-4 w-4"/> System Settings
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/authenticated/placements">
+                <Link href="/placements">
                   <Briefcase className="mr-2 h-4 w-4"/> Placement Hub
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/authenticated/home">
+                <Link href="/home">
                   <Bell className="mr-2 h-4 w-4"/> Post Notice
                 </Link>
               </Button>
