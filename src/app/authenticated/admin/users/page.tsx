@@ -154,7 +154,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={isFacultyRole ? 6 : 5} className="h-24 text-center">
+            <TableCell colSpan={isFacultyRole ? 7 : 6} className="h-24 text-center">
               No users found.
             </TableCell>
           </TableRow>
