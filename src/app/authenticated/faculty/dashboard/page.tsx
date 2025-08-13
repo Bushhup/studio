@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type ModalDataType = 'classes' | 'subjects' | 'feedback';
 type ListItem = { id: string; name: string; description?: string; date?: string };
@@ -244,16 +245,28 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
                                                 <svg viewBox="0 0 24 24" className="h-6 w-6 animate-pulse" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
                                             </div>
                                         ) : (filteredStudents(c.id) && filteredStudents(c.id).length > 0) ? (
-                                            <ul className="space-y-2 pl-4">
-                                                {filteredStudents(c.id).map((student) => (
-                                                    <li key={student.id} className="text-sm flex justify-between items-center">
-                                                        <span><span className="font-semibold w-12 inline-block">{student.rollNo || 'N/A'}.</span> {student.name}</span>
-                                                        <Button variant="ghost" size="sm" onClick={() => onStudentClick(student)}>
-                                                            <User className="mr-2 h-4 w-4"/> View Profile
-                                                        </Button>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Roll No.</TableHead>
+                                                        <TableHead>Name</TableHead>
+                                                        <TableHead className="text-right">Action</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {filteredStudents(c.id).map((student) => (
+                                                        <TableRow key={student.id}>
+                                                            <TableCell className="font-medium">{student.rollNo || 'N/A'}</TableCell>
+                                                            <TableCell>{student.name}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                <Button variant="ghost" size="sm" onClick={() => onStudentClick(student)}>
+                                                                    <User className="mr-2 h-4 w-4"/> Profile
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
                                         ) : (
                                             <p className="text-center text-muted-foreground py-4">No students found.</p>
                                         )}
