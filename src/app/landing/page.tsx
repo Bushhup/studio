@@ -77,7 +77,7 @@ export default function LandingPage() {
       <section className="py-20 sm:py-32">
         <div className="container mx-auto px-4 text-center">
           <GraduationCap className="h-20 w-20 mx-auto text-primary mb-6" />
-          <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-accent animated-gradient">
+          <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tight text-primary">
             MCA Department Portal
           </h1>
           <p className="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
