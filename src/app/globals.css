@@ -6,7 +6,7 @@
 
 @layer base {
   html {
-    @apply text-base md:text-lg; /* Set base font size for mobile and larger for desktop */
+    @apply text-lg;
   }
 
   body {
