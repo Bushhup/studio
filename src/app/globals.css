@@ -4,11 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif; /* Ensure Inter is primary body font */
-}
-
 @layer base {
+  html {
+    @apply text-base md:text-lg; /* Set base font size for mobile and larger for desktop */
+  }
+
+  body {
+    @apply font-body; /* Use the Inter font defined in tailwind.config.ts */
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -95,9 +99,5 @@ body {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
-  }
-
-  .theme-gradient-stroke {
-    stroke: url(#theme-gradient);
   }
 }
