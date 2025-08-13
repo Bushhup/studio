@@ -6,7 +6,12 @@
 
 @layer base {
   html {
-    @apply text-lg;
+    font-size: 18px;
+  }
+  @screen md {
+    html {
+      font-size: 16px;
+    }
   }
 
   body {
