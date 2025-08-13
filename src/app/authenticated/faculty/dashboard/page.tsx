@@ -209,7 +209,10 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
     const filteredStudents = (classId: string) => {
         const students = studentsByClass[classId] || [];
         if (!searchTerm) return students;
-        return students.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        return students.filter(s => 
+            s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.rollNo?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
     }
 
     return (
@@ -248,7 +251,7 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead>Roll No.</TableHead>
+                                                        <TableHead className="w-24">Roll No.</TableHead>
                                                         <TableHead>Name</TableHead>
                                                         <TableHead className="text-right">Action</TableHead>
                                                     </TableRow>
@@ -465,16 +468,16 @@ export default function FacultyDashboardPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
+                    <Link href="/authenticated/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
+                    <Link href="/authenticated/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
+                    <Link href="/authenticated/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
+                    <Link href="/authenticated/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
                 </Button>
                 </CardContent>
             </Card>
