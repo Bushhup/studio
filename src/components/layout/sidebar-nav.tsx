@@ -56,6 +56,7 @@ const navItems: NavItem[] = [
   { href: '/faculty/marks', label: 'Marks Entry', icon: ClipboardList, roles: ['faculty'] },
   { href: '/faculty/attendance', label: 'Attendance', icon: ListChecks, roles: ['faculty'] },
   { href: '/faculty/performance', label: 'Class Performance', icon: BarChart3, roles: ['faculty'] },
+  { href: '/faculty/my-scheduling', label: 'My Scheduling', icon: Calendar, roles: ['faculty'] },
 
   // Student Specific
   { href: '/student/my-marks', label: 'My Marks', icon: GraduationCap, roles: ['student'] },
