@@ -154,10 +154,10 @@ export function Header() {
   const getDashboardPath = () => {
     if (!role) return '/login';
     switch (role) {
-        case 'admin': return '/authenticated/admin/dashboard';
-        case 'faculty': return '/authenticated/faculty/dashboard';
-        case 'student': return '/authenticated/student/dashboard';
-        default: return '/authenticated/home';
+        case 'admin': return '/admin/dashboard';
+        case 'faculty': return '/faculty/dashboard';
+        case 'student': return '/student/dashboard';
+        default: return '/home';
     }
   };
   
@@ -247,13 +247,13 @@ export function Header() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={role === 'student' ? '#' : '/authenticated/settings/account'} onClick={handleProfileClick}>
+                      <Link href={role === 'student' ? '#' : '/settings/account'} onClick={handleProfileClick}>
                         <UserCircle className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                       <Link href="/authenticated/settings/account">
+                       <Link href="/settings/account">
                           <Settings className="mr-2 h-4 w-4" />
                           Settings
                       </Link>

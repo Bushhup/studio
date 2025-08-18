@@ -115,8 +115,8 @@ export default function AuthenticatedLayout({
           <SidebarFooter className="p-2">
              <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname.startsWith('/authenticated/settings')} tooltip={{ children: "Settings" }}>
-                        <Link href="/authenticated/settings/account">
+                    <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip={{ children: "Settings" }}>
+                        <Link href="/settings/account">
                             <Settings className="h-5 w-5" />
                             <span>Settings</span>
                         </Link>

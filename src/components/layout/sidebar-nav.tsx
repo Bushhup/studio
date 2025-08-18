@@ -82,7 +82,7 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
   return (
     <SidebarMenu>
       {filteredNavItems.map((item) => {
-        const href = `/authenticated${item.href}`;
+        const href = item.href;
         const isActive = pathname === href;
         
         return (

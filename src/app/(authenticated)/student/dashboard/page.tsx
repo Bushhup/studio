@@ -83,7 +83,7 @@ export default function StudentDashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/authenticated/student/my-attendance">
+        <Link href="/student/my-attendance">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Overall Attendance</CardTitle>
@@ -96,7 +96,7 @@ export default function StudentDashboardPage() {
             </Card>
         </Link>
 
-        <Link href="/authenticated/student/my-marks">
+        <Link href="/student/my-marks">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Recent Marks</CardTitle>
@@ -109,7 +109,7 @@ export default function StudentDashboardPage() {
             </Card>
         </Link>
         
-        <Link href="/authenticated/home">
+        <Link href="/home">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
@@ -130,22 +130,22 @@ export default function StudentDashboardPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/student/my-marks"><GraduationCap className="mr-2 h-4 w-4"/> My Marks</Link>
+            <Link href="/student/my-marks"><GraduationCap className="mr-2 h-4 w-4"/> My Marks</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/student/my-attendance"><ShieldCheck className="mr-2 h-4 w-4"/> My Attendance</Link>
+            <Link href="/student/my-attendance"><ShieldCheck className="mr-2 h-4 w-4"/> My Attendance</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/materials"><BookOpenText className="mr-2 h-4 w-4"/> Study Materials</Link>
+            <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Study Materials</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/placements"><Briefcase className="mr-2 h-4 w-4"/> Placements</Link>
+            <Link href="/placements"><Briefcase className="mr-2 h-4 w-4"/> Placements</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> Submit Feedback</Link>
+            <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> Submit Feedback</Link>
           </Button>
            <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/authenticated/student/my-performance"><BarChart3 className="mr-2 h-4 w-4"/> Performance</Link>
+            <Link href="/student/my-performance"><BarChart3 className="mr-2 h-4 w-4"/> Performance</Link>
           </Button>
         </CardContent>
       </Card>
