@@ -264,7 +264,7 @@ export default function AdminUsersPage() {
             <p className="text-muted-foreground">Manage student and faculty accounts.</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
             <Button onClick={() => handleOpenAddDialog('student')}>
               <UserPlus className="mr-2 h-5 w-5" /> Add Student
             </Button>

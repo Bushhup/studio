@@ -130,22 +130,22 @@ export default function StudentDashboardPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/student/my-marks"><GraduationCap className="mr-2 h-4 w-4"/> My Marks</Link>
+            <Link href="/authenticated/student/my-marks"><GraduationCap className="mr-2 h-4 w-4"/> My Marks</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/student/my-attendance"><ShieldCheck className="mr-2 h-4 w-4"/> My Attendance</Link>
+            <Link href="/authenticated/student/my-attendance"><ShieldCheck className="mr-2 h-4 w-4"/> My Attendance</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Study Materials</Link>
+            <Link href="/authenticated/materials"><BookOpenText className="mr-2 h-4 w-4"/> Study Materials</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/placements"><Briefcase className="mr-2 h-4 w-4"/> Placements</Link>
+            <Link href="/authenticated/placements"><Briefcase className="mr-2 h-4 w-4"/> Placements</Link>
           </Button>
           <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> Submit Feedback</Link>
+            <Link href="/authenticated/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> Submit Feedback</Link>
           </Button>
            <Button asChild variant="outline" className="justify-start text-left">
-            <Link href="/student/my-performance"><BarChart3 className="mr-2 h-4 w-4"/> Performance</Link>
+            <Link href="/authenticated/student/my-performance"><BarChart3 className="mr-2 h-4 w-4"/> Performance</Link>
           </Button>
         </CardContent>
       </Card>

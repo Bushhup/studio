@@ -74,7 +74,7 @@ export default function LandingPage() {
   return (
     <div className="bg-background text-foreground">
       {/* Hero Section */}
-      <section className="flex min-h-screen flex-col justify-center py-20 sm:py-32">
+      <section className="flex flex-col justify-center min-h-screen py-20 sm:py-32">
         <div className="container mx-auto px-4 text-center">
           <GraduationCap className="h-20 w-20 mx-auto text-primary mb-6" />
           <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tight text-primary hover:text-primary/90 transition-colors">
@@ -83,7 +83,7 @@ export default function LandingPage() {
           <p className="mt-6 max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
             A unified platform for students, faculty, and administration to streamline communication, manage academics, and foster growth.
           </p>
-          <div className="mt-10 flex justify-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild size="lg">
                 <Link href="/login">Portal Login</Link>
             </Button>

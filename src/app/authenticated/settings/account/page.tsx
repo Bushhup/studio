@@ -41,6 +41,7 @@ export default function AccountSettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -117,7 +118,7 @@ export default function AccountSettingsPage() {
             <CardDescription>Update your personal details and profile picture.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-primary/50">
                         <AvatarImage src={avatarPreview || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="user avatar" />
@@ -140,7 +141,7 @@ export default function AccountSettingsPage() {
                         onChange={handleAvatarChange}
                     />
                 </div>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 flex-grow">
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 flex-grow w-full">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="name">Full Name</Label>

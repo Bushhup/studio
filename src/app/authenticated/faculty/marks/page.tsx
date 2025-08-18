@@ -142,7 +142,7 @@ export default function FacultyMarksPage() {
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4">
              <Select onValueChange={handleSubjectChange} disabled={isLoadingSubjects}>
-              <SelectTrigger className="w-full sm:w-[300px]">
+              <SelectTrigger className="w-full sm:flex-1">
                 <SelectValue placeholder={isLoadingSubjects ? "Loading subjects..." : "Select subject..."} />
               </SelectTrigger>
               <SelectContent>
@@ -156,7 +156,7 @@ export default function FacultyMarksPage() {
               </SelectContent>
             </Select>
             <Input 
-              className="w-full sm:w-[300px]" 
+              className="w-full sm:flex-1" 
               placeholder="Enter assessment name (e.g., Unit Test 1)" 
               disabled={!selectedSubjectId} 
               value={assessmentName}
