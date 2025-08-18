@@ -368,6 +368,7 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         revalidatePath('/admin/users');
         revalidatePath('/admin/classes');
         revalidatePath('/admin/subjects');
+        revalidatePath('/settings/account');
         return { success: true, message: "User updated successfully." };
 
     } catch (error) {
