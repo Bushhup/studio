@@ -74,7 +74,7 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
   const filteredNavItems = navItems.map(item => {
     let finalHref = item.href;
     if (item.isDashboardLink) {
-        finalHref = `/${userRole}/dashboard`;
+        finalHref = `/${userRole}${item.href}`;
     }
     return { ...item, href: finalHref };
   }).filter(item => item.roles.includes(userRole));

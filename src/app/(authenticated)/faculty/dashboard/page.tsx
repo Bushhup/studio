@@ -468,16 +468,16 @@ export default function FacultyDashboardPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
+                    <Link href="/authenticated/faculty/marks"><ClipboardList className="mr-2 h-4 w-4"/> Enter Marks</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
+                    <Link href="/authenticated/faculty/attendance"><ListChecks className="mr-2 h-4 w-4"/> Mark Attendance</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
+                    <Link href="/authenticated/materials"><BookOpenText className="mr-2 h-4 w-4"/> Upload Material</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-start text-left">
-                    <Link href="/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
+                    <Link href="/authenticated/feedback"><MessageSquareText className="mr-2 h-4 w-4"/> View Feedback</Link>
                 </Button>
                 </CardContent>
             </Card>
@@ -550,5 +550,3 @@ export default function FacultyDashboardPage() {
     </>
   );
 }
-
-    

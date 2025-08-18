@@ -31,7 +31,7 @@ import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
-import { getStudentBioForProfile } from '@/app/authenticated/settings/account/actions';
+import { getStudentBioForProfile } from '@/app/(authenticated)/settings/account/actions';
 import { IStudentBio } from '@/models/studentBio.model';
 import { Label } from '../ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
