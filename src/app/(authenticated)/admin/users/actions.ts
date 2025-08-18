@@ -39,6 +39,7 @@ const updateUserSchema = z.object({
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
   handlingSubjects: z.array(z.string()).optional(), // For faculty
+  avatar: z.string().optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
@@ -191,6 +192,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     password: 1,
                     role: 1,
                     rollNo: 1,
+                    avatar: 1,
                     classId: 1,
                     className: '$classDetails.name',
                     inchargeOfClasses: {
@@ -218,6 +220,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             password: user.password,
             role: user.role,
             rollNo: user.rollNo,
+            avatar: user.avatar,
             className: user.className || 'N/A',
             classId: user.classId?.toString(),
             inchargeOfClasses: (user.inchargeOfClasses || []).map(c => ({...c, id: c.id.toString()})),
@@ -326,6 +329,10 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
             if (data.classId) {
                 userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
             }
+        }
+
+        if (data.avatar) {
+          userToUpdate.avatar = data.avatar;
         }
         
         await userToUpdate.save();

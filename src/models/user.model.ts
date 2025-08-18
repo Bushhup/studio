@@ -8,6 +8,7 @@ export interface IUser extends UserType, Document {
   password?: string;
   rollNo?: string;
   classId?: mongoose.Types.ObjectId;
+  avatar?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -21,6 +22,7 @@ const UserSchema = new Schema<IUser>({
   password: { type: String, required: true, select: false },
   rollNo: { type: String, required: false },
   classId: { type: Schema.Types.ObjectId, ref: 'Class', required: false },
+  avatar: { type: String, required: false },
 }, {
   collection: 'users'
 });

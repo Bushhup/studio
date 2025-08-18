@@ -32,7 +32,8 @@ export const authOptions: NextAuthOptions = {
                     id: 'admin_user_placeholder',
                     name: 'Admin User',
                     email: 'admin@mca-dept.edu',
-                    role: 'admin'
+                    role: 'admin',
+                    image: null,
                 };
             }
             throw new Error("Invalid admin credentials");
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role as Role,
+            image: user.avatar,
             classId: user.classId ? user.classId.toString() : undefined,
         };
       },
@@ -71,6 +73,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        token.image = user.image;
         token.classId = (user as any).classId;
       }
       return token;
@@ -79,6 +82,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        session.user.image = token.image as string | null;
         session.user.classId = token.classId as string | undefined;
       }
       return session;
