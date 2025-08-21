@@ -307,8 +307,7 @@ export default function FacultyDashboardPage() {
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     
     const [selectedStudent, setSelectedStudent] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
-    const [studentBio, setStudentBio] = useState<IStudentBio | null>(null);
-    const [isBioLoading, setIsBioLoading] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     
     const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
     const todaySchedule = schedule[dayOfWeek] || [];
@@ -359,15 +358,7 @@ export default function FacultyDashboardPage() {
     const handleStudentClick = async (student: Pick<IUser, 'id' | 'name'>) => {
         setSelectedStudent(student);
         setIsModalOpen(false); // Close the class list dialog
-        setIsBioLoading(true);
-        try {
-            const bio = await getStudentBioForProfile(student.id);
-            setStudentBio(bio);
-        } catch {
-            toast({ title: "Error", description: "Failed to fetch student profile.", variant: "destructive"});
-        } finally {
-            setIsBioLoading(false);
-        }
+        setIsProfileOpen(true);
     };
 
     const getModalData = () => {
@@ -542,10 +533,8 @@ export default function FacultyDashboardPage() {
         
         <StudentProfileDialog
             student={selectedStudent}
-            bioData={studentBio}
-            isLoading={isBioLoading}
-            isOpen={!!selectedStudent}
-            setIsOpen={() => setSelectedStudent(null)}
+            isOpen={isProfileOpen}
+            setIsOpen={() => { setIsProfileOpen(false); setSelectedStudent(null); }}
         />
     </>
   );

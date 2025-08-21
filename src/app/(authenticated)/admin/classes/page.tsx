@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { IUser } from '@/models/user.model';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { School, PlusCircle, Users, MoreHorizontal, Edit, Trash2, CalendarClock, Save, Clock, Coffee, NotebookText } from "lucide-react";
+import { School, PlusCircle, Users, MoreHorizontal, Edit, Trash2, CalendarClock, Save, Clock, Coffee, NotebookText, User, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -29,13 +29,113 @@ import { getUsersByRole } from '../users/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getStudentBioForProfile } from '../../settings/account/actions';
+import { IStudentBio } from '@/models/studentBio.model';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
 
 const classSchema = z.object({
   name: z.string().min(3, "Class name must be at least 3 characters."),
   academicYear: z.string().regex(/^\d{4}-\d{4}$/, "Academic year must be in YYYY-YYYY format."),
   inchargeFaculty: z.string().min(1, "You must select an in-charge faculty."),
 });
+
+const getInitials = (name: string) => {
+    if (!name) return '';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
+};
+
+const formatAadhar = (value?: string) => {
+    if (!value) return '';
+    const cleaned = value.replace(/\D/g, '').substring(0, 12);
+    let result = '';
+    for (let i = 0; i < cleaned.length; i++) {
+        if (i > 0 && i % 4 === 0) {
+            result += ' ';
+        }
+        result += cleaned[i];
+    }
+    return result;
+};
+
+
+function StudentProfileDialog({ student, isOpen, setIsOpen }: {
+    student: Pick<IUser, 'id' | 'name'> | null,
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void,
+}) {
+    const [bioData, setBioData] = useState<IStudentBio | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && student) {
+            setIsLoading(true);
+            getStudentBioForProfile(student.id)
+                .then(setBioData)
+                .finally(() => setIsLoading(false));
+        }
+    }, [isOpen, student]);
+
+    if (!student) return null;
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-primary">
+                            <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
+                            <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <DialogTitle className="font-headline text-2xl">Student Profile: {student.name}</DialogTitle>
+                            {bioData?.email && <DialogDescription>{bioData.email}</DialogDescription>}
+                        </div>
+                    </div>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] p-1">
+                {isLoading ? (
+                     <div className="flex justify-center items-center h-48">
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse theme-gradient-stroke" fill="none" stroke="url(#theme-gradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                     </div>
+                ) : bioData ? (
+                    <div className="space-y-4 text-sm p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                            <div><Label>Email</Label><p className="text-muted-foreground">{bioData.email || 'N/A'}</p></div>
+                            <div><Label>Date of Birth</Label><p className="text-muted-foreground">{bioData.dob ? format(new Date(bioData.dob), "PPP") : 'N/A'}</p></div>
+                            <div><Label>Mobile Number</Label><p className="text-muted-foreground">{bioData.mobileNumber || 'N/A'}</p></div>
+                            <div><Label>Gender</Label><p className="text-muted-foreground capitalize">{bioData.gender || 'N/A'}</p></div>
+                            <div className="lg:col-span-2"><Label>Aadhar Number</Label><p className="text-muted-foreground">{formatAadhar(bioData.aadharNumber) || 'N/A'}</p></div>
+                            <div className="md:col-span-2 lg:col-span-3"><Label>Address</Label><p className="text-muted-foreground">{bioData.address || 'N/A'}</p></div>
+                            <div><Label>Father's Name</Label><p className="text-muted-foreground">{bioData.fatherName || 'N/A'}</p></div>
+                            <div><Label>Father's Occupation</Label><p className="text-muted-foreground">{bioData.fatherOccupation || 'N/A'}</p></div>
+                            <div><Label>Father's Mobile</Label><p className="text-muted-foreground">{bioData.fatherMobileNumber || 'N/A'}</p></div>
+                            <div><Label>Religion</Label><p className="text-muted-foreground">{bioData.religion || 'N/A'}</p></div>
+                            <div><Label>Community</Label><p className="text-muted-foreground">{bioData.community || 'N/A'}</p></div>
+                            <div><Label>Caste</Label><p className="text-muted-foreground">{bioData.caste || 'N/A'}</p></div>
+                            <div><Label>Admission Quota</Label><p className="text-muted-foreground capitalize">{bioData.quota || 'N/A'}</p></div>
+                        </div>
+                    </div>
+                ) : (
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>No Bio-data Found</AlertTitle>
+                        <AlertDescription>This student has not yet filled out their bio-data information.</AlertDescription>
+                    </Alert>
+                )}
+                </ScrollArea>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function ClassForm({ 
   setIsOpen, 
@@ -237,19 +337,21 @@ function StudentListDialog({
   setIsOpen,
   classInfo,
   students,
-  isLoading
+  isLoading,
+  onStudentClick
 }: {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   classInfo: IClassWithFacultyAndStudentCount | null;
   students: Pick<IUser, 'id' | 'name' | 'rollNo'>[];
   isLoading: boolean;
+  onStudentClick: (student: Pick<IUser, 'id' | 'name'>) => void;
 }) {
   if (!classInfo) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-headline flex items-center gap-2">
             <Users className="h-5 w-5" /> Student List - {classInfo.name}
@@ -281,14 +383,29 @@ function StudentListDialog({
               </svg>
             </div>
           ) : students.length > 0 ? (
-            <ScrollArea className="h-72 w-full rounded-md border p-4">
-              <ul className="space-y-2">
-                {students.map((student) => (
-                  <li key={student.id} className="text-sm">
-                    <span className="font-semibold w-12 inline-block">{student.rollNo || 'N/A'}.</span> {student.name}
-                  </li>
-                ))}
-              </ul>
+            <ScrollArea className="h-72 w-full rounded-md border">
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead className="w-24">Roll No.</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {students.map((student) => (
+                          <TableRow key={student.id}>
+                              <TableCell className="font-medium">{student.rollNo || 'N/A'}</TableCell>
+                              <TableCell>{student.name}</TableCell>
+                              <TableCell className="text-right">
+                                  <Button variant="ghost" size="sm" onClick={() => onStudentClick(student)}>
+                                      <User className="mr-2 h-4 w-4"/> Profile
+                                  </Button>
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
             </ScrollArea>
           ) : (
             <p className="text-center text-muted-foreground py-10">No students found in this class.</p>
@@ -472,6 +589,7 @@ export default function AdminClassesPage() {
     const [classToDelete, setClassToDelete] = useState<IClassWithFacultyAndStudentCount | null>(null);
 
     const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name' | 'rollNo'>[]>([]);
+    const [selectedStudentForProfile, setSelectedStudentForProfile] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
     
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
@@ -537,6 +655,11 @@ export default function AdminClassesPage() {
             toast({ title: "Error", description: result.message, variant: "destructive" });
         }
         setClassToDelete(null);
+    };
+
+    const handleStudentProfileClick = (student: Pick<IUser, 'id' | 'name'>) => {
+        setSelectedStudentForProfile(student);
+        setIsStudentListDialogOpen(false); // Close list to show profile
     };
 
   return (
@@ -616,6 +739,13 @@ export default function AdminClassesPage() {
         classInfo={selectedClassForStudents}
         students={studentsInClass}
         isLoading={isLoadingStudents}
+        onStudentClick={handleStudentProfileClick}
+      />
+      
+      <StudentProfileDialog
+          student={selectedStudentForProfile}
+          isOpen={!!selectedStudentForProfile}
+          setIsOpen={() => setSelectedStudentForProfile(null)}
       />
       
       <TimetableDialog 

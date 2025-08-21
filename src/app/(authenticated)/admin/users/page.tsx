@@ -75,7 +75,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
      <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{isFacultyRole ? 'Username' : 'Roll No.'}</TableHead>
+          <TableHead>{isFacultyRole ? 'Faculty Name' : 'Roll No.'}</TableHead>
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Password</TableHead>
@@ -96,7 +96,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
             <TableCell className="font-medium">
               {isFacultyRole ? user.name : user.rollNo || 'N/A'}
             </TableCell>
-            {!isFacultyRole && <TableCell>{user.name}</TableCell>}
+            {isFacultyRole ? <TableCell>{user.name}</TableCell> : <TableCell>{user.name}</TableCell>}
             <TableCell>{user.email}</TableCell>
             <TableCell>
               <PasswordCell password={user.password} />
@@ -154,7 +154,7 @@ function UsersTable({ users, onSelectEdit, onSelectDelete, role }: { users: Exte
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={isFacultyRole ? 6 : 5} className="h-24 text-center">
+            <TableCell colSpan={isFacultyRole ? 7 : 6} className="h-24 text-center">
               No users found.
             </TableCell>
           </TableRow>
