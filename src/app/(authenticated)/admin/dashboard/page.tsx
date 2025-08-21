@@ -62,9 +62,9 @@ function ListDialog({
           ) : items.length > 0 ? (
             <ul className="space-y-2">
               {items.map((item) => (
-                <li key={item.id} className="text-sm">
-                  {item.rollNo && <span className="font-semibold w-12 inline-block">{item.rollNo}.</span>}
-                  {item.name}
+                <li key={item.id} className="text-sm flex items-center gap-2">
+                  {item.rollNo && <span className="font-semibold w-16 text-muted-foreground text-right shrink-0">{item.rollNo}.</span>}
+                  <span>{item.name}</span>
                   {item.date && (
                     <span className="text-muted-foreground ml-2 text-xs">
                       ({new Date(item.date).toLocaleDateString()})
