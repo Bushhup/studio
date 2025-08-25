@@ -132,7 +132,7 @@ function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }
                 <DialogHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 border-2 border-primary">
-                            <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
+                            <AvatarImage src={student?.avatar || `https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
                             <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -307,7 +307,8 @@ export default function FacultyDashboardPage() {
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     
     const [selectedStudent, setSelectedStudent] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [studentBio, setStudentBio] = useState<IStudentBio | null>(null);
+    const [isBioLoading, setIsBioLoading] = useState(false);
     
     const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
     const todaySchedule = schedule[dayOfWeek] || [];
@@ -358,7 +359,15 @@ export default function FacultyDashboardPage() {
     const handleStudentClick = async (student: Pick<IUser, 'id' | 'name'>) => {
         setSelectedStudent(student);
         setIsModalOpen(false); // Close the class list dialog
-        setIsProfileOpen(true);
+        setIsBioLoading(true);
+        try {
+            const bio = await getStudentBioForProfile(student.id);
+            setStudentBio(bio);
+        } catch {
+            toast({ title: "Error", description: "Failed to fetch student profile.", variant: "destructive"});
+        } finally {
+            setIsBioLoading(false);
+        }
     };
 
     const getModalData = () => {
@@ -533,8 +542,10 @@ export default function FacultyDashboardPage() {
         
         <StudentProfileDialog
             student={selectedStudent}
-            isOpen={isProfileOpen}
-            setIsOpen={() => { setIsProfileOpen(false); setSelectedStudent(null); }}
+            bioData={studentBio}
+            isLoading={isBioLoading}
+            isOpen={!!selectedStudent}
+            setIsOpen={() => setSelectedStudent(null)}
         />
     </>
   );
