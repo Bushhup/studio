@@ -119,7 +119,7 @@ function ListDialog({
 }
 
 function StudentProfileDialog({ student, bioData, isLoading, isOpen, setIsOpen }: {
-    student: Pick<IUser, 'id' | 'name'> | null,
+    student: Pick<IUser, 'id' | 'name' | 'avatar'> | null,
     bioData: IStudentBio | null,
     isLoading: boolean,
     isOpen: boolean,
@@ -185,10 +185,10 @@ function ClassStudentDialog({ isOpen, setIsOpen, classes, isLoading, onStudentCl
     setIsOpen: (open: boolean) => void;
     classes: ClassInfo[];
     isLoading: boolean;
-    onStudentClick: (student: Pick<IUser, 'id' | 'name'>) => void;
+    onStudentClick: (student: Pick<IUser, 'id' | 'name' | 'avatar'>) => void;
 }) {
     const { toast } = useToast();
-    const [studentsByClass, setStudentsByClass] = useState<Record<string, Pick<IUser, 'id'|'name'|'rollNo'>[]>>({});
+    const [studentsByClass, setStudentsByClass] = useState<Record<string, Pick<IUser, 'id'|'name'|'rollNo'|'avatar'>[]>>({});
     const [loadingClass, setLoadingClass] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -306,7 +306,7 @@ export default function FacultyDashboardPage() {
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingModal, setIsLoadingModal] = useState(false);
     
-    const [selectedStudent, setSelectedStudent] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
+    const [selectedStudent, setSelectedStudent] = useState<Pick<IUser, 'id' | 'name' | 'avatar'> | null>(null);
     const [studentBio, setStudentBio] = useState<IStudentBio | null>(null);
     const [isBioLoading, setIsBioLoading] = useState(false);
     
@@ -356,7 +356,7 @@ export default function FacultyDashboardPage() {
         }
     };
     
-    const handleStudentClick = async (student: Pick<IUser, 'id' | 'name'>) => {
+    const handleStudentClick = async (student: Pick<IUser, 'id' | 'name' | 'avatar'>) => {
         setSelectedStudent(student);
         setIsModalOpen(false); // Close the class list dialog
         setIsBioLoading(true);
