@@ -280,6 +280,7 @@ export default function HomePage() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   
   const { data: session } = useSession();
+  const { toast } = useToast();
   const user = session?.user;
   const role = user?.role;
 
@@ -390,7 +391,10 @@ export default function HomePage() {
                 </DialogHeader>
                 <AddEventForm 
                     setIsOpen={setIsAddEventOpen} 
-                    onEventAdded={fetchPageData}
+                    onEventAdded={() => {
+                        fetchPageData();
+                        toast({ title: 'Event Added', description: 'The new event has been posted successfully.' });
+                    }}
                     classes={allClasses}
                     faculty={allFaculty}
                 />

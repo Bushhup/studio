@@ -56,6 +56,17 @@ export default function StudentDashboardPage() {
             try {
                 const notifData = await getRecentNotifications(studentId);
                 setNotifications(notifData);
+                // Here we can trigger toasts for new notifications
+                notifData.forEach((notif, index) => {
+                    // This is a simple way to show popups. A more robust system
+                    // would track which notifications the user has already "seen".
+                    setTimeout(() => {
+                         toast({
+                            title: `New ${notif.type} notification`,
+                            description: notif.message,
+                        });
+                    }, index * 500); // Stagger notifications
+                });
             } catch {
                 toast({ title: "Error", description: "Failed to load notifications.", variant: "destructive"});
             } finally {
