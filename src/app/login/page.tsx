@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft } from 'lucide-react';
+import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, useSession } from 'next-auth/react';
@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -167,15 +168,27 @@ export default function LoginPage() {
                   </div>
 
                   <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                  />
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input
+                          id="password"
+                          type={isPasswordVisible ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 h-full px-3"
+                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                      >
+                        {isPasswordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        <span className="sr-only">{isPasswordVisible ? 'Hide password' : 'Show password'}</span>
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex justify-center">
                     <Button type="submit" disabled={!username || !password || isLoggingIn} className="w-full">
