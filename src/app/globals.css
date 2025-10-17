@@ -10,7 +10,7 @@
   }
   
   body {
-    @apply font-sans; /* Use the Inter font defined in tailwind.config.ts */
+    @apply font-sans bg-background text-foreground;
   }
 
   :root {
@@ -76,15 +76,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 276 100% 70%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
 
