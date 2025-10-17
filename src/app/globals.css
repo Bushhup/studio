@@ -10,7 +10,7 @@
   }
   
   body {
-    @apply font-body; /* Use the Inter font defined in tailwind.config.ts */
+    @apply font-sans; /* Use the Inter font defined in tailwind.config.ts */
   }
 
   :root {
@@ -26,8 +26,8 @@
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 276 80% 96%;
+    --accent-foreground: 276 90% 30%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
