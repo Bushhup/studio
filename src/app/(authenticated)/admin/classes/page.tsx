@@ -66,7 +66,7 @@ const formatAadhar = (value?: string) => {
 
 
 function StudentProfileDialog({ student, isOpen, setIsOpen }: {
-    student: Pick<IUser, 'id' | 'name'> | null,
+    student: Pick<IUser, 'id' | 'name' | 'avatar'> | null,
     isOpen: boolean,
     setIsOpen: (open: boolean) => void,
 }) {
@@ -89,7 +89,7 @@ function StudentProfileDialog({ student, isOpen, setIsOpen }: {
                 <DialogHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 border-2 border-primary">
-                            <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
+                            <AvatarImage src={student.avatar || `https://placehold.co/100x100.png?text=${getInitials(student.name)}`} alt={student.name} data-ai-hint="student avatar" />
                             <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -343,9 +343,9 @@ function StudentListDialog({
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   classInfo: IClassWithFacultyAndStudentCount | null;
-  students: Pick<IUser, 'id' | 'name' | 'rollNo'>[];
+  students: Pick<IUser, 'id' | 'name' | 'rollNo' | 'avatar'>[];
   isLoading: boolean;
-  onStudentClick: (student: Pick<IUser, 'id' | 'name'>) => void;
+  onStudentClick: (student: Pick<IUser, 'id' | 'name' | 'avatar'>) => void;
 }) {
   if (!classInfo) return null;
 
@@ -588,8 +588,8 @@ export default function AdminClassesPage() {
     const [classToEdit, setClassToEdit] = useState<IClassWithFacultyAndStudentCount | null>(null);
     const [classToDelete, setClassToDelete] = useState<IClassWithFacultyAndStudentCount | null>(null);
 
-    const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name' | 'rollNo'>[]>([]);
-    const [selectedStudentForProfile, setSelectedStudentForProfile] = useState<Pick<IUser, 'id' | 'name'> | null>(null);
+    const [studentsInClass, setStudentsInClass] = useState<Pick<IUser, 'id' | 'name' | 'rollNo' | 'avatar'>[]>([]);
+    const [selectedStudentForProfile, setSelectedStudentForProfile] = useState<Pick<IUser, 'id' | 'name' | 'avatar'> | null>(null);
     
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
@@ -657,7 +657,7 @@ export default function AdminClassesPage() {
         setClassToDelete(null);
     };
 
-    const handleStudentProfileClick = (student: Pick<IUser, 'id' | 'name'>) => {
+    const handleStudentProfileClick = (student: Pick<IUser, 'id' | 'name' | 'avatar'>) => {
         setSelectedStudentForProfile(student);
         setIsStudentListDialogOpen(false); // Close list to show profile
     };
@@ -779,3 +779,5 @@ export default function AdminClassesPage() {
     </div>
   );
 }
+
+    
