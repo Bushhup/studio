@@ -103,3 +103,20 @@ You can log in using one of the three roles:
 - **Faculty/Student**: Use the "User Management" section in the admin dashboard to create faculty and student accounts.
 
 You're all set! The project should now be running perfectly on your local machine.
+
+---
+
+## Troubleshooting
+
+### CSS Styles Not Loading on `localhost`
+
+If you run the project locally and notice that the styling is missing, it might be due to a caching issue with Next.js or Tailwind CSS. Follow these steps to resolve it:
+
+1.  **Stop the development server** (Ctrl+C in the terminal).
+2.  **Delete the `.next` directory** in the root of your project. This folder is a cache created by Next.js.
+3.  **Restart the development server**:
+    ```bash
+    npm run dev
+    ```
+
+This process forces Next.js to rebuild the project from scratch, which should correctly process the CSS and apply all the styles.
