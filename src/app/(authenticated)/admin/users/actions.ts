@@ -223,8 +223,8 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             avatar: user.avatar,
             className: user.className || 'N/A',
             classId: user.classId?.toString(),
-            inchargeOfClasses: (user.inchargeOfClasses || []).map(c => ({...c, id: c.id.toString()})),
-            handlingSubjects: (user.handlingSubjects || []).map(s => ({...s, id: s.id.toString()}))
+            inchargeOfClasses: (user.inchargeOfClasses || []).map((c: any) => ({...c, id: c.id.toString()})),
+            handlingSubjects: (user.handlingSubjects || []).map((s: any) => ({...s, id: s.id.toString()}))
         }));
 
         return plainUsers as ExtendedUser[];
@@ -264,6 +264,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
         revalidatePath('/admin/users');
         revalidatePath('/admin/classes');
         revalidatePath('/admin/subjects');
+        revalidatePath('/settings/account');
         return { success: true, message: `User deleted successfully.` };
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -384,5 +385,3 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         return { success: false, message: 'An unknown error occurred while updating the user.' };
     }
 }
-
-    
