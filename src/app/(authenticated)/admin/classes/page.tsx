@@ -379,7 +379,7 @@ function TimetableDialog({ isOpen, setIsOpen, classInfo }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-6xl">
+      <DialogContent className="max-w-6xl min-w-[50vw] resize-x overflow-auto">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">Timetable for {classInfo.name}</DialogTitle>
           <DialogDescription>Edit the timetable below</DialogDescription>
@@ -646,5 +646,3 @@ export default function AdminClassesPage() {
     </div>
   );
 }
-
-    
