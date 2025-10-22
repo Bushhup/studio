@@ -1,3 +1,4 @@
+
 'use server';
 
 import { connectToDB } from '@/lib/mongoose';
@@ -121,26 +122,26 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
 
 export interface IClassWithFacultyAndStudentCount extends Omit<IClass, 'inchargeFaculty'> {
   studentCount: number;
-  inchargeFaculty: { id: string; name: string } | null;
+  inchargeFaculty: { id: string; name: string; } | null;
 }
 
 export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> {
   try {
       await connectToDB();
 
-      const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean();
+      const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean<IClass[]>();
 
       const classesWithDetails = await Promise.all(classes.map(async (c) => {
           const studentCount = await UserModel.countDocuments({ classId: c._id, role: 'student' });
           const faculty = c.inchargeFaculty as any;
 
           return {
-              id: (c._id as mongoose.Types.ObjectId).toString(),
+              id: c._id.toString(),
               name: c.name,
               academicYear: c.academicYear,
               studentCount,
               inchargeFaculty: faculty ? {
-                  id: (faculty._id as mongoose.Types.ObjectId).toString(),
+                  id: faculty._id.toString(),
                   name: faculty.name
               } : null
           };
@@ -233,3 +234,5 @@ export async function saveTimetable(classId: string, schedule: TimetableData): P
       return { success: false, message: error.message || 'An unknown error occurred.' };
   }
 }
+
+    
