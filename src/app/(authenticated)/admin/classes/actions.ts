@@ -132,8 +132,7 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
 }
 
 
-export interface IClassWithFacultyAndStudentCount extends Omit<IClass, 'inchargeFaculty'> {
-    _id: mongoose.Types.ObjectId;
+export interface IClassWithFacultyAndStudentCount extends IClass {
     studentCount: number;
     inchargeFaculty: {
         id: string;
@@ -154,16 +153,14 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
                 const faculty = c.inchargeFaculty as any;
 
                 return {
-                    _id: c._id,
+                    ...c,
                     id: c._id.toString(),
-                    name: c.name,
-                    academicYear: c.academicYear,
                     studentCount: studentCount,
                     inchargeFaculty: faculty ? {
                         id: faculty._id.toString(),
                         name: faculty.name
                     } : null
-                };
+                } as IClassWithFacultyAndStudentCount;
             })
         );
         
@@ -182,10 +179,12 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
             return [];
         }
 
+        type StudentForClass = { _id: mongoose.Types.ObjectId; name: string; rollNo?: string; avatar?: string; };
+
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
             .sort({ rollNo: 1, name: 1 })
             .select('_id name rollNo avatar')
-            .lean<IUser[]>();
+            .lean<StudentForClass[]>();
         
         return students.map(student => ({
             id: student._id.toString(),
