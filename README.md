@@ -161,7 +161,14 @@ firebase init
 - When prompted, choose **"App Hosting"** by pressing the spacebar, then hit Enter.
 - Select an existing Firebase project or create a new one.
 
-### 4. Deploy!
+### 4. Enable Web Frameworks Experiment
+
+Run the following command to enable the necessary deployment features:
+```bash
+firebase experiments:enable webframeworks
+```
+
+### 5. Deploy!
 
 After initialization is complete, deploy your application with this simple command:
 ```bash
