@@ -144,8 +144,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
     try {
         await connectToDB();
         
-        // Simpler, more direct approach
-        const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean();
+        const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean<IClass[]>();
         
         const classesWithDetails = await Promise.all(
             classes.map(async (c) => {
@@ -174,7 +173,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
     }
 }
 
-export async function getStudentsByClass(classId: string): Promise<Pick<IUser, 'id' | 'name' | 'rollNo'>[]> {
+export async function getStudentsByClass(classId: string): Promise<Pick<IUser, 'id' | 'name' | 'rollNo' | 'avatar'>[]> {
     try {
         await connectToDB();
         if (!mongoose.Types.ObjectId.isValid(classId)) {
@@ -183,13 +182,14 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
 
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
             .sort({ rollNo: 1, name: 1 })
-            .select('_id name rollNo')
+            .select('_id name rollNo avatar')
             .lean();
         
         return students.map(student => ({
             id: student._id.toString(),
             name: student.name,
             rollNo: student.rollNo,
+            avatar: student.avatar,
         }));
 
     } catch (error) {
