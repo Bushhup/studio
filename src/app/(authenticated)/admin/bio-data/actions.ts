@@ -3,7 +3,7 @@
 
 import { connectToDB } from '@/lib/mongoose';
 import StudentBioModel, { IStudentBio } from '@/models/studentBio.model';
-import UserModel from '@/models/user.model';
+import UserModel, { IUser } from '@/models/user.model';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import mongoose from 'mongoose';
@@ -117,10 +117,17 @@ export async function getStudentBio(studentId: string): Promise<Partial<StudentB
     }
 }
 
+type StudentForBioData = {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    email: string;
+    rollNo?: string;
+}
+
 export async function getStudentsForBioData(): Promise<{id: string, name: string, email: string, rollNo?: string}[]> {
     try {
         await connectToDB();
-        const students = await UserModel.find({ role: 'student' }).select('_id name email rollNo').sort({ rollNo: 1, name: 1 }).lean();
+        const students = await UserModel.find({ role: 'student' }).select('_id name email rollNo').sort({ rollNo: 1, name: 1 }).lean<StudentForBioData[]>();
         return students.map(s => ({
             id: s._id.toString(),
             name: s.name,
