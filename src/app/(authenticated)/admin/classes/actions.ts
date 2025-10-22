@@ -133,6 +133,7 @@ export async function deleteClass(classId: string): Promise<{ success: boolean; 
 
 
 export interface IClassWithFacultyAndStudentCount extends Omit<IClass, 'inchargeFaculty'> {
+    _id: mongoose.Types.ObjectId;
     studentCount: number;
     inchargeFaculty: {
         id: string;
@@ -153,6 +154,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
                 const faculty = c.inchargeFaculty as any;
 
                 return {
+                    _id: c._id,
                     id: c._id.toString(),
                     name: c.name,
                     academicYear: c.academicYear,
@@ -183,7 +185,7 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
         const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
             .sort({ rollNo: 1, name: 1 })
             .select('_id name rollNo avatar')
-            .lean();
+            .lean<IUser[]>();
         
         return students.map(student => ({
             id: student._id.toString(),
@@ -256,3 +258,5 @@ export async function saveTimetable(classId: string, schedule: TimetableData): P
         return { success: false, message: 'An unknown error occurred.' };
     }
 }
+
+    

@@ -144,8 +144,7 @@ export async function getClasses(): Promise<IClassWithFacultyAndStudentCount[]> 
     try {
         await connectToDB();
         
-        // Simpler, more direct approach
-        const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean();
+        const classes = await ClassModel.find().populate('inchargeFaculty', 'name').lean<IClass[]>();
         
         const classesWithDetails = await Promise.all(
             classes.map(async (c) => {
