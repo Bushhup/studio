@@ -106,6 +106,72 @@ You're all set! The project should now be running perfectly on your local machin
 
 ---
 
+## Pushing to GitHub
+
+To keep your code safe and collaborate with others, you should store it in a GitHub repository.
+
+1.  **Initialize Git**: If you haven't already, initialize a git repository in your project folder.
+    ```bash
+    git init
+    ```
+
+2.  **Create a Repository on GitHub**: Go to [GitHub](https://github.com/new) and create a new repository. Do **not** initialize it with a README, .gitignore, or license file.
+
+3.  **Add and Commit Your Code**: Stage all your files and commit them.
+    ```bash
+    git add .
+    git commit -m "Initial commit of MCA Department project"
+    ```
+
+4.  **Connect to GitHub and Push**: Link your local repository to the one on GitHub and push your code.
+    ```bash
+    # Replace <your-github-username> and <your-repo-name>
+    git remote add origin https://github.com/<your-github-username>/<your-repo-name>.git
+    git branch -M main
+    git push -u origin main
+    ```
+
+---
+
+## Deploying the Project
+
+To make your project live on the internet, you can deploy it using Firebase App Hosting.
+
+### 1. Install the Firebase CLI
+
+If you don't have it installed, open your terminal and run:
+```bash
+npm install -g firebase-tools
+```
+
+### 2. Login to Firebase
+
+Log in to your Google account through the Firebase CLI:
+```bash
+firebase login
+```
+
+### 3. Initialize Firebase
+
+In your project's root directory, run the initialization command:
+```bash
+firebase init
+```
+
+- When prompted, choose **"App Hosting"** by pressing the spacebar, then hit Enter.
+- Select an existing Firebase project or create a new one.
+
+### 4. Deploy!
+
+After initialization is complete, deploy your application with this simple command:
+```bash
+firebase deploy
+```
+
+Once the deployment is finished, the terminal will provide you with the live URL for your project. That's it! Your site is now live.
+
+---
+
 ## Troubleshooting
 
 ### CSS Styles Not Loading on `localhost`
