@@ -7,6 +7,7 @@ import UserModel from '@/models/user.model';
 import MarkModel from '@/models/mark.model';
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
+import { ISubject } from '@/models/subject.model';
 
 export async function getSubjectsForFaculty(facultyId: string) {
   if (!mongoose.Types.ObjectId.isValid(facultyId)) {
@@ -17,15 +18,18 @@ export async function getSubjectsForFaculty(facultyId: string) {
     const facultyObjectId = new mongoose.Types.ObjectId(facultyId);
     
     const subjects = await SubjectModel.find({ facultyId: facultyObjectId })
-      .populate('classId', 'name')
-      .lean();
+      .populate<{ classId: { name: string } | null }>('classId', 'name')
+      .lean<ISubject[]>();
     
-    return subjects.map(s => ({
-      id: s._id.toString(),
-      name: s.name,
-      classId: (s.classId as any)._id.toString(),
-      className: (s.classId as any).name,
-    }));
+    return subjects.map(s => {
+      const classId = (s.classId as any)?._id;
+      return {
+        id: s._id.toString(),
+        name: s.name,
+        classId: classId ? classId.toString() : '',
+        className: (s.classId as any)?.name || 'N/A',
+      };
+    });
   } catch (error) {
     console.error("Error fetching subjects for faculty:", error);
     return [];

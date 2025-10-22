@@ -2,9 +2,7 @@
 import mongoose, { Schema, Document, models, model } from 'mongoose';
 import type { Class } from '@/types';
 
-export interface IClass extends Class, Document {
-  id: string; 
-}
+export interface IClass extends Class, Document {}
 
 const ClassSchema = new Schema<IClass>({
   name: { type: String, required: true },

@@ -72,10 +72,10 @@ export async function getSubjectsHandled(facultyId: string): Promise<SubjectInfo
     try {
         await connectToDB();
         const subjects = await SubjectModel.find({ facultyId: new mongoose.Types.ObjectId(facultyId) })
-            .populate<{ classId: { name: string } }>('classId', 'name')
+            .populate<{ classId: { name: string } | null }>('classId', 'name')
             .select('name code')
             .sort({ name: 1 })
-            .lean();
+            .lean<ISubject[]>();
         return subjects.map(s => ({
             id: s._id.toString(),
             name: s.name,
@@ -97,7 +97,7 @@ export async function getRecentFeedback(facultyId: string): Promise<FeedbackInfo
             facultyId: new mongoose.Types.ObjectId(facultyId),
             isRead: { $ne: true }
         })
-        .populate<{ subjectId: { name: string } }>('subjectId', 'name')
+        .populate<{ subjectId: { name: string } | null }>('subjectId', 'name')
         .select('feedbackText submittedDate')
         .sort({ submittedDate: -1 })
         .limit(20) // Limit to recent 20
@@ -144,7 +144,7 @@ export async function getFacultySchedule(facultyId: string): Promise<FacultySche
         const facultySubjectIds = facultySubjects.map(s => s._id.toString());
         const subjectMap = new Map(facultySubjects.map(s => [s._id.toString(), s.name]));
 
-        const allTimetables = await TimetableModel.find().populate<{ classId: { name: string } }>('classId', 'name').lean<ITimetable[]>();
+        const allTimetables = await TimetableModel.find().populate<{ classId: { name: string } | null }>('classId', 'name').lean<ITimetable[]>();
 
         const schedule: FacultySchedule = {};
 
@@ -188,5 +188,3 @@ export async function getFacultySchedule(facultyId: string): Promise<FacultySche
         return {};
     }
 }
-
-    
