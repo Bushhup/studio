@@ -1,0 +1,52 @@
+type Department @table {
+  name: String!
+  code: String!
+  description: String
+  headOfDepartment: Faculty
+}
+
+type Faculty @table {
+  department: Department
+  firstName: String!
+  lastName: String!
+  employeeId: String!
+  email: String
+  rank: String
+  officeLocation: String
+}
+
+type Course @table {
+  department: Department
+  courseCode: String!
+  title: String!
+  creditHours: Int!
+  description: String
+  prerequisites: String
+}
+
+type Student @table {
+  department: Department
+  firstName: String!
+  lastName: String!
+  studentId: String!
+  email: String
+  major: String
+  yearOfStudy: Int
+}
+
+type CourseEnrollment @table {
+  student: Student!
+  course: Course!
+  enrollmentDate: Date!
+  grade: String
+  completionDate: Date
+}
+
+type CourseOffering @table {
+  course: Course!
+  faculty: Faculty
+  term: String!
+  year: Int!
+  location: String
+  schedule: String
+}
