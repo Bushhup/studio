@@ -160,13 +160,19 @@ export async function getStudentsByClass(classId: string): Promise<Pick<IUser, '
       await connectToDB();
       if (!mongoose.Types.ObjectId.isValid(classId)) return [];
 
+      type LeanStudent = {
+        _id: mongoose.Types.ObjectId;
+        name: string;
+        rollNo?: string;
+        avatar?: string;
+      }
       const students = await UserModel.find({ classId: new mongoose.Types.ObjectId(classId), role: 'student' })
           .sort({ rollNo: 1, name: 1 })
           .select('_id name rollNo avatar')
-          .lean();
+          .lean<LeanStudent[]>();
 
       return students.map(s => ({
-          id: (s._id as mongoose.Types.ObjectId).toString(),
+          id: s._id.toString(),
           name: s.name,
           rollNo: s.rollNo,
           avatar: s.avatar,
@@ -207,7 +213,13 @@ export async function getTimetable(classId: string): Promise<TimetableData | nul
       if (!mongoose.Types.ObjectId.isValid(classId)) return null;
 
       const timetable = await TimetableModel.findOne({ classId: new mongoose.Types.ObjectId(classId) }).lean<ITimetable>();
-      return timetable ? timetable.schedule : null;
+      if (!timetable) return null;
+
+      const plainSchedule: TimetableData = {};
+      for (const day in timetable.schedule) {
+          plainSchedule[day] = timetable.schedule[day].map(subjectId => subjectId ? subjectId.toString() : null);
+      }
+      return plainSchedule;
 
   } catch (error) {
       console.error('Error fetching timetable:', error);
@@ -234,5 +246,3 @@ export async function saveTimetable(classId: string, schedule: TimetableData): P
       return { success: false, message: error.message || 'An unknown error occurred.' };
   }
 }
-
-    
