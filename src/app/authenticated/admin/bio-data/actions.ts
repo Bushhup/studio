@@ -92,7 +92,7 @@ export async function getStudentBio(studentId: string): Promise<Partial<StudentB
     }
     try {
         await connectToDB();
-        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
+        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean<IStudentBio>();
         
         if (bio) {
           const dob = bio.dob ? new Date(bio.dob) : null;

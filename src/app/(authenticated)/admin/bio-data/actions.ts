@@ -51,7 +51,7 @@ export async function saveStudentBio(data: Partial<StudentBioInput>): Promise<{ 
     const day = parseInt(data.dob_day, 10);
     updateData.dob = new Date(Date.UTC(year, monthIndex, day));
   } else {
-    updateData.$unset = { dob: "" };
+    updateData.dob = undefined;
   }
   
   delete updateData.dob_day;
@@ -92,7 +92,7 @@ export async function getStudentBio(studentId: string): Promise<Partial<StudentB
     }
     try {
         await connectToDB();
-        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean();
+        const bio = await StudentBioModel.findOne({ studentId: new mongoose.Types.ObjectId(studentId) }).lean<IStudentBio>();
         
         if (bio) {
           const dob = bio.dob ? new Date(bio.dob) : null;
