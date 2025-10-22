@@ -274,11 +274,16 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
     }
 }
 
+type UserForRole = {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    rollNo?: string;
+};
 
 export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'| 'rollNo'>[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role }).select('_id name rollNo').sort({ rollNo: 1, name: 1 }).lean();
+        const users = await UserModel.find({ role }).select('_id name rollNo').sort({ rollNo: 1, name: 1 }).lean<UserForRole[]>();
         return users.map(user => ({
             id: user._id.toString(),
             name: user.name,
@@ -379,3 +384,5 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
         return { success: false, message: 'An unknown error occurred while updating the user.' };
     }
 }
+
+    

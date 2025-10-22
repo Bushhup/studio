@@ -2,9 +2,9 @@
 'use server';
 
 import { connectToDB } from '@/lib/mongoose';
-import TimetableModel from '@/models/timetable.model';
-import UserModel from '@/models/user.model';
-import SubjectModel from '@/models/subject.model';
+import TimetableModel, { ITimetable } from '@/models/timetable.model';
+import UserModel, { IUser } from '@/models/user.model';
+import SubjectModel, { ISubject } from '@/models/subject.model';
 import mongoose from 'mongoose';
 
 export type TimetablePeriod = {
@@ -32,6 +32,18 @@ const periodsConfig = [
     { name: 'Period 8', time: '03:45 - 04:30', isBreak: false },
 ];
 
+type LeanUser = {
+  _id: mongoose.Types.ObjectId;
+  classId?: mongoose.Types.ObjectId;
+}
+
+type LeanSubject = {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  facultyId: {
+    name: string;
+  }
+}
 
 export async function getStudentTimetable(studentId: string): Promise<StudentTimetable | null> {
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
@@ -40,12 +52,12 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
     try {
         await connectToDB();
 
-        const student = await UserModel.findById(studentId).select('classId').lean();
+        const student = await UserModel.findById(studentId).select('classId').lean<LeanUser>();
         if (!student || !student.classId) {
             return null;
         }
 
-        const timetable = await TimetableModel.findOne({ classId: student.classId }).lean();
+        const timetable = await TimetableModel.findOne({ classId: student.classId }).lean<ITimetable>();
         if (!timetable) {
             return null;
         }
@@ -59,12 +71,12 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
         });
 
         const subjects = await SubjectModel.find({ _id: { $in: Array.from(subjectIds) } })
-            .populate('facultyId', 'name')
-            .lean();
+            .populate<{ facultyId: { name: string } }>('facultyId', 'name')
+            .lean<LeanSubject[]>();
         
         const subjectMap = new Map(subjects.map(s => [s._id.toString(), {
             name: s.name,
-            facultyName: (s.facultyId as any)?.name || 'N/A'
+            facultyName: s.facultyId?.name || 'N/A'
         }]));
         
         const studentTimetable: StudentTimetable = {};
@@ -105,3 +117,5 @@ export async function getStudentTimetable(studentId: string): Promise<StudentTim
         return null;
     }
 }
+
+    

@@ -4,6 +4,7 @@ import type { Class } from '@/types';
 
 export interface IClass extends Class, Document {
   id: string; 
+  _id: mongoose.Schema.Types.ObjectId;
 }
 
 const ClassSchema = new Schema<IClass>({

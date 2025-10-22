@@ -258,5 +258,3 @@ export async function saveTimetable(classId: string, schedule: TimetableData): P
         return { success: false, message: 'An unknown error occurred.' };
     }
 }
-
-    
