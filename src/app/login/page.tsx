@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Eye, EyeOff, Home } from 'lucide-react';
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, useSession } from 'next-auth/react';
@@ -83,9 +83,13 @@ export default function LoginPage() {
   };
 
   const handleBack = () => {
-    setSelectedRole(null);
-    setUsername('');
-    setPassword('');
+    if (selectedRole) {
+        setSelectedRole(null);
+        setUsername('');
+        setPassword('');
+    } else {
+        router.push('/landing');
+    }
   };
 
   if (status === 'loading' || status === 'authenticated') {
@@ -119,16 +123,15 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
         <Card className="w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-top-10 duration-500">
           <CardHeader className="text-center relative">
-            {selectedRole && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 left-4"
-                onClick={handleBack}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4"
+              onClick={handleBack}
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
             <div className="mb-4 flex justify-center">
                 <Link href="/landing">
                     <GraduationCap className="h-16 w-16 text-primary" />
@@ -141,17 +144,22 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="transition-all duration-500">
             {!selectedRole ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
-                  <Card
-                    key={role}
-                    className="p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
-                    onClick={() => handleRoleSelect(role)}
-                  >
-                    {roleIcons[role]}
-                    <p className="font-semibold capitalize">{role}</p>
-                  </Card>
-                ))}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
+                    <Card
+                      key={role}
+                      className="p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
+                      onClick={() => handleRoleSelect(role)}
+                    >
+                      {roleIcons[role]}
+                      <p className="font-semibold capitalize">{role}</p>
+                    </Card>
+                  ))}
+                </div>
+                <Button variant="outline" className="w-full" onClick={() => router.push('/landing')}>
+                  <Home className="mr-2 h-4 w-4" /> Back to Home
+                </Button>
               </div>
             ) : (
               <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in-50">
