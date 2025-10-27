@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Eye, EyeOff, Home } from 'lucide-react';
+import { GraduationCap, LogIn, UserCog, Briefcase, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import type { Role } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { signIn, useSession } from 'next-auth/react';
@@ -144,22 +144,17 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="transition-all duration-500">
             {!selectedRole ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
-                    <Card
-                      key={role}
-                      className="p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
-                      onClick={() => handleRoleSelect(role)}
-                    >
-                      {roleIcons[role]}
-                      <p className="font-semibold capitalize">{role}</p>
-                    </Card>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full" onClick={() => router.push('/landing')}>
-                  <Home className="mr-2 h-4 w-4" /> Back to Home
-                </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {(['admin', 'faculty', 'student'] as Role[]).map((role) => (
+                  <Card
+                    key={role}
+                    className="p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 ease-in-out hover:scale-105"
+                    onClick={() => handleRoleSelect(role)}
+                  >
+                    {roleIcons[role]}
+                    <p className="font-semibold capitalize">{role}</p>
+                  </Card>
+                ))}
               </div>
             ) : (
               <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in-50">
