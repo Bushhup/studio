@@ -153,3 +153,20 @@ export async function getMarksForAssessment(
         return [];
     }
 }
+
+export async function getAssessmentsForSubject(subjectId: string, classId: string): Promise<string[]> {
+    if (!mongoose.Types.ObjectId.isValid(subjectId) || !mongoose.Types.ObjectId.isValid(classId)) {
+        return [];
+    }
+    try {
+        await connectToDB();
+        const assessments = await MarkModel.find({
+            subjectId: new mongoose.Types.ObjectId(subjectId),
+            classId: new mongoose.Types.ObjectId(classId)
+        }).distinct('assessmentName');
+        return assessments.sort();
+    } catch (error) {
+        console.error("Error fetching assessments:", error);
+        return [];
+    }
+}
