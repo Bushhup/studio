@@ -93,26 +93,21 @@ export default function FacultyMarksPage() {
     try {
         const existingMarks = await getMarksForAssessment(subject.id, subject.classId, assessmentName);
         
-        setMarks(prev => {
-            const newMarks = { ...prev };
-            // Initialize all students
-            students.forEach(student => {
-                if (!newMarks[student.id]) {
-                     newMarks[student.id] = { marksObtained: null, maxMarks: 100 };
-                }
-            });
-
-            // Update with fetched marks
-            existingMarks.forEach(mark => {
-                if (newMarks[mark.studentId]) {
-                    newMarks[mark.studentId] = {
-                        marksObtained: mark.marksObtained,
-                        maxMarks: mark.maxMarks
-                    };
-                }
-            });
-            return newMarks;
+        const newMarks: MarksRecord = {};
+        const defaultMaxMarks = existingMarks.length > 0 ? existingMarks[0].maxMarks : 100;
+        
+        students.forEach(student => {
+            const foundMark = existingMarks.find(m => m.studentId === student.id);
+            if (foundMark) {
+                newMarks[student.id] = {
+                    marksObtained: foundMark.marksObtained,
+                    maxMarks: foundMark.maxMarks,
+                };
+            } else {
+                newMarks[student.id] = { marksObtained: null, maxMarks: defaultMaxMarks };
+            }
         });
+        setMarks(newMarks);
 
         if(existingMarks.length > 0) {
             toast({ title: "Marks Loaded", description: `Loaded marks for ${assessmentName}.`});
@@ -315,5 +310,3 @@ export default function FacultyMarksPage() {
     </div>
   );
 }
-
-    
