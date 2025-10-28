@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, type MarkInput } from './actions';
+import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, getMarksForAssessment, type MarkInput } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Users, Save } from "lucide-react";
+import { ClipboardList, Users, Save, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,7 @@ export default function FacultyMarksPage() {
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingMarks, setIsFetchingMarks] = useState(false);
   
   const [marks, setMarks] = useState<MarksRecord>({});
 
@@ -57,6 +58,7 @@ export default function FacultyMarksPage() {
     setSelectedSubjectId(subjectId);
     setStudents([]);
     setMarks({});
+    setAssessmentName('');
     if (!subjectId) return;
 
     const subject = subjects.find(s => s.id === subjectId);
@@ -76,6 +78,52 @@ export default function FacultyMarksPage() {
       } finally {
         setIsLoadingStudents(false);
       }
+    }
+  };
+  
+  const handleFetchMarks = async () => {
+    if (!selectedSubjectId || !assessmentName) {
+        toast({ title: 'Missing Info', description: 'Please select a subject and enter an assessment name.', variant: 'destructive' });
+        return;
+    }
+    const subject = subjects.find(s => s.id === selectedSubjectId);
+    if (!subject) return;
+
+    setIsFetchingMarks(true);
+    try {
+        const existingMarks = await getMarksForAssessment(subject.id, subject.classId, assessmentName);
+        
+        setMarks(prev => {
+            const newMarks = { ...prev };
+            // Initialize all students
+            students.forEach(student => {
+                if (!newMarks[student.id]) {
+                     newMarks[student.id] = { marksObtained: null, maxMarks: 100 };
+                }
+            });
+
+            // Update with fetched marks
+            existingMarks.forEach(mark => {
+                if (newMarks[mark.studentId]) {
+                    newMarks[mark.studentId] = {
+                        marksObtained: mark.marksObtained,
+                        maxMarks: mark.maxMarks
+                    };
+                }
+            });
+            return newMarks;
+        });
+
+        if(existingMarks.length > 0) {
+            toast({ title: "Marks Loaded", description: `Loaded marks for ${assessmentName}.`});
+        } else {
+            toast({ title: "No Existing Marks", description: `No marks found for ${assessmentName}. You can enter new marks.`, variant: 'default'});
+        }
+
+    } catch (error) {
+        toast({ title: 'Error', description: 'Could not fetch existing marks.', variant: 'destructive' });
+    } finally {
+        setIsFetchingMarks(false);
     }
   };
 
@@ -137,7 +185,7 @@ export default function FacultyMarksPage() {
       <Card>
         <CardHeader>
           <CardTitle>Marks Entry / View</CardTitle>
-          <CardDescription>Select class and subject to manage marks for an assessment.</CardDescription>
+          <CardDescription>Select a subject, then enter an assessment name to view or enter marks.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -155,13 +203,24 @@ export default function FacultyMarksPage() {
                 )}
               </SelectContent>
             </Select>
-            <Input 
-              className="w-full sm:w-[300px]" 
-              placeholder="Enter assessment name (e.g., Unit Test 1)" 
-              disabled={!selectedSubjectId} 
-              value={assessmentName}
-              onChange={(e) => setAssessmentName(e.target.value)}
-            />
+            <div className="flex w-full sm:w-auto sm:flex-grow gap-2">
+                <Input 
+                  className="flex-grow" 
+                  placeholder="Enter assessment name (e.g., Unit Test 1)" 
+                  disabled={!selectedSubjectId} 
+                  value={assessmentName}
+                  onChange={(e) => setAssessmentName(e.target.value)}
+                />
+                <Button onClick={handleFetchMarks} disabled={!assessmentName || isFetchingMarks}>
+                    {isFetchingMarks ? <svg
+                        viewBox="0 0 24 24"
+                        className="mr-2 h-4 w-4 animate-pulse"
+                        fill="none"
+                        stroke="currentColor"
+                      ><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg> : <Search className="mr-2 h-4 w-4" />}
+                    View Marks
+                </Button>
+            </div>
           </div>
 
           {isLoadingStudents ? (
@@ -189,7 +248,7 @@ export default function FacultyMarksPage() {
             <div className="space-y-4">
               <Card>
                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List for {assessmentName || 'New Assessment'}</CardTitle>
                  </CardHeader>
                  <CardContent>
                     <Table>

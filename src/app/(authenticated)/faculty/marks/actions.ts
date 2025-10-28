@@ -121,3 +121,35 @@ export async function saveOrUpdateMarks(
     return { success: false, message: 'An unknown error occurred while saving marks.' };
   }
 }
+
+export type ExistingMark = {
+  studentId: string;
+  marksObtained: number;
+  maxMarks: number;
+}
+export async function getMarksForAssessment(
+    subjectId: string, 
+    classId: string, 
+    assessmentName: string
+): Promise<ExistingMark[]> {
+    if (!mongoose.Types.ObjectId.isValid(subjectId) || !mongoose.Types.ObjectId.isValid(classId) || !assessmentName) {
+        return [];
+    }
+    try {
+        await connectToDB();
+        const marks = await MarkModel.find({
+            subjectId: new mongoose.Types.ObjectId(subjectId),
+            classId: new mongoose.Types.ObjectId(classId),
+            assessmentName
+        }).lean();
+        
+        return marks.map(mark => ({
+            studentId: mark.studentId.toString(),
+            marksObtained: mark.marksObtained,
+            maxMarks: mark.maxMarks
+        }));
+    } catch (error) {
+        console.error("Error fetching marks for assessment:", error);
+        return [];
+    }
+}
