@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 type SubjectInfo = {
   id: string;
@@ -104,17 +105,17 @@ export default function FacultyMarksPage() {
     try {
         const existingMarks = await getMarksForAssessment(subject.id, subject.classId, currentAssessmentName);
         
-        const newMarks: MarksRecord = {};
+        const newMarksState: MarksRecord = {};
         const defaultMaxMarks = existingMarks.length > 0 ? existingMarks[0].maxMarks : 100;
         
         students.forEach(student => {
             const foundMark = existingMarks.find(m => m.studentId === student.id);
-            newMarks[student.id] = {
+            newMarksState[student.id] = {
                 marksObtained: foundMark ? foundMark.marksObtained : null,
                 maxMarks: foundMark ? foundMark.maxMarks : defaultMaxMarks,
             };
         });
-        setMarks(newMarks);
+        setMarks(newMarksState);
 
         if(existingMarks.length > 0) {
             toast({ title: "Marks Loaded", description: `Loaded marks for ${currentAssessmentName}.`});
