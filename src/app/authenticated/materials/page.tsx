@@ -184,6 +184,7 @@ export default function MaterialsPage() {
 
   const handleNewMaterial = (newMaterial: StudyMaterial) => {
     setMaterials(prev => [newMaterial, ...prev]);
+    toast({ title: 'Upload Successful', description: `"${newMaterial.title}" has been added.` });
   };
 
   const filteredMaterials = materials.filter(material => 

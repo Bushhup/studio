@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Settings, Briefcase, Bell, GraduationCap, CalendarDays } from "lucide-react";
+import { Users, Settings, Briefcase, Bell, GraduationCap, CalendarDays, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getUserCounts, getUsersByRole } from "../users/actions";
 import { getUpcomingEvents } from "./actions";
@@ -13,6 +13,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { IUser } from '@/models/user.model';
 import type { AppEvent } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type ModalDataType = 'students' | 'faculty' | 'events';
 type ListItem = { id: string; name: string; date?: string; rollNo?: string; };
@@ -30,14 +32,34 @@ function ListDialog({
   items: ListItem[];
   isLoading: boolean;
 }) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchTerm) return items;
+    return items.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.rollNo && item.rollNo.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [items, searchTerm]);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>A list of all {title.toLowerCase()}.</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-72 w-full rounded-md border p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search by name or roll no..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <ScrollArea className="h-72 w-full rounded-md border">
           {isLoading ? (
              <div className="flex justify-center items-center h-full">
                 <svg
@@ -59,20 +81,29 @@ function ListDialog({
                     <path d="M6 12v5c3 3 9 3 12 0v-5" />
                 </svg>
              </div>
-          ) : items.length > 0 ? (
-            <ul className="space-y-2">
-              {items.map((item) => (
-                <li key={item.id} className="text-sm">
-                  {item.rollNo && <span className="font-semibold w-12 inline-block">{item.rollNo}.</span>}
-                  {item.name}
-                  {item.date && (
-                    <span className="text-muted-foreground ml-2 text-xs">
-                      ({new Date(item.date).toLocaleDateString()})
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+          ) : filteredItems.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {items[0]?.rollNo && <TableHead className="w-24">Roll No.</TableHead>}
+                  <TableHead>Name</TableHead>
+                  {items[0]?.date && <TableHead>Date</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.map((item) => (
+                  <TableRow key={item.id}>
+                    {item.rollNo && <TableCell className="font-medium">{item.rollNo}</TableCell>}
+                    <TableCell>{item.name}</TableCell>
+                     {item.date && (
+                        <TableCell className="text-muted-foreground text-xs">
+                          {new Date(item.date).toLocaleDateString()}
+                        </TableCell>
+                      )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <p className="text-center text-muted-foreground py-10">No items found.</p>
           )}
@@ -220,22 +251,22 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/admin/users">
+                <Link href="/authenticated/admin/users">
                   <Users className="mr-2 h-4 w-4"/> Manage Users
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/settings/account">
+                <Link href="/authenticated/settings/account">
                   <Settings className="mr-2 h-4 w-4"/> System Settings
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/placements">
+                <Link href="/authenticated/placements">
                   <Briefcase className="mr-2 h-4 w-4"/> Placement Hub
                 </Link>
               </Button>
               <Button asChild variant="outline" className="justify-start text-left">
-                <Link href="/home">
+                <Link href="/authenticated/home">
                   <Bell className="mr-2 h-4 w-4"/> Post Notice
                 </Link>
               </Button>

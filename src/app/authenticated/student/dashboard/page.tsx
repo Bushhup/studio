@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, BarChart3, ShieldCheck, BookOpenText, Briefcase, MessageSquareText, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { useSession } from 'next-auth/react';
-import { getStudentDashboardData } from "./actions";
+import { getStudentDashboardData, getRecentNotifications } from "./actions";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import type { Notification } from './actions';
+import { formatDistanceToNow } from 'date-fns';
+
 
 type DashboardData = {
     attendancePercentage: number;
@@ -28,7 +31,9 @@ export default function StudentDashboardPage() {
     recentMarkText: "N/A",
     upcomingEventsCount: 0,
   });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -44,7 +49,34 @@ export default function StudentDashboardPage() {
             }
         }
     }
+    
+    async function fetchNotifications() {
+        if (studentId) {
+            setIsLoadingNotifications(true);
+            try {
+                const notifData = await getRecentNotifications(studentId);
+                setNotifications(notifData);
+                // Here we can trigger toasts for new notifications
+                notifData.forEach((notif, index) => {
+                    // This is a simple way to show popups. A more robust system
+                    // would track which notifications the user has already "seen".
+                    setTimeout(() => {
+                         toast({
+                            title: `New ${notif.type} notification`,
+                            description: notif.message,
+                        });
+                    }, index * 500); // Stagger notifications
+                });
+            } catch {
+                toast({ title: "Error", description: "Failed to load notifications.", variant: "destructive"});
+            } finally {
+                setIsLoadingNotifications(false);
+            }
+        }
+    }
+    
     fetchData();
+    fetchNotifications();
   }, [studentId, userRole, toast]);
   
   const renderCardContent = (content: string | number, isLoading: boolean) => {
@@ -83,7 +115,7 @@ export default function StudentDashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/student/my-attendance">
+        <Link href="/authenticated/student/my-attendance">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Overall Attendance</CardTitle>
@@ -96,7 +128,7 @@ export default function StudentDashboardPage() {
             </Card>
         </Link>
 
-        <Link href="/student/my-marks">
+        <Link href="/authenticated/student/my-marks">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Recent Marks</CardTitle>
@@ -109,7 +141,7 @@ export default function StudentDashboardPage() {
             </Card>
         </Link>
         
-        <Link href="/home">
+        <Link href="/authenticated/home">
             <Card className="shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
@@ -156,11 +188,24 @@ export default function StudentDashboardPage() {
             <CardDescription>Important updates and announcements.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>Marks for Unit Test 1 are published.</span> <span className="text-primary whitespace-nowrap">2 hours ago</span></li>
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>Reminder: AI Guest Lecture tomorrow.</span> <span className="text-primary whitespace-nowrap">1 day ago</span></li>
-                <li className="flex justify-between p-2 rounded-md hover:bg-muted"><span>New study material for DSA uploaded.</span> <span className="text-primary whitespace-nowrap">3 days ago</span></li>
-            </ul>
+            {isLoadingNotifications ? (
+                <div className="flex justify-center items-center py-10">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 animate-pulse" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                </div>
+            ) : notifications.length > 0 ? (
+                <ul className="space-y-2 text-sm">
+                    {notifications.map((notif) => (
+                         <li key={notif.id} className="flex justify-between p-2 rounded-md hover:bg-muted">
+                            <span>{notif.message}</span> 
+                            <span className="text-primary whitespace-nowrap ml-4">
+                                {formatDistanceToNow(new Date(notif.date), { addSuffix: true })}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-center text-muted-foreground py-10">No recent notifications.</p>
+            )}
           </CardContent>
         </Card>
     </div>

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { updateProfile, changePassword } from './actions';
+import { updateProfile, changePassword, updateAvatar } from './actions';
 import { useSession } from 'next-auth/react';
 
 const profileSchema = z.object({
@@ -37,7 +37,7 @@ export default function AccountSettingsPage() {
   const user = session?.user;
   
   const { toast } = useToast();
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.image || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getInitials = (name: string) => {
@@ -64,11 +64,20 @@ export default function AccountSettingsPage() {
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && user?.id) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-        toast({ title: "Avatar Updated (Mock)", description: "Profile picture changes are not saved in this demo." });
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        setAvatarPreview(dataUrl);
+        const result = await updateAvatar(user.id, dataUrl);
+
+        if (result.success) {
+            toast({ title: "Avatar Updated", description: "Your new profile picture has been saved." });
+            await updateSession({ image: result.avatar });
+        } else {
+            toast({ title: "Error", description: result.message, variant: "destructive" });
+            setAvatarPreview(user?.image || null); // Revert on failure
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -118,7 +127,7 @@ export default function AccountSettingsPage() {
             <CardDescription>Update your personal details and profile picture.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex items-center gap-6">
                 <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-primary/50">
                         <AvatarImage src={avatarPreview || `https://placehold.co/100x100.png?text=${getInitials(userName)}`} alt={userName} data-ai-hint="user avatar" />
@@ -141,7 +150,7 @@ export default function AccountSettingsPage() {
                         onChange={handleAvatarChange}
                     />
                 </div>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 flex-grow w-full">
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 flex-grow">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="name">Full Name</Label>

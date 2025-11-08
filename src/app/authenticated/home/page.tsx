@@ -390,7 +390,10 @@ export default function HomePage() {
                 </DialogHeader>
                 <AddEventForm 
                     setIsOpen={setIsAddEventOpen} 
-                    onEventAdded={fetchPageData}
+                    onEventAdded={() => {
+                        fetchPageData();
+                        toast({ title: 'Event Added', description: 'The new event has been posted successfully.' });
+                    }}
                     classes={allClasses}
                     faculty={allFaculty}
                 />

@@ -74,8 +74,19 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
   const filteredNavItems = navItems.map(item => {
     let finalHref = item.href;
     if (item.isDashboardLink) {
-        finalHref = `/${userRole}${item.href}`;
+        finalHref = `/authenticated/${userRole}${item.href}`;
+    } else if (userRole === 'admin' && item.href.startsWith('/admin/')) {
+        finalHref = `/authenticated${item.href}`;
+    } else if (userRole === 'faculty' && item.href.startsWith('/faculty/')) {
+        finalHref = `/authenticated${item.href}`;
+    } else if (userRole === 'student' && item.href.startsWith('/student/')) {
+        finalHref = `/authenticated${item.href}`;
+    } else if (!item.href.startsWith('/')) {
+        finalHref = `/authenticated/${item.href}`;
+    } else {
+        finalHref = `/authenticated${item.href}`;
     }
+
     return { ...item, href: finalHref };
   }).filter(item => item.roles.includes(userRole));
   
@@ -103,5 +114,3 @@ export function SidebarNav({ userRole }: { userRole: Role | null }) {
     </SidebarMenu>
   );
 }
-
-    
