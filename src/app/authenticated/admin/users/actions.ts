@@ -39,6 +39,7 @@ const updateUserSchema = z.object({
   classId: z.string().optional(),
   inchargeOfClasses: z.array(z.string()).optional(), // For faculty
   handlingSubjects: z.array(z.string()).optional(), // For faculty
+  avatar: z.string().optional(),
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
@@ -106,9 +107,9 @@ export async function addUser(data: AddUserInput): Promise<{ success: boolean; m
         }
     }
     
-    revalidatePath('/admin/users');
-    revalidatePath('/admin/classes');
-    revalidatePath('/admin/subjects');
+    revalidatePath('/authenticated/admin/users');
+    revalidatePath('/authenticated/admin/classes');
+    revalidatePath('/authenticated/admin/subjects');
 
     return { success: true, message: `User '${data.name}' added successfully as a ${data.role}.` };
 
@@ -191,6 +192,7 @@ export async function getUsers(): Promise<ExtendedUser[]> {
                     password: 1,
                     role: 1,
                     rollNo: 1,
+                    avatar: 1,
                     classId: 1,
                     className: '$classDetails.name',
                     inchargeOfClasses: {
@@ -218,10 +220,11 @@ export async function getUsers(): Promise<ExtendedUser[]> {
             password: user.password,
             role: user.role,
             rollNo: user.rollNo,
+            avatar: user.avatar,
             className: user.className || 'N/A',
             classId: user.classId?.toString(),
-            inchargeOfClasses: (user.inchargeOfClasses || []).map(c => ({...c, id: c.id.toString()})),
-            handlingSubjects: (user.handlingSubjects || []).map(s => ({...s, id: s.id.toString()}))
+            inchargeOfClasses: (user.inchargeOfClasses || []).map((c: any) => ({...c, id: c.id.toString()})),
+            handlingSubjects: (user.handlingSubjects || []).map((s: any) => ({...s, id: s.id.toString()}))
         }));
 
         return plainUsers as ExtendedUser[];
@@ -258,9 +261,10 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
             );
         }
 
-        revalidatePath('/admin/users');
-        revalidatePath('/admin/classes');
-        revalidatePath('/admin/subjects');
+        revalidatePath('/authenticated/admin/users');
+        revalidatePath('/authenticated/admin/classes');
+        revalidatePath('/authenticated/admin/subjects');
+        revalidatePath('/authenticated/settings/account');
         return { success: true, message: `User deleted successfully.` };
     } catch (error) {
         console.error('Error deleting user:', error);
@@ -271,11 +275,16 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; me
     }
 }
 
+type UserForRole = {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    rollNo?: string;
+};
 
 export async function getUsersByRole(role: 'student' | 'faculty'): Promise<Pick<IUser, 'id' | 'name'| 'rollNo'>[]> {
     try {
         await connectToDB();
-        const users = await UserModel.find({ role }).select('_id name rollNo').sort({ rollNo: 1, name: 1 }).lean();
+        const users = await UserModel.find({ role }).select('_id name rollNo').sort({ rollNo: 1, name: 1 }).lean<UserForRole[]>();
         return users.map(user => ({
             id: user._id.toString(),
             name: user.name,
@@ -327,6 +336,10 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
                 userToUpdate.classId = new mongoose.Types.ObjectId(data.classId);
             }
         }
+
+        if (data.avatar) {
+          userToUpdate.avatar = data.avatar;
+        }
         
         await userToUpdate.save();
         
@@ -358,9 +371,10 @@ export async function updateUser(userId: string, data: UpdateUserInput): Promise
             }
         }
 
-        revalidatePath('/admin/users');
-        revalidatePath('/admin/classes');
-        revalidatePath('/admin/subjects');
+        revalidatePath('/authenticated/admin/users');
+        revalidatePath('/authenticated/admin/classes');
+        revalidatePath('/authenticated/admin/subjects');
+        revalidatePath('/authenticated/settings/account');
         return { success: true, message: "User updated successfully." };
 
     } catch (error) {

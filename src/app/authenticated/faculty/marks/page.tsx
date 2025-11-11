@@ -3,14 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, type MarkInput } from './actions';
+import { getSubjectsForFaculty, getStudentsForClass, saveOrUpdateMarks, getMarksForAssessment, getAssessmentsForSubject, type MarkInput } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Users, Save } from "lucide-react";
+import { ClipboardList, Users, Save, Search, History } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 type SubjectInfo = {
   id: string;
@@ -35,12 +36,14 @@ export default function FacultyMarksPage() {
 
   const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
   const [students, setStudents] = useState<StudentInfo[]>([]);
+  const [assessments, setAssessments] = useState<string[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [assessmentName, setAssessmentName] = useState('');
   
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingMarks, setIsFetchingMarks] = useState(false);
   
   const [marks, setMarks] = useState<MarksRecord>({});
 
@@ -57,25 +60,73 @@ export default function FacultyMarksPage() {
     setSelectedSubjectId(subjectId);
     setStudents([]);
     setMarks({});
+    setAssessmentName('');
+    setAssessments([]);
     if (!subjectId) return;
 
     const subject = subjects.find(s => s.id === subjectId);
     if (subject) {
       setIsLoadingStudents(true);
       try {
-        const fetchedStudents = await getStudentsForClass(subject.classId);
+        const [fetchedStudents, fetchedAssessments] = await Promise.all([
+            getStudentsForClass(subject.classId),
+            getAssessmentsForSubject(subject.id, subject.classId),
+        ]);
         setStudents(fetchedStudents);
-        // Initialize empty marks for all students
+        setAssessments(fetchedAssessments);
+        
         const initialMarks = fetchedStudents.reduce((acc, student) => {
           acc[student.id] = { marksObtained: null, maxMarks: 100 };
           return acc;
         }, {} as MarksRecord);
         setMarks(initialMarks);
       } catch (error) {
-        toast({ title: 'Error', description: 'Could not fetch students.', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Could not fetch students or assessments.', variant: 'destructive' });
       } finally {
         setIsLoadingStudents(false);
       }
+    }
+  };
+  
+  const handleFetchMarks = async (assessmentToFetch?: string) => {
+    const currentAssessmentName = assessmentToFetch || assessmentName;
+    if (!selectedSubjectId || !currentAssessmentName) {
+        toast({ title: 'Missing Info', description: 'Please select a subject and enter or select an assessment name.', variant: 'destructive' });
+        return;
+    }
+    const subject = subjects.find(s => s.id === selectedSubjectId);
+    if (!subject) return;
+
+    if (assessmentToFetch) {
+        setAssessmentName(assessmentToFetch);
+    }
+
+    setIsFetchingMarks(true);
+    try {
+        const existingMarks = await getMarksForAssessment(subject.id, subject.classId, currentAssessmentName);
+        
+        const newMarksState: MarksRecord = {};
+        const defaultMaxMarks = existingMarks.length > 0 ? existingMarks[0].maxMarks : 100;
+        
+        students.forEach(student => {
+            const foundMark = existingMarks.find(m => m.studentId === student.id);
+            newMarksState[student.id] = {
+                marksObtained: foundMark ? foundMark.marksObtained : null,
+                maxMarks: foundMark ? foundMark.maxMarks : defaultMaxMarks,
+            };
+        });
+        setMarks(newMarksState);
+
+        if(existingMarks.length > 0) {
+            toast({ title: "Marks Loaded", description: `Loaded marks for ${currentAssessmentName}.`});
+        } else {
+            toast({ title: "No Existing Marks", description: `Entering new marks for ${currentAssessmentName}.`});
+        }
+
+    } catch (error) {
+        toast({ title: 'Error', description: 'Could not fetch existing marks.', variant: 'destructive' });
+    } finally {
+        setIsFetchingMarks(false);
     }
   };
 
@@ -90,13 +141,14 @@ export default function FacultyMarksPage() {
   }
 
   const handleMaxMarksChange = (studentId: string, value: string) => {
-    setMarks(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        maxMarks: value === '' ? null : Number(value)
-      }
-    }));
+    const newMaxMarks = value === '' ? null : Number(value);
+     setMarks(prev => {
+        const newMarks = {...prev};
+        for (const sId in newMarks) {
+            newMarks[sId] = { ...newMarks[sId], maxMarks: newMaxMarks };
+        }
+        return newMarks;
+    });
   }
   
   const handleSaveMarks = async () => {
@@ -119,6 +171,10 @@ export default function FacultyMarksPage() {
 
     if (result.success) {
       toast({ title: 'Marks Saved', description: result.message });
+      // Refresh assessment list
+      if (!assessments.includes(assessmentName)) {
+        setAssessments(prev => [...prev, assessmentName].sort());
+      }
     } else {
       toast({ title: 'Error', description: result.message, variant: 'destructive' });
     }
@@ -137,12 +193,12 @@ export default function FacultyMarksPage() {
       <Card>
         <CardHeader>
           <CardTitle>Marks Entry / View</CardTitle>
-          <CardDescription>Select class and subject to manage marks for an assessment.</CardDescription>
+          <CardDescription>Select a subject, then enter an assessment name or choose an existing one to manage marks.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4">
              <Select onValueChange={handleSubjectChange} disabled={isLoadingSubjects}>
-              <SelectTrigger className="w-full sm:flex-1">
+              <SelectTrigger className="w-full sm:w-[300px]">
                 <SelectValue placeholder={isLoadingSubjects ? "Loading subjects..." : "Select subject..."} />
               </SelectTrigger>
               <SelectContent>
@@ -155,14 +211,44 @@ export default function FacultyMarksPage() {
                 )}
               </SelectContent>
             </Select>
-            <Input 
-              className="w-full sm:flex-1" 
-              placeholder="Enter assessment name (e.g., Unit Test 1)" 
-              disabled={!selectedSubjectId} 
-              value={assessmentName}
-              onChange={(e) => setAssessmentName(e.target.value)}
-            />
+            <div className="flex w-full sm:w-auto sm:flex-grow gap-2">
+                <Input 
+                  className="flex-grow" 
+                  placeholder="New assessment name (e.g., Unit Test 1)" 
+                  disabled={!selectedSubjectId} 
+                  value={assessmentName}
+                  onChange={(e) => setAssessmentName(e.target.value)}
+                />
+                <Button onClick={() => handleFetchMarks()} disabled={!assessmentName || isFetchingMarks}>
+                    {isFetchingMarks ? <svg
+                        viewBox="0 0 24 24"
+                        className="mr-2 h-4 w-4 animate-pulse"
+                        fill="none"
+                        stroke="currentColor"
+                      ><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg> : <Search className="mr-2 h-4 w-4" />}
+                    Fetch
+                </Button>
+            </div>
           </div>
+          
+          {selectedSubjectId && assessments.length > 0 && (
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-2"><History className="h-4 w-4"/> Existing Assessments</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {assessments.map(name => (
+                  <Button
+                    key={name}
+                    variant={assessmentName === name ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => handleFetchMarks(name)}
+                  >
+                    {name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {isLoadingStudents ? (
              <div className="flex justify-center items-center py-10">
@@ -189,7 +275,7 @@ export default function FacultyMarksPage() {
             <div className="space-y-4">
               <Card>
                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5"/> Student List for {assessmentName || 'New Assessment'}</CardTitle>
                  </CardHeader>
                  <CardContent>
                     <Table>
@@ -202,16 +288,17 @@ export default function FacultyMarksPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {students.map((student) => (
+                            {students.map((student, index) => (
                                 <TableRow key={student.id}>
                                     <TableCell>{student.rollNo || 'N/A'}</TableCell>
                                     <TableCell>{student.name}</TableCell>
                                     <TableCell>
                                       <Input 
                                         type="number" 
-                                        placeholder="Enter marks"
+                                        placeholder="-"
                                         value={marks[student.id]?.marksObtained ?? ''}
                                         onChange={(e) => handleMarksChange(student.id, e.target.value)}
+                                        max={marks[student.id]?.maxMarks || 100}
                                       />
                                     </TableCell>
                                     <TableCell>
@@ -228,7 +315,7 @@ export default function FacultyMarksPage() {
                  </CardContent>
               </Card>
                <div className="flex justify-end">
-                <Button onClick={handleSaveMarks} disabled={isSaving}>
+                <Button onClick={handleSaveMarks} disabled={isSaving || !assessmentName}>
                   {isSaving ? <svg
                     viewBox="0 0 24 24"
                     className="mr-2 h-4 w-4 animate-pulse"

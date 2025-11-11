@@ -78,7 +78,7 @@ export default function StudentTimetablePage() {
                 <path d="M6 12v5c3 3 9 3 12 0v-5" />
               </svg>
             </div>
-          ) : timetable ? (
+          ) : timetable && Object.keys(timetable).length > 0 ? (
              <div className="overflow-x-auto">
                 <Table className="border min-w-full">
                     <TableHeader>
@@ -98,7 +98,7 @@ export default function StudentTimetablePage() {
                                         timetable.monday[periodIndex].subjectName === 'Break' ? <Coffee/> : <BookOpen/>
                                      ) : <Clock/>}
                                      <div>
-                                         <p>{timetable.monday[periodIndex].subjectName}</p>
+                                         <p className="font-semibold">{timetable.monday[periodIndex].isBreak ? timetable.monday[periodIndex].subjectName : `Period ${timetable.monday[periodIndex].period < 3 ? timetable.monday[periodIndex].period : timetable.monday[periodIndex].period < 6 ? timetable.monday[periodIndex].period - 1 : timetable.monday[periodIndex].period - 2}`}</p>
                                          <p className="text-xs text-muted-foreground">{timetable.monday[periodIndex].time}</p>
                                      </div>
                                  </div>

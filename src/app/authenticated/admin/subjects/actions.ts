@@ -43,7 +43,7 @@ export async function createSubject(data: SubjectInput): Promise<{ success: bool
         });
         await newSubject.save();
 
-        revalidatePath('/admin/subjects');
+        revalidatePath('/authenticated/admin/subjects');
 
         return { success: true, message: `Subject '${data.name}' created successfully.` };
 
@@ -155,7 +155,7 @@ export async function updateSubject(subjectId: string, data: SubjectInput): Prom
 
         await subjectToUpdate.save();
 
-        revalidatePath('/admin/subjects');
+        revalidatePath('/authenticated/admin/subjects');
         return { success: true, message: "Subject updated successfully." };
 
     } catch (error) {
@@ -182,7 +182,7 @@ export async function deleteSubject(subjectId: string): Promise<{ success: boole
             return { success: false, message: "Subject not found." };
         }
 
-        revalidatePath('/admin/subjects');
+        revalidatePath('/authenticated/admin/subjects');
         return { success: true, message: "Subject deleted successfully." };
     } catch (error) {
         console.error('Error deleting subject:', error);

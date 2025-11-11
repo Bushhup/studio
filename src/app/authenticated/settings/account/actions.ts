@@ -7,6 +7,7 @@ import StudentBioModel from '@/models/studentBio.model';
 import type { IStudentBio } from '@/models/studentBio.model';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import { revalidatePath } from 'next/cache';
 
 // Schema for updating profile information
 const profileSchema = z.object({
@@ -45,6 +46,7 @@ export async function updateProfile(userId: string, data: { name: string }): Pro
     }
 
     await userToUpdate.save();
+    revalidatePath('/authenticated/settings/account');
     return { success: true, message: "Profile updated successfully." };
 
   } catch (error) {
@@ -133,4 +135,29 @@ export async function getStudentBioForProfile(studentId: string): Promise<IStude
         console.error('Error fetching student bio-data for profile:', error);
         return null;
     }
+}
+
+export async function updateAvatar(userId: string, dataUrl: string): Promise<{ success: boolean; message: string; avatar?: string }> {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return { success: false, message: "Invalid user ID." };
+  }
+  if (!dataUrl.startsWith('data:image/')) {
+    return { success: false, message: "Invalid image data." };
+  }
+
+  try {
+    await connectToDB();
+
+    const result = await UserModel.findByIdAndUpdate(userId, { avatar: dataUrl }, { new: true });
+    if (!result) {
+      return { success: false, message: "User not found." };
+    }
+    
+    revalidatePath('/authenticated/settings/account');
+
+    return { success: true, message: "Avatar updated successfully.", avatar: result.avatar };
+  } catch (error) {
+    console.error('Error updating avatar:', error);
+    return { success: false, message: "An unknown server error occurred." };
+  }
 }

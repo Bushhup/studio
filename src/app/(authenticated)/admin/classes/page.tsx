@@ -379,7 +379,7 @@ function TimetableDialog({ isOpen, setIsOpen, classInfo }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-6xl min-w-[50vw] resize-x overflow-auto">
+      <DialogContent className="max-w-6xl min-w-[50vw] overflow-auto resize">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">Timetable for {classInfo.name}</DialogTitle>
           <DialogDescription>Edit the timetable below</DialogDescription>
@@ -387,8 +387,8 @@ function TimetableDialog({ isOpen, setIsOpen, classInfo }: {
         {isLoading ? (
           <div className="flex justify-center py-10">Loading timetable...</div>
         ) : (
-          <ScrollArea className="h-[60vh] w-full p-2">
-            <Table>
+          <div className="overflow-x-auto">
+            <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>Day/Period</TableHead>
@@ -428,7 +428,7 @@ function TimetableDialog({ isOpen, setIsOpen, classInfo }: {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>

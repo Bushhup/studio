@@ -24,7 +24,7 @@ export type PerformanceData = {
 };
 
 
-export async function getPerformanceDataForClass(classId: string, subjectId: string): Promise<PerformanceData> {
+export async function getPerformanceDataForClass(classId: string, subjectId: string, assessmentName?: string): Promise<PerformanceData> {
     if (!mongoose.Types.ObjectId.isValid(classId) || !mongoose.Types.ObjectId.isValid(subjectId)) {
         return { distribution: [], studentsToWatch: [], topPerformers: [], averagePerformers: [] };
     }
@@ -34,7 +34,16 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
         const classObjectId = new mongoose.Types.ObjectId(classId);
         const subjectObjectId = new mongoose.Types.ObjectId(subjectId);
 
-        const marks = await MarkModel.find({ classId: classObjectId, subjectId: subjectObjectId })
+        const query: { classId: mongoose.Types.ObjectId, subjectId: mongoose.Types.ObjectId, assessmentName?: string } = { 
+            classId: classObjectId, 
+            subjectId: subjectObjectId 
+        };
+
+        if (assessmentName && assessmentName !== 'all') {
+            query.assessmentName = assessmentName;
+        }
+
+        const marks = await MarkModel.find(query)
             .populate('studentId', 'name')
             .lean();
 
@@ -92,22 +101,26 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
 
         Object.values(studentMarks).forEach(student => {
             student.scores.forEach(score => {
+                const reasonText = assessmentName && assessmentName !== 'all' 
+                    ? `Scored ${score.percentage.toFixed(1)}%`
+                    : `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`;
+
                 if (score.percentage < 50) {
                     studentsToWatch.push({
                         name: student.name,
-                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        reason: reasonText,
                         trend: 'down',
                     });
                 } else if (score.percentage >= 90) {
                     topPerformers.push({
                         name: student.name,
-                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        reason: reasonText,
                         trend: 'up',
                     });
                 } else {
                     averagePerformers.push({
                         name: student.name,
-                        reason: `Scored ${score.percentage.toFixed(1)}% in '${score.assessment}'`,
+                        reason: reasonText,
                         trend: 'stable',
                     });
                 }
@@ -122,9 +135,9 @@ export async function getPerformanceDataForClass(classId: string, subjectId: str
 
         return { 
             distribution: distributionData, 
-            studentsToWatch: sortedStudentsToWatch,
-            topPerformers: sortedTopPerformers,
-            averagePerformers: sortedAveragePerformers
+            studentsToWatch: sortedStudentsToWatch.slice(0, 10), // Limit for brevity
+            topPerformers: sortedTopPerformers.slice(0, 10),
+            averagePerformers: sortedAveragePerformers.slice(0, 10)
         };
 
     } catch (error) {

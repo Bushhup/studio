@@ -16,7 +16,6 @@ export type SubjectInfo = {
 export type StudentInfo = {
   id: string;
   name: string;
-  rollNo?: string;
 };
 
 export type AttendanceRecord = Record<string, boolean>;
@@ -61,9 +60,9 @@ export async function saveAttendance(input: SaveAttendanceInput): Promise<{ succ
             await AttendanceModel.bulkWrite(operations);
         }
 
-        revalidatePath('/faculty/attendance');
-        revalidatePath('/student/dashboard');
-        revalidatePath('/student/my-attendance');
+        revalidatePath('/authenticated/faculty/attendance');
+        revalidatePath('/authenticated/student/dashboard');
+        revalidatePath('/authenticated/student/my-attendance');
 
         return { success: true, message: 'Attendance recorded successfully.' };
 

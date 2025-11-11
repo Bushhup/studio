@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingDown, TrendingUp, Users, School, Star, UserCheck, GraduationCap } from "lucide-react";
+import { BarChart3, TrendingDown, TrendingUp, Users, School, Star, UserCheck, GraduationCap, FileSearch } from "lucide-react";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from 'next-auth/react';
-import { getSubjectsForFaculty } from '../marks/actions';
+import { getSubjectsForFaculty, getAssessmentsForSubject } from '../marks/actions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getPerformanceDataForClass, type MarksDistributionData, type StudentPerformanceInfo } from './actions';
 
@@ -33,7 +33,10 @@ export default function FacultyPerformancePage() {
   const facultyId = session?.user?.id;
 
   const [subjects, setSubjects] = useState<SubjectInfo[]>([]);
+  const [assessments, setAssessments] = useState<string[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [selectedAssessment, setSelectedAssessment] = useState('all');
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingChart, setIsLoadingChart] = useState(false);
   
@@ -42,6 +45,27 @@ export default function FacultyPerformancePage() {
   const [topPerformers, setTopPerformers] = useState<StudentPerformanceInfo[]>([]);
   const [averagePerformers, setAveragePerformers] = useState<StudentPerformanceInfo[]>([]);
 
+  const fetchPerformanceData = async (classId: string, subjectId: string, assessmentName: string) => {
+    setIsLoadingChart(true);
+    setChartData([]);
+    setStudentsToWatch([]);
+    setTopPerformers([]);
+    setAveragePerformers([]);
+    
+    try {
+        const performanceData = await getPerformanceDataForClass(classId, subjectId, assessmentName);
+        setChartData(performanceData.distribution);
+        setStudentsToWatch(performanceData.studentsToWatch);
+        setTopPerformers(performanceData.topPerformers);
+        setAveragePerformers(performanceData.averagePerformers);
+    } catch (error) {
+        console.error("Failed to fetch performance data:", error);
+    } finally {
+        setIsLoadingChart(false);
+        if(isLoading) setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (facultyId) {
       setIsLoading(true);
@@ -49,7 +73,6 @@ export default function FacultyPerformancePage() {
         .then(data => {
             setSubjects(data);
             if (data.length > 0) {
-                // Automatically select the first subject and fetch its data
                 handleSubjectChange(data[0].id, data);
             } else {
                 setIsLoading(false);
@@ -62,37 +85,33 @@ export default function FacultyPerformancePage() {
   const handleSubjectChange = async (subjectId: string, currentSubjects?: SubjectInfo[]) => {
     const subjectList = currentSubjects || subjects;
     setSelectedSubjectId(subjectId);
+    setSelectedAssessment('all'); // Reset assessment filter
+    setAssessments([]);
 
-    if (!subjectId) {
-      setIsLoading(false);
-      setIsLoadingChart(false);
-      return;
-    }
+    if (!subjectId) return;
 
     const subject = subjectList.find(s => s.id === subjectId);
     if (subject) {
-        setIsLoadingChart(true);
-        setChartData([]);
-        setStudentsToWatch([]);
-        setTopPerformers([]);
-        setAveragePerformers([]);
-        
-        try {
-            const performanceData = await getPerformanceDataForClass(subject.classId, subject.id);
-            setChartData(performanceData.distribution);
-            setStudentsToWatch(performanceData.studentsToWatch);
-            setTopPerformers(performanceData.topPerformers);
-            setAveragePerformers(performanceData.averagePerformers);
-        } catch (error) {
-            console.error("Failed to fetch performance data:", error);
-        } finally {
-            setIsLoadingChart(false);
-        }
+        // Fetch assessments for this subject
+        const fetchedAssessments = await getAssessmentsForSubject(subject.id, subject.classId);
+        setAssessments(fetchedAssessments);
+        // Fetch performance for all assessments
+        fetchPerformanceData(subject.classId, subject.id, 'all');
     }
-    if (isLoading) setIsLoading(false);
   }
+
+  const handleAssessmentChange = (assessmentName: string) => {
+    setSelectedAssessment(assessmentName);
+    const subject = subjects.find(s => s.id === selectedSubjectId);
+    if (subject) {
+        fetchPerformanceData(subject.classId, subject.id, assessmentName);
+    }
+  };
   
   const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
+  const descriptionText = selectedAssessment === 'all' 
+    ? `Overall performance for ${selectedSubject?.name} (${selectedSubject?.className})` 
+    : `Performance for '${selectedAssessment}' in ${selectedSubject?.name}`;
 
   return (
     <div className="container mx-auto py-8">
@@ -104,24 +123,38 @@ export default function FacultyPerformancePage() {
             <p className="text-muted-foreground">View performance metrics for your classes.</p>
             </div>
         </div>
-        <Select onValueChange={(value) => handleSubjectChange(value)} value={selectedSubjectId} disabled={isLoading || subjects.length === 0}>
-            <SelectTrigger className="w-full sm:w-[300px]">
-                <School className="mr-2 h-4 w-4"/>
-                <SelectValue placeholder={isLoading ? "Loading classes..." : "Select a class to view performance"} />
-            </SelectTrigger>
-            <SelectContent>
-                {subjects.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.className} ({s.name})</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select onValueChange={(value) => handleSubjectChange(value)} value={selectedSubjectId} disabled={isLoading || subjects.length === 0}>
+                <SelectTrigger className="w-full sm:w-[300px]">
+                    <School className="mr-2 h-4 w-4"/>
+                    <SelectValue placeholder={isLoading ? "Loading classes..." : "Select a class to view"} />
+                </SelectTrigger>
+                <SelectContent>
+                    {subjects.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.className} ({s.name})</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select onValueChange={handleAssessmentChange} value={selectedAssessment} disabled={!selectedSubjectId}>
+                <SelectTrigger className="w-full sm:w-[250px]">
+                    <FileSearch className="mr-2 h-4 w-4"/>
+                    <SelectValue placeholder="Select an assessment" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Assessments</SelectItem>
+                    {assessments.map(name => (
+                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </div>
       <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Marks Distribution</CardTitle>
             <CardDescription>
-                {selectedSubject ? `Subject: ${selectedSubject.name} (${selectedSubject.className})` : 'No class selected'}
+                {selectedSubject ? descriptionText : 'No class selected'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -146,7 +179,7 @@ export default function FacultyPerformancePage() {
                         <path d="M6 12v5c3 3 9 3 12 0v-5" />
                     </svg>
                 </div>
-            ) : chartData.length > 0 ? (
+            ) : chartData.some(d => d.count > 0) ? (
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <ResponsiveContainer>
                     <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -188,32 +221,13 @@ export default function FacultyPerformancePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-yellow-400"/> Top Performers</CardTitle>
-                <CardDescription>Students excelling in this subject (&gt;90%).</CardDescription>
+                <CardDescription>Students excelling in this selection (&gt;=90%).</CardDescription>
               </CardHeader>
               <CardContent>
                  {isLoadingChart ? (
-                      <div className="flex justify-center items-center h-[250px]">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-8 w-8 animate-pulse theme-gradient-stroke"
-                          fill="none"
-                          stroke="url(#theme-gradient)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                            <defs>
-                                <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
-                                    <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
-                                </linearGradient>
-                            </defs>
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                        </svg>
-                    </div>
+                      <div className="flex justify-center items-center h-[250px]"><svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg></div>
                  ) : topPerformers.length > 0 ? (
-                    <ul className="space-y-4">
+                    <ul className="space-y-4 max-h-[300px] overflow-y-auto">
                         {topPerformers.map((student, index) => (
                             <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                 <div className="flex items-center gap-3">
@@ -228,9 +242,7 @@ export default function FacultyPerformancePage() {
                         ))}
                     </ul>
                  ) : (
-                    <div className="flex justify-center items-center h-[250px]">
-                        <p className="text-muted-foreground text-center">No students currently in the top performer category.</p>
-                    </div>
+                    <div className="flex justify-center items-center h-[250px]"><p className="text-muted-foreground text-center">No students currently in this category.</p></div>
                  )}
               </CardContent>
             </Card>
@@ -241,26 +253,7 @@ export default function FacultyPerformancePage() {
               </CardHeader>
               <CardContent>
                  {isLoadingChart ? (
-                      <div className="flex justify-center items-center h-[250px]">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-8 w-8 animate-pulse theme-gradient-stroke"
-                          fill="none"
-                          stroke="url(#theme-gradient)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                            <defs>
-                                <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
-                                    <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
-                                </linearGradient>
-                            </defs>
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                        </svg>
-                    </div>
+                     <div className="flex justify-center items-center h-[250px]"><svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg></div>
                  ) : averagePerformers.length > 0 ? (
                     <ul className="space-y-4 max-h-[300px] overflow-y-auto">
                         {averagePerformers.map((student, index) => (
@@ -276,9 +269,7 @@ export default function FacultyPerformancePage() {
                         ))}
                     </ul>
                  ) : (
-                    <div className="flex justify-center items-center h-[250px]">
-                        <p className="text-muted-foreground text-center">No students currently in the average performer category.</p>
-                    </div>
+                    <div className="flex justify-center items-center h-[250px]"><p className="text-muted-foreground text-center">No students currently in this category.</p></div>
                  )}
               </CardContent>
             </Card>
@@ -289,28 +280,9 @@ export default function FacultyPerformancePage() {
               </CardHeader>
               <CardContent>
                  {isLoadingChart ? (
-                      <div className="flex justify-center items-center h-[250px]">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-8 w-8 animate-pulse theme-gradient-stroke"
-                          fill="none"
-                          stroke="url(#theme-gradient)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                            <defs>
-                                <linearGradient id="theme-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style={{stopColor: 'hsl(var(--primary))'}} />
-                                    <stop offset="100%" style={{stopColor: 'hsl(var(--accent))'}} />
-                                </linearGradient>
-                            </defs>
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                        </svg>
-                    </div>
+                      <div className="flex justify-center items-center h-[250px]"><svg viewBox="0 0 24 24" className="h-8 w-8 animate-pulse"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg></div>
                  ) : studentsToWatch.length > 0 ? (
-                    <ul className="space-y-4">
+                    <ul className="space-y-4 max-h-[300px] overflow-y-auto">
                         {studentsToWatch.map((student, index) => (
                             <li key={index} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                 <div className="flex items-center gap-3">
@@ -325,9 +297,7 @@ export default function FacultyPerformancePage() {
                         ))}
                     </ul>
                  ) : (
-                    <div className="flex justify-center items-center h-[250px]">
-                        <p className="text-muted-foreground text-center">No students require special attention at this time.</p>
-                    </div>
+                    <div className="flex justify-center items-center h-[250px]"><p className="text-muted-foreground text-center">No students require special attention.</p></div>
                  )}
               </CardContent>
             </Card>

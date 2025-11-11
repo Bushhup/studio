@@ -83,9 +83,13 @@ export default function LoginPage() {
   };
 
   const handleBack = () => {
-    setSelectedRole(null);
-    setUsername('');
-    setPassword('');
+    if (selectedRole) {
+        setSelectedRole(null);
+        setUsername('');
+        setPassword('');
+    } else {
+        router.push('/landing');
+    }
   };
 
   if (status === 'loading' || status === 'authenticated') {
@@ -119,16 +123,15 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
         <Card className="w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-top-10 duration-500">
           <CardHeader className="text-center relative">
-            {selectedRole && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 left-4"
-                onClick={handleBack}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4"
+              onClick={handleBack}
+              aria-label="Go back"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
             <div className="mb-4 flex justify-center">
                 <Link href="/landing">
                     <GraduationCap className="h-16 w-16 text-primary" />

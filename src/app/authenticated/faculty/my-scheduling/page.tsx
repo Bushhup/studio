@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { getStudentTimetable, type StudentTimetable } from './actions';
+import { getFacultyTimetable, type FacultyTimetable } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -11,12 +11,12 @@ import { Calendar, Clock, Coffee, BookOpen } from "lucide-react";
 
 const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
-export default function StudentTimetablePage() {
+export default function FacultySchedulingPage() {
   const { data: session } = useSession();
-  const studentId = session?.user?.id;
+  const facultyId = session?.user?.id;
   const { toast } = useToast();
 
-  const [timetable, setTimetable] = useState<StudentTimetable | null>(null);
+  const [timetable, setTimetable] = useState<FacultyTimetable | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentDay, setCurrentDay] = useState('');
   
@@ -27,9 +27,9 @@ export default function StudentTimetablePage() {
   }, []);
 
   useEffect(() => {
-    if (studentId) {
+    if (facultyId) {
       setIsLoading(true);
-      getStudentTimetable(studentId)
+      getFacultyTimetable(facultyId)
         .then(setTimetable)
         .catch(() => {
           toast({
@@ -40,21 +40,21 @@ export default function StudentTimetablePage() {
         })
         .finally(() => setIsLoading(false));
     }
-  }, [studentId, toast]);
+  }, [facultyId, toast]);
 
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center gap-3">
         <Calendar className="h-10 w-10 text-primary" />
         <div>
-          <h1 className="font-headline text-4xl font-bold tracking-tight text-primary">My Timetable</h1>
-          <p className="text-muted-foreground">Your weekly class schedule.</p>
+          <h1 className="font-headline text-4xl font-bold tracking-tight text-primary">My Scheduling</h1>
+          <p className="text-muted-foreground">Your personal weekly class schedule.</p>
         </div>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Class Schedule</CardTitle>
-          <CardDescription>Here is your timetable for the week. Today is <span className="capitalize font-bold text-primary">{currentDay}</span>.</CardDescription>
+          <CardTitle>My Weekly Timetable</CardTitle>
+          <CardDescription>Here is your schedule for the week. Today is <span className="capitalize font-bold text-primary">{currentDay}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -106,13 +106,13 @@ export default function StudentTimetablePage() {
                              {daysOfWeek.map(day => {
                                 const period = timetable[day][periodIndex];
                                 return (
-                                    <TableCell key={day} className={`text-center p-2 ${day === currentDay ? 'bg-primary/5' : ''}`}>
+                                    <TableCell key={day} className={`text-center p-2 ${day === currentDay ? 'bg-primary/5' : ''} ${period.subjectName && period.subjectName !== 'Free Period' && !period.isBreak ? 'bg-accent/50' : ''}`}>
                                         {period.isBreak ? (
                                             <span className="italic text-muted-foreground">{period.subjectName}</span>
                                         ) : (
                                             <div>
                                                 <p className="font-semibold">{period.subjectName}</p>
-                                                <p className="text-xs text-muted-foreground">{period.facultyName}</p>
+                                                {period.className && <p className="text-xs text-muted-foreground">{period.className}</p>}
                                             </div>
                                         )}
                                     </TableCell>
@@ -124,7 +124,7 @@ export default function StudentTimetablePage() {
                 </Table>
              </div>
           ) : (
-             <p className="text-center text-muted-foreground py-10 h-96">No timetable found for your class. Please contact your administrator.</p>
+             <p className="text-center text-muted-foreground py-10 h-96">No schedule found. Please ensure subjects are assigned to you and timetables are set by the admin.</p>
           )}
         </CardContent>
       </Card>

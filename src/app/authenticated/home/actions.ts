@@ -110,7 +110,7 @@ export async function addEvent(data: AddEventInput): Promise<{ success: boolean;
 
         await newEvent.save();
 
-        revalidatePath('/home');
+        revalidatePath('/authenticated/home');
 
         return { success: true, message: 'Event added successfully.' };
     } catch (error) {

@@ -7,6 +7,7 @@ import UserModel from '@/models/user.model';
 import MarkModel from '@/models/mark.model';
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
+import { ISubject } from '@/models/subject.model';
 
 export async function getSubjectsForFaculty(facultyId: string) {
   if (!mongoose.Types.ObjectId.isValid(facultyId)) {
@@ -17,15 +18,18 @@ export async function getSubjectsForFaculty(facultyId: string) {
     const facultyObjectId = new mongoose.Types.ObjectId(facultyId);
     
     const subjects = await SubjectModel.find({ facultyId: facultyObjectId })
-      .populate('classId', 'name')
-      .lean();
+      .populate<{ classId: { name: string } | null }>('classId', 'name')
+      .lean<ISubject[]>();
     
-    return subjects.map(s => ({
-      id: s._id.toString(),
-      name: s.name,
-      classId: (s.classId as any)._id.toString(),
-      className: (s.classId as any).name,
-    }));
+    return subjects.map(s => {
+      const classId = (s.classId as any)?._id;
+      return {
+        id: s._id.toString(),
+        name: s.name,
+        classId: classId ? classId.toString() : '',
+        className: (s.classId as any)?.name || 'N/A',
+      };
+    });
   } catch (error) {
     console.error("Error fetching subjects for faculty:", error);
     return [];
@@ -105,8 +109,8 @@ export async function saveOrUpdateMarks(
       await MarkModel.bulkWrite(operations);
     }
     
-    revalidatePath('/faculty/marks');
-    revalidatePath('/faculty/performance'); // Revalidate performance page as well
+    revalidatePath('/authenticated/faculty/marks');
+    revalidatePath('/authenticated/faculty/performance'); // Revalidate performance page as well
     return { success: true, message: 'Marks have been saved successfully.' };
 
   } catch (error) {
@@ -116,4 +120,53 @@ export async function saveOrUpdateMarks(
     }
     return { success: false, message: 'An unknown error occurred while saving marks.' };
   }
+}
+
+export type ExistingMark = {
+  studentId: string;
+  marksObtained: number;
+  maxMarks: number;
+}
+export async function getMarksForAssessment(
+    subjectId: string, 
+    classId: string, 
+    assessmentName: string
+): Promise<ExistingMark[]> {
+    if (!mongoose.Types.ObjectId.isValid(subjectId) || !mongoose.Types.ObjectId.isValid(classId) || !assessmentName) {
+        return [];
+    }
+    try {
+        await connectToDB();
+        const marks = await MarkModel.find({
+            subjectId: new mongoose.Types.ObjectId(subjectId),
+            classId: new mongoose.Types.ObjectId(classId),
+            assessmentName
+        }).lean();
+        
+        return marks.map(mark => ({
+            studentId: mark.studentId.toString(),
+            marksObtained: mark.marksObtained,
+            maxMarks: mark.maxMarks
+        }));
+    } catch (error) {
+        console.error("Error fetching marks for assessment:", error);
+        return [];
+    }
+}
+
+export async function getAssessmentsForSubject(subjectId: string, classId: string): Promise<string[]> {
+    if (!mongoose.Types.ObjectId.isValid(subjectId) || !mongoose.Types.ObjectId.isValid(classId)) {
+        return [];
+    }
+    try {
+        await connectToDB();
+        const assessments = await MarkModel.find({
+            subjectId: new mongoose.Types.ObjectId(subjectId),
+            classId: new mongoose.Types.ObjectId(classId)
+        }).distinct('assessmentName');
+        return assessments.sort();
+    } catch (error) {
+        console.error("Error fetching assessments:", error);
+        return [];
+    }
 }
